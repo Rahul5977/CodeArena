@@ -14,10 +14,10 @@ export const submitBatch = async (submissions) => {
     { submissions },
     {
       headers: {
-        'Content-Type': 'application/json',
-        Accept: 'application/json',
+        "Content-Type": "application/json",
+        Accept: "application/json",
         Authorization: `Bearer ${process.env.SULU_API_KEY}`,
-      }
+      },
     }
   );
   console.log("Submission result: ", data);
@@ -32,9 +32,13 @@ export const pollBatchResults = async (tokens) => {
         tokens: tokens.join(","),
         base64_encoded: false,
       },
+      headers: {
+        Authorization: `Bearer ${process.env.SULU_API_KEY}`,
+        Accept: "application/json",
+      },
     });
     const results = data.submissions;
-    const isAllDone = results.every((r) => r.status.id !== 1 && r.status !== 2);
+    const isAllDone = results.every((r) => r.status.id !== 1 && r.status.id !== 2);
     if (isAllDone) return results;
     await sleep(1000);
   }
