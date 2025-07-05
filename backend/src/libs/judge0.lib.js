@@ -4,7 +4,6 @@ export const getJudge0LanguageId = (Language) => {
     PYTHON: 71,
     JAVA: 62,
     JAVASCRIPT: 63,
-    CPP: 54,
   };
   return languageMap[Language.toUpperCase()];
 };

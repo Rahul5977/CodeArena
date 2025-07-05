@@ -14,6 +14,7 @@ export const createProblem = async (req, res) => {
   } = req.body;
   if (req.user.role !== "ADMIN") {
     return res.status(403).json({
+      success:false,
       message: "You are not allowed to create a problem",
     });
   }
@@ -36,7 +37,7 @@ export const createProblem = async (req, res) => {
       //submissions -> array of objects with these entities
 
       const submissionsResults = await submitBatch(submissions);
-      //returns a token
+      //returns a token->array of tokens 
       const tokens = submissionsResults.map((res) => res.token);
       //token extraced ..
       const results = await pollBatchResults(tokens);
