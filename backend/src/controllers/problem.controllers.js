@@ -82,7 +82,7 @@ export const createProblem = async (req, res) => {
 };
 export const getAllProblem = async (req, res) => {
   try {
-    const problems = await db.problems.findMany();
+    const problems = await db.problem.findMany();
     if (!problems) {
       return res.status(404).json({
         error: "No problem found",
@@ -104,7 +104,7 @@ export const getAllProblem = async (req, res) => {
 export const getAllProblemById = async (req, res) => {
   const { id } = req.params;
   try {
-    const problem = await db.problems.findUnique({
+    const problem = await db.problem.findUnique({
       where: {
         id: id,
       },
@@ -119,7 +119,6 @@ export const getAllProblemById = async (req, res) => {
       message: "Problem fetched Successfully",
       problem,
     });
-
   } catch (error) {
     console.error("Error fetching problem by id", error);
     res.status(403).json({
@@ -129,4 +128,32 @@ export const getAllProblemById = async (req, res) => {
   }
 };
 export const updateProblem = async (req, res) => {};
-export const deleteProblem = async (req, res) => {};
+export const deleteProblem = async (req, res) => {
+  const { id } = req.params;
+  try {
+    const problem = await db.problem.findUnique({
+      where: { id },
+    });
+
+    if (!problem) {
+      return res.status(404).json({
+        error: "No problem found",
+      });
+    }
+
+    await db.problem.delete({
+      where: { id },
+    });
+    return res.status(200).json({
+      success: true,
+      message: "Problem deleted Successfully",
+    });
+  } catch (error) {
+    console.error("Error deleting problem by id", error);
+    res.status(403).json({
+      success: false,
+      error: "Error deleting problem by id",
+    });
+  }
+};
+export const getAllProblemSolvedByuser = async (req, res) => {};
