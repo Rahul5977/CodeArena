@@ -14,7 +14,7 @@ export const createProblem = async (req, res) => {
   } = req.body;
   if (req.user.role !== "ADMIN") {
     return res.status(403).json({
-      success:false,
+      success: false,
       message: "You are not allowed to create a problem",
     });
   }
@@ -37,7 +37,7 @@ export const createProblem = async (req, res) => {
       //submissions -> array of objects with these entities
 
       const submissionsResults = await submitBatch(submissions);
-      //returns a token->array of tokens 
+      //returns a token->array of tokens
       const tokens = submissionsResults.map((res) => res.token);
       //token extraced ..
       const results = await pollBatchResults(tokens);
@@ -66,16 +66,41 @@ export const createProblem = async (req, res) => {
           userId: req.user.id,
         },
       });
-      return res.status(201).json(newProblem);
+      return res.status(201).json({
+        success: true,
+        message: "Problem Created Successfully",
+        newProblem,
+      });
     }
   } catch (error) {
     console.error("Error creating problem", error);
     res.status(403).json({
+      success: false,
       error: "Error creating problem",
     });
   }
 };
-export const getAllProblem = async (req, res) => {};
+export const getAllProblem = async (req, res) => {
+  try {
+    const problems = await db.problems.findMany();
+    if (!problems) {
+      return res.status(404).json({
+        error: "No problem found",
+      });
+    }
+    return res.status(201).json({
+      success: true,
+      message: "Problem fetched Successfully",
+      problems,
+    });
+  } catch (error) {
+    console.error("Error fetching problem", error);
+    res.status(403).json({
+      success: false,
+      error: "Error fetching problem",
+    });
+  }
+};
 export const getAllProblemById = async (req, res) => {};
 export const updateProblem = async (req, res) => {};
 export const deleteProblem = async (req, res) => {};
