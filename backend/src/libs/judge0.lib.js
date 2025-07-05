@@ -11,16 +11,20 @@ export const getJudge0LanguageId = (Language) => {
 export const submitBatch = async (submissions) => {
   const { data } = await axios.post(
     `${process.env.JUDGE0_API_URL}submissions/batch?base64_encoded=false`,
-    { submissions }
+    { submissions },
+    {
+      headers: {
+        'Content-Type': 'application/json',
+        Accept: 'application/json',
+        Authorization: `Bearer ${process.env.SULU_API_KEY}`,
+      }
+    }
   );
   console.log("Submission result: ", data);
   return data; //[{token},{token},{token}]
 };
-const sleep = (ms) => {
-  new Promise((resolve) => {
-    setTimeout(resolve, ms);
-  });
-};
+const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+
 export const pollBatchResults = async (tokens) => {
   while (true) {
     const { data } = await axios.get(`${process.env.JUDGE0_API_URL}/submissions/batch`, {
