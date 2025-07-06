@@ -43,7 +43,7 @@ export const createProblem = async (req, res) => {
       const results = await pollBatchResults(tokens);
       for (let i = 0; i < results.length; i++) {
         const result = results[i];
-        console.log("result-----", result[i]);
+        console.log("result-----", result);
 
         if (result.status.id !== 3) {
           return res.status(400).json({
