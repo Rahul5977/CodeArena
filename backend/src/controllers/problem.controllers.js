@@ -127,7 +127,90 @@ export const getAllProblemById = async (req, res) => {
     });
   }
 };
-export const updateProblem = async (req, res) => {};
+export const updateProblem = async (req, res) => {
+  const { problemId } = req.params;
+  const existingProblem = await db.problem.findUnique({ where: { id: problemId } });
+  if (!existingProblem) {
+    return res.status(404).json({ error: "Problem not found" });
+  }
+  const {
+    title,
+    description,
+    difficulty,
+    tags,
+    examples,
+    constraints,
+    testcases,
+    codeSnippets,
+    referenceSolutions,
+  } = req.body;
+
+  if (req.user.role !== "ADMIN") {
+    return res.status(403).json({ message: "You are not allowed to update this problem" });
+  }
+
+  try {
+    // Validate -> Sulu/Judge0
+    for (const [language, solutionCode] of Object.entries(referenceSolutions)) {
+      const languageId = getJudge0LanguageId(language);
+      if (!languageId) {
+        return res.status(400).json({
+          error: `Language ${language} is not supported`,
+        });
+      }
+
+      const submissions = testcases.map(({ input, output }) => ({
+        source_code: solutionCode,
+        language_id: languageId,
+        stdin: input,
+        expected_output: output,
+      }));
+
+      const submissionResults = await submitBatch(submissions);
+      const tokens = submissionResults.map((res) => res.token);
+      const results = await pollBatchResults(tokens);
+
+      for (let i = 0; i < results.length; i++) {
+        const result = results[i];
+
+        if (result.status.id !== 3) {
+          return res.status(400).json({
+            error: `Testcase ${i + 1} failed for language ${language}`,
+            message: result.status.description,
+          });
+        }
+      }
+    }
+
+    // If all reference solutions pass, update problem in DB
+    const updatedProblem = await db.problem.update({
+      where: { id: problemId },
+      data: {
+        title,
+        description,
+        difficulty,
+        tags,
+        examples,
+        constraints,
+        testcases,
+        codeSnippets,
+        referenceSolutions,
+        userId: req.user.id,
+      },
+    });
+
+    res.status(200).json({
+      message: "Problem Updated !",
+      success: true,
+      updatedProblem,
+    });
+  } catch (error) {
+    console.error("Error updating problem:", error);
+    res.status(500).json({
+      error: "Failed to update the problem",
+    });
+  }
+};
 export const deleteProblem = async (req, res) => {
   const { id } = req.params;
   try {
@@ -156,6 +239,4 @@ export const deleteProblem = async (req, res) => {
     });
   }
 };
-export const getAllProblemSolvedByuser = async (req, res) => {
-  
-};
+export const getAllProblemSolvedByuser = async (req, res) => {};
