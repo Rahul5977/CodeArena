@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
-import { pollBatchResults, submitBatch } from "../libs/judge0.lib.js";
+import { getLanguageName, pollBatchResults, submitBatch } from "../libs/judge0.lib.js";
+import { all } from "axios";
 export const executeCode = async (req, res) => {
   //user se language input
   //fir code, input, output array
@@ -19,13 +20,13 @@ export const executeCode = async (req, res) => {
       });
     }
     //prepare each test cases for judge0 batch submission
-    const submission = stdin.map((input) => ({
+    const submissions = stdin.map((input) => ({
       source_code,
       language_id,
       stdin: input,
     }));
     //send this batch pf submission to judge0
-    const submitResponse = await submitBatch(submission);
+    const submitResponse = await submitBatch(submissions);
     const tokens = submitResponse.map((res) => res.token);
     //poll judge0 for result of all submitted testcases
     const results = await pollBatchResults(tokens);
@@ -72,7 +73,30 @@ export const executeCode = async (req, res) => {
     // Mached :true
 
     console.log(detailedresults);
-    
+    const submission = await db.submission.create({
+      data: {
+        userId,
+        problemId,
+        sourceCode: source_code,
+        language: getLanguageName(language_id),
+        stdin: stdin.join("\n"),
+        stdout: JSON.stringify(detailedresults.map((r) => r.stdout)),
+        stderr: detailedresults.some((r) => r.stderr)
+          ? JSON.stringify(detailedresults.map((r) => r.stderr))
+          : null,
+        compileOutput: detailedresults.some((r) => r.compile_output)
+          ? JSON.stringify(detailedresults.map((r) => r.compile_output))
+          : null,
+        status: allPassed ? "Acepted" : "Wrong Answer",
+        memory: detailedresults.some((r) => r.memory)
+          ? JSON.stringify(detailedresults.map((r) => r.memory))
+          : null,
+        time: detailedresults.some((r) => r.time)
+          ? JSON.stringify(detailedresults.map((r) => r.time))
+          : null,
+      },
+    });
+
     res.status(200).json({
       message: "Code executed !",
     });
