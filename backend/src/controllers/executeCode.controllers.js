@@ -1,6 +1,7 @@
 import dotenv from "dotenv";
 import { getLanguageName, pollBatchResults, submitBatch } from "../libs/judge0.lib.js";
-import { all } from "axios";
+import { db } from "../libs/db.js";
+// import { all } from "axios";
 export const executeCode = async (req, res) => {
   //user se language input
   //fir code, input, output array
@@ -96,9 +97,52 @@ export const executeCode = async (req, res) => {
           : null,
       },
     });
+    //if all passed -> mark problem as solved for current user
+    if (allPassed) {
+      await db.problemSolved.upsert({
+        where: {
+          userId_problemId: {
+            userId,
+            problemId,
+          },
+        },
+        update: {},
+        create: {
+          userId,
+          problemId,
+        },
+      });
+    }
 
+    //save individual test case results
+    const testCaseResults = detailedresults.map((result) => ({
+      submissionId: submission.id,
+      testCase: result.testCase,
+      passed: result.passed,
+      stdout: result.stdout,
+      expected: result.expected,
+      stderr: result.stderr,
+      compileOutput: result.compile_output,
+      status: result.status,
+      memory: result.memory,
+      time: result.time,
+    }));
+    await db.testCaseResult.createMany({
+      data: testCaseResults,
+    });
+
+    const submissionWithTestCase = await db.submission.findUnique({
+      where: {
+        id: submission.id,
+      },
+      include: {
+        testCases: true,
+      },
+    });
     res.status(200).json({
-      message: "Code executed !",
+      success: true,
+      message: "Code Executed! Successfully!",
+      submission: submissionWithTestCase,
     });
   } catch (error) {
     res.status(403).json({
