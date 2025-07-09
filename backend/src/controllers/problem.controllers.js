@@ -128,8 +128,10 @@ export const getAllProblemById = async (req, res) => {
   }
 };
 export const updateProblem = async (req, res) => {
-  const { problemId } = req.params;
-  const existingProblem = await db.problem.findUnique({ where: { id: problemId } });
+  const { id } = req.params;
+  console.log("Problem ID from params:", req.params.id);
+
+  const existingProblem = await db.problem.findUnique({ where: { id: id } });
   if (!existingProblem) {
     return res.status(404).json({ error: "Problem not found" });
   }
@@ -184,7 +186,7 @@ export const updateProblem = async (req, res) => {
 
     // If all reference solutions pass, update problem in DB
     const updatedProblem = await db.problem.update({
-      where: { id: problemId },
+      where: { id: id },
       data: {
         title,
         description,
