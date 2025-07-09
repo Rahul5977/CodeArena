@@ -1,8 +1,29 @@
 import { db } from "../libs/db.js";
 
+export const createPlaylist = async (req, res) => {
+  try {
+    const { name, description } = req.body;
+    const userId = req.user.id;
+    const playlist = await db.playlist.create({
+      data: {
+        name,
+        description,
+        userId,
+      },
+    });
+    res.status(200).json({
+      success: true,
+      message: "Playlist created successfully",
+      playlist,
+    });
+  } catch (error) {
+    console.error("Fetch Submissions Error:", error);
+    res.status(500).json({ error: "Failed to create playlist" });
+  }
+};
 export const getAllListDetails = async (req, res) => {
   try {
-    const playlists = await db.findMany({
+    const playlists = await db.playlist.findMany({
       where: {
         userId: req.user.id,
       },
@@ -27,7 +48,7 @@ export const getAllListDetails = async (req, res) => {
 export const getPlaylistDetail = async (req, res) => {
   try {
     const { playlistId } = req.params;
-    const playlist = db.findUnique({
+    const playlist = db.playlist.findUnique({
       where: {
         userId: req.user.id,
         id: playlistId,
@@ -51,27 +72,6 @@ export const getPlaylistDetail = async (req, res) => {
   } catch (error) {
     console.error("Fetch Submissions Error:", error);
     res.status(500).json({ error: "Failed to get playlists" });
-  }
-};
-export const createPlaylist = async (req, res) => {
-  try {
-    const { name, description } = req.body;
-    const userId = req.user.id;
-    const playlist = await db.playlist.create({
-      data: {
-        name,
-        description,
-        userId,
-      },
-    });
-    res.status(200).json({
-      success: true,
-      message: "Playlist created successfully",
-      playlist,
-    });
-  } catch (error) {
-    console.error("Fetch Submissions Error:", error);
-    res.status(500).json({ error: "Failed to create playlist" });
   }
 };
 export const addProblemToPlaylist = async (req, res) => {
