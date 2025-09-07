@@ -7,9 +7,9 @@ export const createContest = asyncHandler(async (req, res) => {
     req.body;
 
   // Check if the user is an admin
-    if (req.user.role !== "ADMIN") {
-      return new ApiError(403, "Only admins can create contests");
-    }
+  if (req.user.role !== "ADMIN") {
+    return new ApiError(403, "Only admins can create contests");
+  }
   //validate time inputs
   const start = new Date(startTime);
   const end = new Date(endTime);
@@ -49,3 +49,42 @@ export const createContest = asyncHandler(async (req, res) => {
   });
   return new ApiResponse(201, "Contest created successfully", contest);
 });
+export const getAllContests = asyncHandler(async (req, res) => {
+  const { status = "all", page = 1, limit = 10 } = req.query;
+  const where = {};
+  const now = new Date();
+  if (status === "upcoming") {
+    where.startTime = { gt: now };
+  } else if (status === "ongoing") {
+    where.startTime = { lte: now };
+    where.endTime = { gte: now };
+  } else if (status === "past") {
+    where.endTime = { lt: now };
+  }
+  const skip = (page - 1) * limit;
+  const [contests, total] = await Promise.all([
+    db.contest.findMany({
+      where,
+      skip,
+      take: limit,
+      orderBy: { startTime: "desc" },
+      include: { problems: true, _count: { select: { participants: true } } },
+    }),
+    db.contest.count({ where }),
+  ]);
+  const totalPages = Math.ceil(total / limit);
+  return new ApiResponse(200, "Contests fetched successfully", contests, {
+    page,
+    limit,
+    total,
+    totalPages,
+  });
+});
+export const getContestById = asyncHandler(async (req, res) => {});
+export const registerForContest = asyncHandler(async (req, res) => {});
+export const submitContestProblem = asyncHandler(async (req, res) => {});
+export const getContestLeaderboard = asyncHandler(async (req, res) => {});
+export const getLeaderboard = asyncHandler(async (req, res) => {});
+export const updateLeaderboard = asyncHandler(async (req, res) => {});
+export const getMyContestSubmissions = asyncHandler(async (req, res) => {});
+export const updateContestStatus = asyncHandler(async (req, res) => {});
