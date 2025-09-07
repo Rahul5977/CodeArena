@@ -25,19 +25,37 @@ enum Difficulty {
   HARD
 }
 
+enum ContestStatus {
+  UPCOMING
+  LIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum SheetType {
+  FREE
+  PREMIUM
+}
+
 model User {
-  id            String          @id @default(uuid())
-  name          String
-  email         String          @unique
-  image         String?
-  role          UserRole        @default(USER)
-  password      String
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  problems       Problem[]
-  submission    Submission[]
-  problemSolved ProblemSolved[]
-  playlists     Playlist[]
+  id                 String               @id @default(uuid())
+  name               String
+  email              String               @unique
+  image              String?
+  role               UserRole             @default(USER)
+  password           String
+  createdAt          DateTime             @default(now())
+  updatedAt          DateTime             @updatedAt
+  problems           Problem[]
+  submission         Submission[]
+  problemSolved      ProblemSolved[]
+  playlists          Playlist[]
+  ContestParticipant ContestParticipant[]
+  ContestSubmission  ContestSubmission[]
+  ContestLeaderboard ContestLeaderboard[]
+  UserSheet          UserSheet[]
+  SheetProgress      SheetProgress[]
+  Payment            Payment[]
 }
 
 model Problem {
@@ -63,6 +81,8 @@ model Problem {
   submission        Submission[]
   solvedBy          ProblemSolved[]
   problemsPlaylists ProblemInPlaylist[]
+  ContestSubmission ContestSubmission[]
+  SheetProgress     SheetProgress[]
 }
 
 model Submission {
@@ -142,4 +162,136 @@ model ProblemInPlaylist {
   problem  Problem  @relation(fields: [problemId], references: [id], onDelete: Cascade)
 
   @@unique([playListId, problemId])
+}
+
+model Contest {
+  id              String        @id @default(uuid())
+  title           String
+  description     String?
+  startTime       DateTime
+  endTime         DateTime
+  duration        Int // in minutes
+  problemIds      String[] // List of Problem IDs
+  maxParticipants Int?
+  status          ContestStatus @default(UPCOMING)
+  rules           Json?
+  createdAt       DateTime      @default(now())
+  updatedAt       DateTime      @updatedAt
+
+  participants ContestParticipant[]
+  submissions  ContestSubmission[]
+  leaderboard  ContestLeaderboard[]
+}
+
+model ContestParticipant {
+  id        String   @id @default(uuid())
+  userId    String
+  contestId String
+  joinedAt  DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+}
+
+model ContestSubmission {
+  id          String   @id @default(uuid())
+  userId      String
+  contestId   String
+  problemId   String
+  sourceCode  Json
+  language    String
+  status      String // AC, WA, TLE, etc.
+  score       Int      @default(0)
+  penalty     Int      @default(0) // time penalty in minutes
+  submittedAt DateTime @default(now())
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+}
+
+model ContestLeaderboard {
+  id             String    @id @default(uuid())
+  userId         String
+  contestId      String
+  totalScore     Int       @default(0)
+  penalty        Int       @default(0)
+  rank           Int       @default(0)
+  problemsSolved Int       @default(0)
+  lastSubmission DateTime?
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, contestId])
+  @@index([contestId, totalScore, penalty])
+}
+
+model Sheet {
+  id             String     @id @default(uuid())
+  title          String
+  description    String
+  topic          String
+  difficulty     Difficulty
+  problemIds     String[]
+  price          Float      @default(0) // 0 means free
+  type           SheetType  @default(FREE)
+  estimatedHours Int?
+  prerequisites  String[]
+  isActive       Boolean    @default(true)
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  userSheets UserSheet[]
+  progress   SheetProgress[]
+}
+
+model UserSheet {
+  id          String   @id @default(uuid())
+  userId      String
+  sheetId     String
+  purchasedAt DateTime @default(now())
+  paymentId   String? // Payment gateway transaction ID
+  amount      Float
+  isActive    Boolean  @default(true)
+
+  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sheet Sheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sheetId])
+}
+
+model SheetProgress {
+  id          String    @id @default(uuid())
+  userId      String
+  sheetId     String
+  problemId   String
+  completed   Boolean   @default(false)
+  completedAt DateTime?
+  attempts    Int       @default(0)
+
+  user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  sheet   Sheet   @relation(fields: [sheetId], references: [id], onDelete: Cascade)
+  problem Problem @relation(fields: [problemId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, sheetId, problemId])
+}
+
+model Payment {
+  id               String   @id @default(uuid())
+  userId           String
+  sheetId          String?
+  amount           Float
+  currency         String   @default("INR")
+  paymentGateway   String // razorpay, stripe
+  gatewayOrderId   String
+  gatewayPaymentId String?
+  status           String // pending, completed, failed, refunded
+  metadata         Json?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
