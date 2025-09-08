@@ -80,7 +80,26 @@ export const getAllContests = asyncHandler(async (req, res) => {
     totalPages,
   });
 });
-export const getContestById = asyncHandler(async (req, res) => {});
+export const getContestById = asyncHandler(async (req, res) => {
+  const { contestId } = req.params;
+  const userId = req.user ? req.user.id : null;
+  const contest = await db.contest.findUnique({
+    where: { id: contestId },
+    include: {
+      participants: {
+        where: { userId },
+        select: { registeredAt: true },
+      },
+      _count: {
+        select: { participants: true },
+      },
+    },
+  });
+  if (!contest) {
+    throw new ApiError(404, "Contest not found");
+  }
+  return new ApiResponse(200, "Contest fetched successfully", contest);
+});
 export const registerForContest = asyncHandler(async (req, res) => {});
 export const submitContestProblem = asyncHandler(async (req, res) => {});
 export const getContestLeaderboard = asyncHandler(async (req, res) => {});
