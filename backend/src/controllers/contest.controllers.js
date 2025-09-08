@@ -172,7 +172,9 @@ export const registerForContest = asyncHandler(async (req, res) => {
   });
   return new ApiResponse(200, "Registered for contest successfully");
 });
-export const submitContestProblem = asyncHandler(async (req, res) => {});
+export const submitContestProblem = asyncHandler(async (req, res) => {
+  
+});
 export const getContestLeaderboard = asyncHandler(async (req, res) => {});
 export const getLeaderboard = asyncHandler(async (req, res) => {});
 export const updateLeaderboard = asyncHandler(async (req, res) => {});
