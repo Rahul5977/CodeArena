@@ -98,9 +98,80 @@ export const getContestById = asyncHandler(async (req, res) => {
   if (!contest) {
     throw new ApiError(404, "Contest not found");
   }
-  return new ApiResponse(200, "Contest fetched successfully", contest);
+  const now = new Date();
+  const isRegistered = contest.participants.length > 0;
+  const hasStarted = now >= contest.startTime;
+  const hasEnded = now > contest.endTime;
+  // If the contest has started and the user is not registered, hide problem details
+  if (hasStarted && !isRegistered) {
+    delete contest.problems;
+  }
+  // If the contest has ended, hide registration info
+  if (hasEnded) {
+    delete contest.participants;
+  }
+  let problems = [];
+  if (isRegistered && hasStarted && !hasEnded) {
+    problems = await db.problem.findMany({
+      where: { id: { in: contest.problemIds } },
+      select: {
+        id: true,
+        title: true,
+        difficulty: true,
+        tags: true,
+        discription: true,
+        examples: true,
+        constraints: true,
+        codeSnippets: true,
+      },
+    });
+  }
+  return new ApiResponse(200, "Contest fetched successfully", {
+    contest: {
+      ...contest,
+      problems,
+      isRegistered,
+      hasStarted,
+      hasEnded
+    }
+  });
 });
-export const registerForContest = asyncHandler(async (req, res) => {});
+export const registerForContest = asyncHandler(async (req, res) => {
+  const { contestId } = req.params;
+  const userId = req.user.id;
+  const contest = await db.contest.findUnique({
+    where: { id: contestId },
+    include: { 
+      _count: { select: { participants: true } },
+      participants: { where: { userId } }
+    },
+  });
+  if (!contest) {
+    throw new ApiError(404, "Contest not found");
+  }
+  const now = new Date();
+  if (now >= contest.startTime) {
+    throw new ApiError(400, "Cannot register for a contest that has already started");
+  }
+  if(contest.maxParticipants && contest._count.participants >= contest.maxParticipants) {
+    throw new ApiError(400, "Contest is full");
+  }
+  //check if user is already registered
+  const existingParticipant= db.contestParticipant.findUnique({
+    where: { contestId_userId: { contestId, userId } }
+  });
+  if(existingParticipant) {
+    throw new ApiError(400, "User is already registered for the contest");
+  }
+  await db.contestParticipant.create({
+    data: {
+      userId,
+      contestId,
+      registeredAt: new Date(),
+    },
+  });
+  return new ApiResponse(200, "Registered for contest successfully");
+});
 export const submitContestProblem = asyncHandler(async (req, res) => {});
 export const getContestLeaderboard = asyncHandler(async (req, res) => {});
 export const getLeaderboard = asyncHandler(async (req, res) => {});
