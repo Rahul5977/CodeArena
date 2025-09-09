@@ -39,26 +39,31 @@ enum SheetType {
 }
 
 model User {
-  id                 String               @id @default(uuid())
-  name               String
-  email              String               @unique
-  image              String?
-  role               UserRole             @default(USER)
-  promotedBy         String?
-  promotedAt         DateTime?
-  password           String
-  createdAt          DateTime             @default(now())
-  updatedAt          DateTime             @updatedAt
-  problems           Problem[]
-  submission         Submission[]
-  problemSolved      ProblemSolved[]
-  playlists          Playlist[]
-  ContestParticipant ContestParticipant[]
-  ContestSubmission  ContestSubmission[]
-  ContestLeaderboard ContestLeaderboard[]
-  UserSheet          UserSheet[]
-  SheetProgress      SheetProgress[]
-  Payment            Payment[]
+  id            String          @id @default(uuid())
+  name          String
+  email         String          @unique
+  image         String?
+  role          UserRole        @default(USER)
+  password      String
+  promotedBy         String?              // Track who promoted this user
+  promotedAt         DateTime?            // When they were promoted
+  createdAt     DateTime        @default(now())
+  updatedAt     DateTime        @updatedAt
+  problems      Problem[]
+  submission    Submission[]
+  problemSolved ProblemSolved[]
+  playlists     Playlist[]
+
+  // New relations for contests
+  contestParticipants ContestParticipant[]
+  contestSubmissions  ContestSubmission[]
+  contestLeaderboard  ContestLeaderboard[]
+
+  // New relations for sheets
+  userSheets    UserSheet[]
+  sheetProgress SheetProgress[]
+  payments      Payment[]
+  // New relations for role changes
   promotedUsers      RoleChange[]         @relation("PromotedBy")
   roleChanges        RoleChange[]         @relation("UserRoleChanges")
 }
@@ -102,8 +107,10 @@ model Problem {
   submission        Submission[]
   solvedBy          ProblemSolved[]
   problemsPlaylists ProblemInPlaylist[]
-  ContestSubmission ContestSubmission[]
-  SheetProgress     SheetProgress[]
+
+  // New relations
+  contestSubmissions ContestSubmission[]
+  sheetProgress      SheetProgress[]
 }
 
 model Submission {
@@ -192,10 +199,10 @@ model Contest {
   startTime       DateTime
   endTime         DateTime
   duration        Int // in minutes
-  problemIds      String[] // List of Problem IDs
+  problemIds      String[] // Array of problem IDs
   maxParticipants Int?
   status          ContestStatus @default(UPCOMING)
-  rules           Json?
+  rules           Json? // Contest specific rules
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -205,10 +212,10 @@ model Contest {
 }
 
 model ContestParticipant {
-  id        String   @id @default(uuid())
-  userId    String
-  contestId String
-  joinedAt  DateTime @default(now())
+  id           String   @id @default(uuid())
+  userId       String
+  contestId    String
+  registeredAt DateTime @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
   contest Contest @relation(fields: [contestId], references: [id], onDelete: Cascade)
