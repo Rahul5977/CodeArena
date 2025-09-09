@@ -17,6 +17,7 @@ import contestRoutes from "./routes/contest.routes.js";
 import userManagementRoutes from "./routes/userManagement.routes.js";
 
 import { initializeSocket } from "./libs/socket.js";
+import sheetsRoutes from "./routes/sheets.routes.js";
 
 dotenv.config();
 
@@ -52,6 +53,7 @@ app.use("/api/v1/submission", submissionRoutes);
 app.use("/api/v1/playlist", playlistRoutes);
 app.use("/api/v1/aiCodeReview", aiCodeReviewRoutes);
 app.use("/api/v1/contests", contestRoutes);
+app.use("/api/v1/sheets",sheetsRoutes);
 
 // New user management routes
 app.use("/api/v1/admin/users", userManagementRoutes);
