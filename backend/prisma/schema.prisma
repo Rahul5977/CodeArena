@@ -15,6 +15,7 @@ datasource db {
 }
 
 enum UserRole {
+  SUPERADMIN
   ADMIN
   USER
 }
@@ -43,6 +44,8 @@ model User {
   email              String               @unique
   image              String?
   role               UserRole             @default(USER)
+  promotedBy         String?
+  promotedAt         DateTime?
   password           String
   createdAt          DateTime             @default(now())
   updatedAt          DateTime             @updatedAt
@@ -56,6 +59,24 @@ model User {
   UserSheet          UserSheet[]
   SheetProgress      SheetProgress[]
   Payment            Payment[]
+  promotedUsers      RoleChange[]         @relation("PromotedBy")
+  roleChanges        RoleChange[]         @relation("UserRoleChanges")
+}
+
+model RoleChange {
+  id           String   @id @default(uuid())
+  userId       String
+  changedBy    String
+  previousRole UserRole
+  newRole      UserRole
+  reason       String? // Optional reason for role change
+  createdAt    DateTime @default(now())
+
+  user          User @relation("UserRoleChanges", fields: [userId], references: [id], onDelete: Cascade)
+  changedByUser User @relation("PromotedBy", fields: [changedBy], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([changedBy])
 }
 
 model Problem {
