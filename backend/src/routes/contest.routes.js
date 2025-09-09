@@ -6,23 +6,25 @@ import {
   getContestById,
   registerForContest,
   submitContestProblem,
-  getContestLeaderboard,
   getLeaderboard,
-  updateLeaderboard,
   getMyContestSubmissions,
   updateContestStatus,
 } from "../controllers/contest.controllers.js";
 
 const contestRoutes = express.Router();
-contestRoutes.post("/", authMiddleware, checkAdmin, createContest);
-contestRoutes.get("/", getAllContests);
-contestRoutes.get("/:id", getContestById);
-contestRoutes.post("/:id/register", authMiddleware, registerForContest);
-contestRoutes.post("/:id/submit", authMiddleware, submitContestProblem);
-contestRoutes.get("/:id/leaderboard", getContestLeaderboard);
-contestRoutes.get("/:id/leaderboard/full", authMiddleware, getLeaderboard);
-contestRoutes.put("/:id/leaderboard", authMiddleware, checkAdmin, updateLeaderboard);
-contestRoutes.get("/:id/submissions", authMiddleware, getMyContestSubmissions);
-contestRoutes.patch("/:id/status", authMiddleware, checkAdmin, updateContestStatus);
+// Public routes (with auth)
+contestRoutes.get("/", authMiddleware, getAllContests);
+contestRoutes.get("/:contestId", authMiddleware, getContestById);
+contestRoutes.get("/:contestId/leaderboard", authMiddleware, getLeaderboard);
+
+// Participant routes
+contestRoutes.post("/:contestId/register", authMiddleware, registerForContest);
+contestRoutes.post("/:contestId/problems/:problemId/submit", authMiddleware, submitContestProblem);
+contestRoutes.get("/:contestId/my-submissions", authMiddleware, getMyContestSubmissions);
+
+// Admin routes
+contestRoutes.post("/create", authMiddleware, checkAdmin, createContest);
+contestRoutes.patch("/:contestId/status", authMiddleware, checkAdmin, updateContestStatus);
+
 
 export default contestRoutes;

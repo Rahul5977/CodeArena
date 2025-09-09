@@ -7,7 +7,8 @@ import problemRoutes from "./routes/problem.route.js";
 import executionRoute from "./routes/executeCode.routes.js";
 import submissionRoutes from "./routes/submission.routes.js";
 import playlistRoutes from "./routes/playlist.routes.js";
-import aiCodeReviewRoutes from "./routes/aiCodeReview.routes.js";
+import aiCodeReviewRoutes from "./routes/aiCodeReview.routes.js";  
+import contestRoutes from "./routes/contest.routes.js"; 
 
 dotenv.config();
 
@@ -32,7 +33,9 @@ app.use("/api/v1/execute-code", executionRoute);
 app.use("/api/v1/submission", submissionRoutes);
 app.use("/api/v1/playlist", playlistRoutes);
 app.use("/api/v1/aiCodeReview", aiCodeReviewRoutes);
+app.use("/api/v1/contests", contestRoutes);
+
 
 app.listen(PORT, () => {
-  console.log(`Server is runnig on port ${PORT} `);
+  console.log(`Server is running on port ${PORT}`);
 });
