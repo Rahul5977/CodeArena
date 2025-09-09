@@ -1,5 +1,9 @@
 import express from "express";
-import { authMiddleware, checkAdmin } from "../middlewares/auth.middleware.js";
+import {
+  authMiddleware,
+  checkAdminOrSuperAdmin,
+  checkPermission,
+} from "../middleware/auth.middleware.js";
 import {
   createContest,
   getAllContests,
@@ -12,6 +16,7 @@ import {
 } from "../controllers/contest.controllers.js";
 
 const contestRoutes = express.Router();
+
 // Public routes (with auth)
 contestRoutes.get("/", authMiddleware, getAllContests);
 contestRoutes.get("/:contestId", authMiddleware, getContestById);
@@ -23,8 +28,12 @@ contestRoutes.post("/:contestId/problems/:problemId/submit", authMiddleware, sub
 contestRoutes.get("/:contestId/my-submissions", authMiddleware, getMyContestSubmissions);
 
 // Admin routes
-contestRoutes.post("/create", authMiddleware, checkAdmin, createContest);
-contestRoutes.patch("/:contestId/status", authMiddleware, checkAdmin, updateContestStatus);
-
+contestRoutes.post("/create", authMiddleware, checkPermission("contests", "create"), createContest);
+contestRoutes.patch(
+  "/:contestId/status",
+  authMiddleware,
+  checkPermission("contests", "manage"),
+  updateContestStatus
+);
 
 export default contestRoutes;
