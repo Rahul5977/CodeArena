@@ -1,9 +1,10 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
-import { db } from "../libs/db.lib.js";
+import { db } from "../libs/db.js";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
 import { submitBatch, pollBatchResults } from "../libs/judge0.lib.js";
-import { io } from "../libs/socket.js";
+import { initializeSocket } from "../libs/socket.js";
+const io = initializeSocket();
 export const createContest = asyncHandler(async (req, res) => {
   const { title, description, startTime, endTime, duration, problemIds, maxParticipants, rules } =
     req.body;

@@ -1,5 +1,5 @@
 import { db } from "../libs/db.js";
-import { createRazorpayOrder, verifyRazorpayPayment } from "../libs/payment.lib.js";
+import { createRazorpayOrder, verifyRazorpayPayment } from "../libs/payments.lib.js";
 
 export const createSheet = async (req, res) => {
   try {

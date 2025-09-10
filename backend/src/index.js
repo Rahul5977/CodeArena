@@ -69,12 +69,12 @@ app.use((err, req, res, next) => {
 });
 
 // 404 handler
-app.use("*", (req, res) => {
-  res.status(404).json({
-    success: false,
-    message: "Route not found",
-  });
-});
+// app.use("*", (req, res) => {
+//   res.status(404).json({
+//     success: false,
+//     message: "Route not found",
+//   });
+// });
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
