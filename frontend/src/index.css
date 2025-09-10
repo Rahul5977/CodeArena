@@ -1,0 +1,80 @@
+@import "tailwindcss";
+
+/* Custom utilities */
+@layer components {
+  .btn-brand {
+    background-color: #3b82f6; /* bg-blue-500 */
+    color: #fff; /* text-white */
+    border: none; /* border-none */
+    border-radius: 0.5rem; /* rounded-lg */
+    padding-left: 1rem; /* px-4 */
+    padding-right: 1rem; /* px-4 */
+    padding-top: 0.5rem; /* py-2 */
+    padding-bottom: 0.5rem; /* py-2 */
+    font-weight: 500; /* font-medium */
+    transition-property: background-color;
+    transition-duration: 150ms; /* transition-colors */
+  }
+  .btn-brand:hover {
+    background-color: #2563eb; /* hover:bg-blue-600 */
+  }
+  
+  .card-hover {
+    transition: box-shadow 0.2s;
+  }
+  .card-hover:hover {
+    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1), 0 4px 6px -4px rgba(59, 130, 246, 0.1);
+  }
+  
+  .gradient-bg {
+    background-image: linear-gradient(to bottom right, #3b82f6, #1d4ed8);
+  }
+  
+  .stat-custom {
+    background-color: #fff; /* bg-white */
+    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); /* shadow-lg */
+    border-radius: 0.5rem; /* rounded-lg */
+    padding: 1.5rem; /* p-6 */
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f5f9;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* Remove default styles */
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, sans-serif;
+}
+
+/* Dark theme support */
+[data-theme="dark"] ::-webkit-scrollbar-track {
+  background: #1e293b;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb {
+  background: #475569;
+}
+
+[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
+  background: #64748b;
+}
