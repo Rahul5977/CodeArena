@@ -1,6 +1,26 @@
 # File created using '.gitignore Generator' for Visual Studio Code: https://bit.ly/vscode-gig
-# Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,node
-# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,macos,node
+# Created by https://www.toptal.com/developers/gitignore/api/visualstudiocode,node,macos,altium,react
+# Edit at https://www.toptal.com/developers/gitignore?templates=visualstudiocode,node,macos,altium,react
+
+### Altium ###
+# Previews Folders
+**/__Previews/
+
+# History Folders
+**/History/*
+
+# Project Logs
+Project\ Logs*/
+
+# Project Outputs
+Project\ Outputs*/
+
+# Auto-conversion notices
+*.PcbDoc.htm
+
+# Access lock file for dbLib sources
+**/*.ldb
+
 
 ### macOS ###
 # General
@@ -174,6 +194,19 @@ dist
 # SvelteKit build / generate output
 .svelte-kit
 
+### react ###
+.DS_*
+**/*.backup.*
+**/*.back.*
+
+node_modules
+
+*.sublime*
+
+psd
+thumb
+sketch
+
 ### VisualStudioCode ###
 .vscode/*
 !.vscode/settings.json
@@ -193,7 +226,7 @@ dist
 .history
 .ionide
 
-# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,macos,node
+# End of https://www.toptal.com/developers/gitignore/api/visualstudiocode,node,macos,altium,react
 
 # Custom rules (everything added below won't be overriden by 'Generate .gitignore File' if you use 'Update' option)
 
