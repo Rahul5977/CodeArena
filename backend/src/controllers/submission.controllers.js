@@ -8,6 +8,17 @@ export const getAllSubmission = async (req, res) => {
       where: {
         userId: userId,
       },
+      include: {
+        problem: {
+          select: {
+            title: true,
+            id: true,
+          },
+        },
+      },
+      orderBy: {
+        createdAt: "desc",
+      },
     });
 
     res.status(200).json({
@@ -17,7 +28,10 @@ export const getAllSubmission = async (req, res) => {
     });
   } catch (error) {
     console.error("Fetch Submissions Error:", error);
-    res.status(500).json({ error: "Failed to fetch submissions" });
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch submissions",
+    });
   }
 };
 

@@ -2,23 +2,36 @@ import { db } from "../libs/db.js";
 
 export const createPlaylist = async (req, res) => {
   try {
-    const { name, description } = req.body;
+    const { name, title, description } = req.body; // Accept both name and title
+    const playlistName = name || title; // Use name first, then title
     const userId = req.user.id;
+
+    if (!playlistName) {
+      return res.status(400).json({
+        success: false,
+        message: "Playlist name is required",
+      });
+    }
+
     const playlist = await db.playlist.create({
       data: {
-        name,
-        description,
+        name: playlistName, // Use the determined name
+        description: description || "",
         userId,
       },
     });
-    res.status(200).json({
+
+    res.status(201).json({
       success: true,
       message: "Playlist created successfully",
       playlist,
     });
   } catch (error) {
-    console.error("Fetch Submissions Error:", error);
-    res.status(500).json({ error: "Failed to create playlist" });
+    console.error("Create Playlist Error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to create playlist",
+    });
   }
 };
 export const getAllListDetails = async (req, res) => {

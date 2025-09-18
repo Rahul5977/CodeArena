@@ -12,12 +12,12 @@ import submissionRoutes from "./routes/submission.routes.js";
 import playlistRoutes from "./routes/playlist.routes.js";
 import aiCodeReviewRoutes from "./routes/aiCodeReview.routes.js";
 import contestRoutes from "./routes/contest.routes.js";
+import sheetsRoutes from "./routes/sheets.routes.js";
 
 // Import new user management routes
 import userManagementRoutes from "./routes/userManagement.routes.js";
 
 import { initializeSocket } from "./libs/socket.js";
-import sheetsRoutes from "./routes/sheets.routes.js";
 
 dotenv.config();
 
@@ -53,28 +53,34 @@ app.use("/api/v1/submission", submissionRoutes);
 app.use("/api/v1/playlist", playlistRoutes);
 app.use("/api/v1/aiCodeReview", aiCodeReviewRoutes);
 app.use("/api/v1/contests", contestRoutes);
-app.use("/api/v1/sheets",sheetsRoutes);
+app.use("/api/v1/sheets", sheetsRoutes);
 
 // New user management routes
 app.use("/api/v1/admin/users", userManagementRoutes);
 
 // Global error handler
 app.use((err, req, res, next) => {
-  console.error("Global error:", err);
-  res.status(500).json({
+  console.error("Global error:", {
+    message: err.message,
+    stack: err.stack,
+    url: req.url,
+    method: req.method,
+  });
+
+  res.status(err.statusCode || 500).json({
     success: false,
-    message: "Internal server error",
-    error: process.env.NODE_ENV === "development" ? err.message : undefined,
+    message: err.message || "Internal server error",
+    error: process.env.NODE_ENV === "development" ? err.stack : undefined,
   });
 });
 
 // 404 handler
-// app.use("*", (req, res) => {
-//   res.status(404).json({
-//     success: false,
-//     message: "Route not found",
-//   });
-// });
+app.use("*", (req, res) => {
+  res.status(404).json({
+    success: false,
+    message: `Route ${req.method} ${req.originalUrl} not found`,
+  });
+});
 
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);

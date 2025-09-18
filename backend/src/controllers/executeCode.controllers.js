@@ -78,7 +78,7 @@ export const executeCode = async (req, res) => {
       data: {
         userId,
         problemId,
-        sourceCode: source_code,
+        sourceCode: { code: source_code, language_id }, // Store as JSON
         language: getLanguageName(language_id),
         stdin: stdin.join("\n"),
         stdout: JSON.stringify(detailedresults.map((r) => r.stdout)),
@@ -88,7 +88,7 @@ export const executeCode = async (req, res) => {
         compileOutput: detailedresults.some((r) => r.compile_output)
           ? JSON.stringify(detailedresults.map((r) => r.compile_output))
           : null,
-        status: allPassed ? "Acepted" : "Wrong Answer",
+        status: allPassed ? "Accepted" : "Wrong Answer", // Fixed typo
         memory: detailedresults.some((r) => r.memory)
           ? JSON.stringify(detailedresults.map((r) => r.memory))
           : null,
@@ -145,8 +145,11 @@ export const executeCode = async (req, res) => {
       submission: submissionWithTestCase,
     });
   } catch (error) {
-    res.status(403).json({
-      error: "Error in code execution",
+    console.error("Code execution error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Error in code execution",
+      error: process.env.NODE_ENV === "development" ? error.message : undefined,
     });
   }
 };
