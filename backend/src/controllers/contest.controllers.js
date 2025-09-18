@@ -64,23 +64,31 @@ export const getAllContests = asyncHandler(async (req, res) => {
   } else if (status === "past") {
     where.endTime = { lt: now };
   }
-  const skip = (page - 1) * limit;
+  const skip = (parseInt(page) - 1) * parseInt(limit);
   const [contests, total] = await Promise.all([
     db.contest.findMany({
       where,
       skip,
-      take: limit,
+      take: parseInt(limit),
       orderBy: { startTime: "desc" },
-      include: { problems: true, _count: { select: { participants: true } } },
+      include: {
+        _count: { select: { participants: true } },
+      },
     }),
     db.contest.count({ where }),
   ]);
-  const totalPages = Math.ceil(total / limit);
-  return new ApiResponse(200, "Contests fetched successfully", contests, {
-    page,
-    limit,
-    total,
-    totalPages,
+  const totalPages = Math.ceil(total / parseInt(limit));
+
+  res.status(200).json({
+    success: true,
+    message: "Contests fetched successfully",
+    contests,
+    pagination: {
+      page: parseInt(page),
+      limit: parseInt(limit),
+      total,
+      totalPages,
+    },
   });
 });
 export const getContestById = asyncHandler(async (req, res) => {
@@ -317,41 +325,43 @@ export const getLeaderboard = asyncHandler(async (req, res) => {
 
     res.status(200).json({
       success: true,
-      leaderboard
+      leaderboard,
     });
   } catch (error) {
     console.error("Error fetching leaderboard:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to fetch leaderboard"
+      message: "Failed to fetch leaderboard",
     });
   }
 });
-export const updateLeaderboard = asyncHandler(async (contestId,userId,scoreToAdd,penaltyToAdd=0) => {
-  try {
-    await db.contestLeaderboard.upsert({
-      where: {
-        userId_contestId: { userId, contestId }
-      },
-      update: {
-        totalScore: { increment: scoreToAdd },
-        penalty: { increment: penaltyToAdd },
-        problemsSolved: { increment: 1 },
-        lastSubmission: new Date()
-      },
-      create: {
-        userId,
-        contestId,
-        totalScore: scoreToAdd,
-        penalty: penaltyToAdd,
-        problemsSolved: 1,
-        lastSubmission: new Date()
-      }
-    });
-  } catch (error) {
-    console.error("Error updating leaderboard:", error);
+export const updateLeaderboard = asyncHandler(
+  async (contestId, userId, scoreToAdd, penaltyToAdd = 0) => {
+    try {
+      await db.contestLeaderboard.upsert({
+        where: {
+          userId_contestId: { userId, contestId },
+        },
+        update: {
+          totalScore: { increment: scoreToAdd },
+          penalty: { increment: penaltyToAdd },
+          problemsSolved: { increment: 1 },
+          lastSubmission: new Date(),
+        },
+        create: {
+          userId,
+          contestId,
+          totalScore: scoreToAdd,
+          penalty: penaltyToAdd,
+          problemsSolved: 1,
+          lastSubmission: new Date(),
+        },
+      });
+    } catch (error) {
+      console.error("Error updating leaderboard:", error);
+    }
   }
-});
+);
 export const getMyContestSubmissions = asyncHandler(async (req, res) => {
   try {
     const { contestId } = req.params;
@@ -361,21 +371,21 @@ export const getMyContestSubmissions = asyncHandler(async (req, res) => {
       where: { userId, contestId },
       include: {
         problem: {
-          select: { id: true, title: true, difficulty: true }
-        }
+          select: { id: true, title: true, difficulty: true },
+        },
       },
-      orderBy: { submittedAt: 'desc' }
+      orderBy: { submittedAt: "desc" },
     });
 
     res.status(200).json({
       success: true,
-      submissions
+      submissions,
     });
   } catch (error) {
     console.error("Error fetching submissions:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to fetch submissions"
+      message: "Failed to fetch submissions",
     });
   }
 });
@@ -387,25 +397,25 @@ export const updateContestStatus = asyncHandler(async (req, res) => {
     if (req.user.role !== "ADMIN") {
       return res.status(403).json({
         success: false,
-        message: "Only admins can update contest status"
+        message: "Only admins can update contest status",
       });
     }
 
     const contest = await db.contest.update({
       where: { id: contestId },
-      data: { status }
+      data: { status },
     });
 
     res.status(200).json({
       success: true,
       message: "Contest status updated successfully",
-      contest
+      contest,
     });
   } catch (error) {
     console.error("Error updating contest status:", error);
     res.status(500).json({
       success: false,
-      message: "Failed to update contest status"
+      message: "Failed to update contest status",
     });
   }
 });
