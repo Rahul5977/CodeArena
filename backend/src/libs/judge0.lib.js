@@ -17,7 +17,7 @@ export const submitBatch = async (submissions) => {
     headers: {
       "Content-Type": "application/json",
       Accept: "application/json",
-      Authorization: "Bearer REMOVED_SECRET",
+      Authorization: `Bearer ${process.env.SULU_API_KEY}`,
     },
     data: { submissions },
   };
