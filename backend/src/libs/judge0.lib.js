@@ -75,5 +75,3 @@ export function getLanguageName(languageId) {
 
   return LANGUAGE_NAMES[languageId] || "Unknown";
 }
-
-// git push --force origin main
