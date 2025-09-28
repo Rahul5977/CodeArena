@@ -1,0 +1,29 @@
+node_modules
+npm-debug.log*
+.env
+.env.local
+.env.production
+dist/
+build/
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Database
+*.sqlite
+*.db
+
+# Uploads
+uploads/
+
+# SSL certificates
+*.pem
+*.key
+*.crt
+
+# Docker
+.dockerignore

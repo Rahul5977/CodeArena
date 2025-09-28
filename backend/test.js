@@ -71,7 +71,7 @@ const data = `{
         "JAVA": "import java.util.Scanner;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        int a = sc.nextInt();\n        int b = sc.nextInt();\n        System.out.println(a + b);\n    }\n}"
     }
 }
-`
+`;
 // "12 13"
 // const input = fs.readFileSync(0, 'utf-8').trim();
 // const [a, b] = input.split(' ').map(Number);

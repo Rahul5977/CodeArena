@@ -1,0 +1,89 @@
+# Development docker-compose with hot reload
+version: "3.8"
+
+services:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: leetlab-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: myuser
+      POSTGRES_PASSWORD: mypassword
+    volumes:
+      - postgres_dev_data:/var/lib/postgresql/data
+    ports:
+      - "5432:5432"
+    networks:
+      - leetlab-dev-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: leetlab-redis-dev
+    restart: unless-stopped
+    command: redis-server --requirepass redispassword
+    volumes:
+      - redis_dev_data:/data
+    ports:
+      - "6379:6379"
+    networks:
+      - leetlab-dev-network
+
+  # Backend Service (Development)
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile.dev
+    container_name: leetlab-backend-dev
+    restart: unless-stopped
+    depends_on:
+      - postgres
+      - redis
+    environment:
+      NODE_ENV: development
+      PORT: 8080
+      DATABASE_URL: postgresql://myuser:mypassword@postgres:5432/postgres
+      REDIS_URL: redis://:redispassword@redis:6379
+      SECRET: dev-secret-key
+      REFRESH_SECRET: dev-refresh-secret-key
+      JUDGE0_API_URL: https://judge0-ce.p.sulu.sh
+      SULU_API_KEY: ${SULU_API_KEY}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET}
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
+    ports:
+      - "8080:8080"
+    networks:
+      - leetlab-dev-network
+    command: npm run dev
+
+  # Frontend Service (Development)
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile.dev
+    container_name: leetlab-frontend-dev
+    restart: unless-stopped
+    environment:
+      VITE_API_URL: http://localhost:8080/api/v1
+      VITE_WS_URL: ws://localhost:8080
+    volumes:
+      - ./frontend:/app
+      - /app/node_modules
+    ports:
+      - "3000:3000"
+    networks:
+      - leetlab-dev-network
+    command: npm run dev
+
+volumes:
+  postgres_dev_data:
+  redis_dev_data:
+
+networks:
+  leetlab-dev-network:
+    driver: bridge

@@ -1,0 +1,35 @@
+node_modules
+npm-debug.log*
+.env
+.env.local
+.env.production
+*.log
+.DS_Store
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# Development files
+Dockerfile.dev
+docker-compose.dev.yml
+
+# Build output
+dist/
+build/
+
+# Git
+.git
+.gitignore
+
+# Documentation
+README*.md
+docs/
+
+# Testing
+coverage/
+.nyc_output
+
+# Misc
+*.md
