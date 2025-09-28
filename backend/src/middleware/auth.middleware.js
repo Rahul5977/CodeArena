@@ -1,25 +1,34 @@
 import jwt from "jsonwebtoken";
 import { db } from "../libs/db.js";
 import { UserRole } from "../generated/prisma/index.js";
+import { ApiError } from "../utils/api-error.js";
 
 export const authMiddleware = async (req, res, next) => {
   try {
-    const token = req.cookies.jwt;
+    let token = req.cookies.accessToken || req.cookies.jwt; // Support both new and legacy tokens
+
+    // Also check Authorization header
+    if (!token && req.headers.authorization) {
+      token = req.headers.authorization.replace("Bearer ", "");
+    }
+
     if (!token) {
       return res.status(401).json({
         success: false,
         message: "Unauthorized user - No token provided",
       });
     }
+
     let decoded;
     try {
       decoded = jwt.verify(token, process.env.SECRET);
     } catch (error) {
       return res.status(401).json({
         success: false,
-        message: "Unauthorized -Invalid token",
+        message: "Unauthorized - Invalid token",
       });
     }
+
     const user = await db.user.findUnique({
       where: {
         id: decoded.id,
@@ -30,23 +39,36 @@ export const authMiddleware = async (req, res, next) => {
         name: true,
         email: true,
         role: true,
+        isActive: true,
+        emailVerified: true,
         promotedBy: true,
         promotedAt: true,
+        lastLoginAt: true,
       },
     });
+
     if (!user) {
       return res.status(404).json({
         success: false,
-        message: "user not found",
+        message: "User not found",
       });
     }
+
+    // Check if user account is active
+    if (!user.isActive) {
+      return res.status(403).json({
+        success: false,
+        message: "Account is deactivated",
+      });
+    }
+
     req.user = user;
     next();
   } catch (error) {
-    console.error("Error authenticating user ", error);
+    console.error("Error authenticating user", error);
     res.status(500).json({
       success: false,
-      message: "Error authenticating user ",
+      message: "Error authenticating user",
     });
   }
 };
