@@ -39,20 +39,27 @@ enum SheetType {
 }
 
 model User {
-  id            String          @id @default(uuid())
-  name          String
-  email         String          @unique
-  image         String?
-  role          UserRole        @default(USER)
-  password      String
-  promotedBy         String?              // Track who promoted this user
-  promotedAt         DateTime?            // When they were promoted
-  createdAt     DateTime        @default(now())
-  updatedAt     DateTime        @updatedAt
-  problems      Problem[]
-  submission    Submission[]
-  problemSolved ProblemSolved[]
-  playlists     Playlist[]
+  id                     String          @id @default(uuid())
+  name                   String
+  email                  String          @unique
+  image                  String?
+  role                   UserRole        @default(USER)
+  password               String
+  refreshToken           String? // For JWT refresh tokens
+  passwordResetToken     String? // For password reset
+  passwordResetExpiry    DateTime? // Expiry for reset token
+  lastLoginAt            DateTime? // Track last login
+  isActive               Boolean         @default(true) // Account status
+  emailVerified          Boolean         @default(false) // Email verification
+  emailVerificationToken String? // Email verification token
+  promotedBy             String? // Track who promoted this user
+  promotedAt             DateTime? // When they were promoted
+  createdAt              DateTime        @default(now())
+  updatedAt              DateTime        @updatedAt
+  problems               Problem[]
+  submission             Submission[]
+  problemSolved          ProblemSolved[]
+  playlists              Playlist[]
 
   // New relations for contests
   contestParticipants ContestParticipant[]
@@ -63,9 +70,17 @@ model User {
   userSheets    UserSheet[]
   sheetProgress SheetProgress[]
   payments      Payment[]
+
   // New relations for role changes
-  promotedUsers      RoleChange[]         @relation("PromotedBy")
-  roleChanges        RoleChange[]         @relation("UserRoleChanges")
+  promotedUsers RoleChange[] @relation("PromotedBy")
+  roleChanges   RoleChange[] @relation("UserRoleChanges")
+
+  // Session management
+  userSessions UserSession[]
+
+  @@index([email])
+  @@index([refreshToken])
+  @@index([passwordResetToken])
 }
 
 model RoleChange {
@@ -322,4 +337,22 @@ model Payment {
   updatedAt        DateTime @updatedAt
 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model UserSession {
+  id           String   @id @default(uuid())
+  userId       String
+  deviceInfo   String? // Browser, OS, etc.
+  ipAddress    String?
+  refreshToken String   @unique
+  isActive     Boolean  @default(true)
+  lastUsed     DateTime @default(now())
+  expiresAt    DateTime
+  createdAt    DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([refreshToken])
+  @@index([expiresAt])
 }
