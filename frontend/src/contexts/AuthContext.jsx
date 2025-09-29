@@ -1,110 +1,114 @@
-import React, { createContext, useContext, useState, useEffect } from 'react'
-import { useNavigate } from 'react-router-dom'
-import api from '../utils/api'
+import React, { createContext, useContext, useState, useEffect } from "react";
+import { useNavigate } from "react-router-dom";
+import api from "../utils/api";
 
-const AuthContext = createContext()
+const AuthContext = createContext();
 
 export const useAuth = () => {
-  const context = useContext(AuthContext)
+  const context = useContext(AuthContext);
   if (!context) {
-    throw new Error('useAuth must be used within AuthProvider')
+    throw new Error("useAuth must be used within AuthProvider");
   }
-  return context
-}
+  return context;
+};
 
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null)
-  const [loading, setLoading] = useState(true)
-  const navigate = useNavigate()
+  const [user, setUser] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const navigate = useNavigate();
 
   useEffect(() => {
-    checkAuth()
-  }, [])
+    checkAuth();
+  }, []);
 
   const checkAuth = async () => {
     try {
-      const token = localStorage.getItem('token')
+      const token = localStorage.getItem("token");
       if (!token) {
-        setLoading(false)
-        return
+        setLoading(false);
+        return;
       }
 
-      api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-      const response = await api.get('/auth/me')
-      
+      api.defaults.headers.common["Authorization"] = `Bearer ${token}`;
+      const response = await api.get("/auth/me");
+
       if (response.data.success) {
-        setUser(response.data.user)
+        setUser(response.data.data.user);
       } else {
-        localStorage.removeItem('token')
-        delete api.defaults.headers.common['Authorization']
+        localStorage.removeItem("token");
+        delete api.defaults.headers.common["Authorization"];
       }
     } catch (error) {
-      console.error('Auth check failed:', error)
-      localStorage.removeItem('token')
-      delete api.defaults.headers.common['Authorization']
+      console.error("Auth check failed:", error);
+      localStorage.removeItem("token");
+      delete api.defaults.headers.common["Authorization"];
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
-  }
+  };
 
   const login = async (email, password) => {
     try {
-      const response = await api.post('/auth/login', { email, password })
-      
+      const response = await api.post("/auth/login", { email, password });
+
       if (response.data.success) {
-        const { token, user } = response.data
-        localStorage.setItem('token', token)
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        setUser(user)
-        navigate('/')
-        return { success: true }
+        const { accessToken, user } = response.data.data;
+        if (accessToken) {
+          localStorage.setItem("token", accessToken);
+          api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+        }
+        setUser(user);
+        navigate("/");
+        return { success: true };
       } else {
-        throw new Error(response.data.message || 'Login failed')
+        throw new Error(response.data.message || "Login failed");
       }
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const register = async (name, email, password) => {
     try {
-      const response = await api.post('/auth/register', { name, email, password })
-      
+      const response = await api.post("/auth/register", { name, email, password });
+
       if (response.data.success) {
-        const { token, user } = response.data
-        localStorage.setItem('token', token)
-        api.defaults.headers.common['Authorization'] = `Bearer ${token}`
-        setUser(user)
-        navigate('/')
-        return { success: true }
+        const { accessToken, user } = response.data.data;
+        if (accessToken) {
+          localStorage.setItem("token", accessToken);
+          api.defaults.headers.common["Authorization"] = `Bearer ${accessToken}`;
+        }
+        setUser(user);
+        navigate("/");
+        return { success: true };
       } else {
-        throw new Error(response.data.message || 'Registration failed')
+        throw new Error(response.data.message || "Registration failed");
       }
     } catch (error) {
-      throw error
+      throw error;
     }
-  }
+  };
 
   const logout = async () => {
     try {
-      await api.post('/auth/logout')
+      await api.post("/auth/logout");
     } catch (error) {
-      console.error('Logout error:', error)
+      console.error("Logout error:", error);
     } finally {
-      localStorage.removeItem('token')
-      delete api.defaults.headers.common['Authorization']
-      setUser(null)
-      navigate('/login')
+      localStorage.removeItem("token");
+      delete api.defaults.headers.common["Authorization"];
+      setUser(null);
+      navigate("/login");
     }
-  }
+  };
 
   const isAdmin = () => {
-    return user && ['ADMIN', 'SUPERADMIN'].includes(user.role)
-  }
+    return user && ["ADMIN", "SUPERADMIN"].includes(user.role);
+  };
 
   const isSuperAdmin = () => {
-    return user && user.role === 'SUPERADMIN'
-  }
+    return user && user.role === "SUPERADMIN";
+  };
 
   const value = {
     user,
@@ -114,12 +118,8 @@ export const AuthProvider = ({ children }) => {
     logout,
     isAdmin,
     isSuperAdmin,
-    checkAuth
-  }
+    checkAuth,
+  };
 
-  return (
-    <AuthContext.Provider value={value}>
-      {children}
-    </AuthContext.Provider>
-  )
-}
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};

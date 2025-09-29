@@ -1,11 +1,11 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./contexts/AuthContext";
 import Layout from "./components/Layout";
-import Login from "./pages/auth/Login.jsx";
+import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import Dashboard from "./pages/Dashboard";
 import Problems from "./pages/problems/Problems";
-import ProblemDetail from "./pages/problems/ProblemDetails";
+import ProblemDetails from "./pages/problems/ProblemDetails";
 import Playlists from "./pages/playlists/Playlists";
 import PlaylistDetail from "./pages/playlists/PlaylistDetail";
 import Submissions from "./pages/submissions/Submissions";
@@ -54,7 +54,7 @@ function App() {
         >
           <Route index element={<Dashboard />} />
           <Route path="problems" element={<Problems />} />
-          <Route path="problems/:id" element={<ProblemDetail />} />
+          <Route path="problems/:id" element={<ProblemDetails />} />
           <Route path="playlists" element={<Playlists />} />
           <Route path="playlists/:id" element={<PlaylistDetail />} />
           <Route path="submissions" element={<Submissions />} />
@@ -63,10 +63,7 @@ function App() {
           {/* Contest Routes */}
           <Route path="contests" element={<ContestList />} />
           <Route path="contests/:id" element={<ContestDetail />} />
-          <Route
-            path="contests/:id/leaderboard"
-            element={<ContestLeaderboard />}
-          />
+          <Route path="contests/:id/leaderboard" element={<ContestLeaderboard />} />
           <Route
             path="contests/:contestId/problems/:problemId/submit"
             element={<ContestSubmit />}
