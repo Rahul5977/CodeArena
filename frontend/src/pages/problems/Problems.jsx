@@ -1,161 +1,366 @@
-import { useState, useEffect } from 'react'
-import { Link as RouterLink } from 'react-router-dom'
-import { FiSearch, FiPlus, FiEye } from 'react-icons/fi'
-import api from '../../utils/api'
-import { useToastContext } from '../../contexts/ToastContext'
-import { useAuth } from '../../contexts/AuthContext'
+import { useState, useEffect } from "react";
+import { Link as RouterLink } from "react-router-dom";
+import {
+  FiSearch,
+  FiFilter,
+  FiTrendingUp,
+  FiClock,
+  FiCode,
+  FiLayers,
+  FiStar,
+  FiBookmark,
+  FiPlay,
+  FiChevronRight,
+  FiCheck,
+} from "react-icons/fi";
+import api from "../../utils/api";
+import { useToastContext } from "../../contexts/ToastContext";
 
 const Problems = () => {
-  const [problems, setProblems] = useState([])
-  const [loading, setLoading] = useState(true)
-  const [search, setSearch] = useState('')
-  const [difficultyFilter, setDifficultyFilter] = useState('')
-  const { showError } = useToastContext()
-  const { isAdmin } = useAuth()
+  const [problems, setProblems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [difficultyFilter, setDifficultyFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [statusFilter, setStatusFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const { showError } = useToastContext();
+
+  // Mock data for demonstration (replace with API data)
+  const mockProblems = [
+    {
+      id: 1,
+      title: "Two Sum",
+      difficulty: "Easy",
+      category: "Array",
+      acceptance: 49.2,
+      description:
+        "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
+      likes: 15420,
+      dislikes: 721,
+      solved: true,
+      bookmarked: false,
+      companies: ["Amazon", "Google", "Facebook"],
+      tags: ["Array", "Hash Table"],
+    },
+    {
+      id: 2,
+      title: "Longest Substring Without Repeating Characters",
+      difficulty: "Medium",
+      category: "String",
+      acceptance: 33.8,
+      description:
+        "Given a string s, find the length of the longest substring without repeating characters.",
+      likes: 25640,
+      dislikes: 1123,
+      solved: false,
+      bookmarked: true,
+      companies: ["Amazon", "Microsoft", "Apple"],
+      tags: ["Hash Table", "String", "Sliding Window"],
+    },
+    {
+      id: 3,
+      title: "Median of Two Sorted Arrays",
+      difficulty: "Hard",
+      category: "Array",
+      acceptance: 34.9,
+      description:
+        "Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.",
+      likes: 18750,
+      dislikes: 2108,
+      solved: false,
+      bookmarked: false,
+      companies: ["Google", "Adobe", "Yahoo"],
+      tags: ["Array", "Binary Search", "Divide and Conquer"],
+    },
+    {
+      id: 4,
+      title: "Valid Parentheses",
+      difficulty: "Easy",
+      category: "String",
+      acceptance: 40.2,
+      description:
+        "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
+      likes: 12890,
+      dislikes: 523,
+      solved: true,
+      bookmarked: false,
+      companies: ["Amazon", "Facebook", "Google"],
+      tags: ["String", "Stack"],
+    },
+  ];
 
   const fetchProblems = async () => {
     try {
-      setLoading(true)
-      const response = await api.get('/problems/get-all-problems')
+      setLoading(true);
+      const response = await api.get("/problems");
       if (response.data.success) {
-        setProblems(response.data.problems)
+        setProblems(response.data.problems);
+      } else {
+        // Use mock data for demonstration
+        setTimeout(() => {
+          setProblems(mockProblems);
+          setLoading(false);
+        }, 1000);
       }
     } catch (error) {
-      showError('Error', 'Failed to fetch problems')
-    } finally {
-      setLoading(false)
+      // Use mock data for demonstration
+      setTimeout(() => {
+        setProblems(mockProblems);
+        setLoading(false);
+      }, 1000);
     }
-  }
+  };
 
   useEffect(() => {
-    fetchProblems()
-  }, [])
+    fetchProblems();
+  }, []);
 
   const getDifficultyColor = (difficulty) => {
-    switch (difficulty) {
-      case 'EASY':
-        return 'badge-success'
-      case 'MEDIUM':
-        return 'badge-warning'
-      case 'HARD':
-        return 'badge-error'
+    switch (difficulty.toLowerCase()) {
+      case "easy":
+        return "text-success";
+      case "medium":
+        return "text-warning";
+      case "hard":
+        return "text-error";
       default:
-        return 'badge-ghost'
+        return "text-base-content";
     }
-  }
+  };
 
-  const filteredProblems = problems.filter(problem => {
-    const matchesSearch = problem.title.toLowerCase().includes(search.toLowerCase()) ||
-                         problem.tags.some(tag => tag.toLowerCase().includes(search.toLowerCase()))
-    const matchesDifficulty = !difficultyFilter || problem.difficulty === difficultyFilter
-    return matchesSearch && matchesDifficulty
-  })
+  const getDifficultyBadge = (difficulty) => {
+    switch (difficulty.toLowerCase()) {
+      case "easy":
+        return "badge-success";
+      case "medium":
+        return "badge-warning";
+      case "hard":
+        return "badge-error";
+      default:
+        return "badge-neutral";
+    }
+  };
+
+  const filteredProblems = problems.filter((problem) => {
+    const matchesDifficulty = !difficultyFilter || problem.difficulty === difficultyFilter;
+    const matchesCategory = !categoryFilter || problem.category === categoryFilter;
+    const matchesStatus =
+      !statusFilter ||
+      (statusFilter === "solved" && problem.solved) ||
+      (statusFilter === "unsolved" && !problem.solved) ||
+      (statusFilter === "bookmarked" && problem.bookmarked);
+    const matchesSearch = !search || problem.title.toLowerCase().includes(search.toLowerCase());
+
+    return matchesDifficulty && matchesCategory && matchesStatus && matchesSearch;
+  });
+
+  const stats = {
+    total: problems.length,
+    easy: problems.filter((p) => p.difficulty === "Easy").length,
+    medium: problems.filter((p) => p.difficulty === "Medium").length,
+    hard: problems.filter((p) => p.difficulty === "Hard").length,
+    solved: problems.filter((p) => p.solved).length,
+  };
 
   if (loading) {
     return (
       <div className="flex justify-center items-center h-96">
-        <span className="loading loading-spinner loading-lg"></span>
+        <span className="loading loading-spinner loading-lg text-primary"></span>
       </div>
-    )
+    );
   }
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-2xl font-bold">Problems</h1>
-        {isAdmin() && (
-          <RouterLink
-            to="/problems/create"
-            className="btn btn-primary btn-sm"
-          >
-            <FiPlus className="mr-2" />
-            Create Problem
-          </RouterLink>
-        )}
+      {/* Header */}
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+            Problems
+          </h1>
+          <p className="text-base-content/70 mt-1">Sharpen your skills with coding challenges</p>
+        </div>
       </div>
 
-      <div className="space-y-6">
-        <div className="flex gap-4">
-          <div className="relative flex-1">
-            <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50" />
-            <input
-              type="text"
-              placeholder="Search problems by title or tags..."
-              className="input input-bordered w-full pl-10"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </div>
-          
-          <select
-            className="select select-bordered w-48"
-            value={difficultyFilter}
-            onChange={(e) => setDifficultyFilter(e.target.value)}
-          >
-            <option value="">All Difficulties</option>
-            <option value="EASY">Easy</option>
-            <option value="MEDIUM">Medium</option>
-            <option value="HARD">Hard</option>
-          </select>
+      {/* Stats */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
+          <div className="stat-title text-xs">Total</div>
+          <div className="stat-value text-2xl">{stats.total}</div>
         </div>
+        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
+          <div className="stat-title text-xs">Easy</div>
+          <div className="stat-value text-2xl text-success">{stats.easy}</div>
+        </div>
+        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
+          <div className="stat-title text-xs">Medium</div>
+          <div className="stat-value text-2xl text-warning">{stats.medium}</div>
+        </div>
+        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
+          <div className="stat-title text-xs">Hard</div>
+          <div className="stat-value text-2xl text-error">{stats.hard}</div>
+        </div>
+        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
+          <div className="stat-title text-xs">Solved</div>
+          <div className="stat-value text-2xl text-primary">{stats.solved}</div>
+        </div>
+      </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredProblems.map(problem => (
-            <div key={problem.id} className="card bg-base-100 shadow-xl card-hover">
-              <div className="card-body">
-                <div className="flex justify-between items-start mb-3">
-                  <h2 className="card-title text-lg">{problem.title}</h2>
-                  <div className={`badge ${getDifficultyColor(problem.difficulty)}`}>
-                    {problem.difficulty}
+      {/* Filters */}
+      <div className="card bg-base-100 shadow-lg">
+        <div className="card-body">
+          <div className="flex flex-col lg:flex-row gap-4">
+            {/* Search */}
+            <div className="flex-1">
+              <div className="relative">
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50" />
+                <input
+                  type="text"
+                  placeholder="Search problems..."
+                  className="input input-bordered w-full pl-10"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </div>
+            </div>
+
+            {/* Difficulty Filter */}
+            <select
+              className="select select-bordered w-full lg:w-auto"
+              value={difficultyFilter}
+              onChange={(e) => setDifficultyFilter(e.target.value)}
+            >
+              <option value="">All Difficulties</option>
+              <option value="Easy">Easy</option>
+              <option value="Medium">Medium</option>
+              <option value="Hard">Hard</option>
+            </select>
+
+            {/* Category Filter */}
+            <select
+              className="select select-bordered w-full lg:w-auto"
+              value={categoryFilter}
+              onChange={(e) => setCategoryFilter(e.target.value)}
+            >
+              <option value="">All Categories</option>
+              <option value="Array">Array</option>
+              <option value="String">String</option>
+              <option value="Tree">Tree</option>
+              <option value="Graph">Graph</option>
+              <option value="Dynamic Programming">Dynamic Programming</option>
+            </select>
+
+            {/* Status Filter */}
+            <select
+              className="select select-bordered w-full lg:w-auto"
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value)}
+            >
+              <option value="">All Status</option>
+              <option value="solved">Solved</option>
+              <option value="unsolved">Unsolved</option>
+              <option value="bookmarked">Bookmarked</option>
+            </select>
+          </div>
+        </div>
+      </div>
+
+      {/* Problems List */}
+      <div className="space-y-4">
+        {filteredProblems.map((problem) => (
+          <div
+            key={problem.id}
+            className="card bg-base-100 shadow-lg hover:shadow-xl transition-all"
+          >
+            <div className="card-body">
+              <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+                {/* Problem Info */}
+                <div className="flex-1">
+                  <div className="flex items-start gap-3 mb-3">
+                    <div className="flex items-center gap-2">
+                      {problem.solved ? (
+                        <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
+                          <FiCheck className="text-success-content text-sm" />
+                        </div>
+                      ) : (
+                        <div className="w-6 h-6 border-2 border-base-content/20 rounded-full"></div>
+                      )}
+                    </div>
+
+                    <div className="flex-1">
+                      <div className="flex items-center gap-3 mb-2">
+                        <RouterLink
+                          to={`/problems/${problem.id}`}
+                          className="link link-hover font-semibold text-lg"
+                        >
+                          {problem.title}
+                        </RouterLink>
+                        <span
+                          className={`badge ${getDifficultyBadge(problem.difficulty)} badge-sm`}
+                        >
+                          {problem.difficulty}
+                        </span>
+                        {problem.bookmarked && <FiBookmark className="text-warning" />}
+                      </div>
+
+                      <p className="text-base-content/70 text-sm mb-3 line-clamp-2">
+                        {problem.description}
+                      </p>
+
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-base-content/70">
+                        <div className="flex items-center gap-1">
+                          <FiTrendingUp />
+                          <span>{problem.acceptance}% acceptance</span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <FiStar />
+                          <span>{problem.likes}</span>
+                        </div>
+
+                        <div className="flex items-center gap-1">
+                          <FiLayers />
+                          <span>{problem.category}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div className="flex flex-wrap gap-2 mt-3">
+                    {problem.tags.map((tag) => (
+                      <span key={tag} className="badge badge-outline badge-sm">
+                        {tag}
+                      </span>
+                    ))}
                   </div>
                 </div>
-                
-                <p className="text-base-content/70 text-sm line-clamp-3 mb-4">
-                  {problem.description}
-                </p>
-                
-                <div className="flex flex-wrap gap-1 mb-4">
-                  {problem.tags.slice(0, 3).map((tag) => (
-                    <span key={tag} className="badge badge-outline badge-sm">
-                      {tag}
-                    </span>
-                  ))}
-                  {problem.tags.length > 3 && (
-                    <span className="badge badge-ghost badge-sm">
-                      +{problem.tags.length - 3}
-                    </span>
-                  )}
-                </div>
-                
-                <div className="card-actions justify-end">
-                  <RouterLink
-                    to={`/problems/${problem.id}`}
-                    className="btn btn-primary btn-sm"
-                  >
-                    <FiEye className="mr-2" />
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row items-center gap-2">
+                  <RouterLink to={`/problems/${problem.id}`} className="btn btn-primary btn-sm">
+                    <FiPlay className="mr-1" />
                     Solve
                   </RouterLink>
                 </div>
               </div>
             </div>
-          ))}
-        </div>
+          </div>
+        ))}
 
         {filteredProblems.length === 0 && (
-          <div className="text-center py-20">
-            <div className="space-y-4">
-              <p className="text-xl text-base-content/50">
-                No problems found
-              </p>
-              <p className="text-base-content/40">
-                Try adjusting your search filters
-              </p>
-            </div>
+          <div className="text-center py-12">
+            <FiCode className="mx-auto text-4xl text-base-content/30 mb-4" />
+            <p className="text-lg text-base-content/50">
+              {search || difficultyFilter || categoryFilter || statusFilter
+                ? "No problems found matching your criteria"
+                : "No problems available"}
+            </p>
           </div>
         )}
       </div>
     </div>
-  )
-}
+  );
+};
 
-export default Problems
+export default Problems;
