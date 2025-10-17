@@ -1,25 +1,7 @@
-import { FiUsers } from 'react-icons/fi'
+import React from 'react';
 
 const UserManagement = () => {
-  return (
-    <div className="space-y-6">
-      <h1 className="text-2xl font-bold">User Management</h1>
-      
-      <div className="card bg-base-100 shadow-xl">
-        <div className="card-body">
-          <div className="text-center py-20">
-            <FiUsers className="mx-auto text-6xl text-base-content/30 mb-4" />
-            <h2 className="text-xl font-bold text-base-content/50 mb-2">
-              User Management
-            </h2>
-            <p className="text-base-content/40">
-              User management features coming soon!
-            </p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-}
+  return <div>UserManagement Component</div>;
+};
 
-export default UserManagement
+export default UserManagement;
