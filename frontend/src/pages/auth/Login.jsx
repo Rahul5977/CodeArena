@@ -65,7 +65,7 @@ const Login = () => {
         {/* Login Card */}
         <div className="bg-white/5 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/10 p-8 hover:bg-white/10 transition-all duration-300">
           <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-white mb-2">Sign In</h2>
+            <h2 className="text-2xl font-bold text-white mb-2">Log In</h2>
             <p className="text-gray-400">Continue your coding excellence</p>
           </div>
 
