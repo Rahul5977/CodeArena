@@ -1,8 +1,12 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useAuth } from "./contexts/AuthContext";
+import { useEffect } from "react";
+import useAuthStore from "./stores/authStore";
 import Layout from "./components/Layout";
 import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
+import ForgotPassword from "./pages/auth/ForgotPassword";
+import ResetPassword from "./pages/auth/ResetPassword";
+import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Problems from "./pages/problems/Problems";
 import ProblemDetails from "./pages/problems/ProblemDetails";
@@ -30,22 +34,37 @@ import ContestManagement from "./pages/admin/ContestManagement";
 import SheetManagement from "./pages/admin/SheetManagement";
 
 function App() {
-  const { loading } = useAuth();
+  const { isLoading, checkAuth } = useAuthStore();
 
-  if (loading) {
+  // Check authentication on app load
+  useEffect(() => {
+    checkAuth();
+  }, [checkAuth]);
+
+  if (isLoading) {
     return <LoadingSpinner />;
   }
 
   return (
-    <div className="min-h-screen bg-base-200" data-theme="leetlab">
+    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
         <Route path="/register" element={<Register />} />
+        <Route path="/forgot-password" element={<ForgotPassword />} />
+        <Route path="/reset-password/:token" element={<ResetPassword />} />
 
         {/* Protected Routes */}
         <Route
           path="/"
+          element={
+            <ProtectedRoute>
+              <Home />
+            </ProtectedRoute>
+          }
+        />
+        <Route
+          path="/dashboard"
           element={
             <ProtectedRoute>
               <Layout />
@@ -53,59 +72,97 @@ function App() {
           }
         >
           <Route index element={<Dashboard />} />
-          <Route path="problems" element={<Problems />} />
-          <Route path="problems/:id" element={<ProblemDetails />} />
-          <Route path="playlists" element={<Playlists />} />
-          <Route path="playlists/:id" element={<PlaylistDetail />} />
-          <Route path="submissions" element={<Submissions />} />
-          <Route path="profile" element={<Profile />} />
+        </Route>
 
-          {/* Contest Routes */}
-          <Route path="contests" element={<ContestList />} />
-          <Route path="contests/:id" element={<ContestDetail />} />
-          <Route path="contests/:id/leaderboard" element={<ContestLeaderboard />} />
-          <Route
-            path="contests/:contestId/problems/:problemId/submit"
-            element={<ContestSubmit />}
-          />
+        {/* Problems */}
+        <Route
+          path="/problems"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Problems />} />
+          <Route path=":id" element={<ProblemDetails />} />
+        </Route>
 
-          {/* Sheets Routes */}
-          <Route path="sheets" element={<SheetList />} />
-          <Route path="sheets/:id" element={<SheetDetail />} />
+        {/* Playlists */}
+        <Route
+          path="/playlists"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Playlists />} />
+          <Route path=":id" element={<PlaylistDetail />} />
+        </Route>
 
-          {/* Admin Routes */}
-          <Route
-            path="admin"
-            element={
-              <ProtectedRoute roles={["ADMIN", "SUPERADMIN"]}>
-                <AdminDashboard />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="admin/users"
-            element={
-              <ProtectedRoute roles={["ADMIN", "SUPERADMIN"]}>
-                <UserManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="admin/contests"
-            element={
-              <ProtectedRoute roles={["ADMIN", "SUPERADMIN"]}>
-                <ContestManagement />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="admin/sheets"
-            element={
-              <ProtectedRoute roles={["ADMIN", "SUPERADMIN"]}>
-                <SheetManagement />
-              </ProtectedRoute>
-            }
-          />
+        {/* Submissions */}
+        <Route
+          path="/submissions"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<Submissions />} />
+        </Route>
+
+        {/* Profile */}
+        <Route
+          path="/profile"
+          element={
+            <ProtectedRoute>
+              <Profile />
+            </ProtectedRoute>
+          }
+        />
+
+        {/* Contests */}
+        <Route
+          path="/contests"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<ContestList />} />
+          <Route path=":id" element={<ContestDetail />} />
+          <Route path=":id/leaderboard" element={<ContestLeaderboard />} />
+          <Route path=":contestId/problems/:problemId/submit" element={<ContestSubmit />} />
+        </Route>
+
+        {/* Sheets */}
+        <Route
+          path="/sheets"
+          element={
+            <ProtectedRoute>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<SheetList />} />
+          <Route path=":id" element={<SheetDetail />} />
+        </Route>
+
+        {/* Admin Routes */}
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute allowedRoles={["ADMIN", "SUPERADMIN"]}>
+              <Layout />
+            </ProtectedRoute>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="users" element={<UserManagement />} />
+          <Route path="contests" element={<ContestManagement />} />
+          <Route path="sheets" element={<SheetManagement />} />
         </Route>
 
         {/* Redirect */}

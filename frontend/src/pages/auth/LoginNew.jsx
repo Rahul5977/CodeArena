@@ -1,17 +1,17 @@
-import { useState } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
-import { FiEye, FiEyeOff, FiMail, FiLock, FiCode, FiAlertCircle } from 'react-icons/fi';
-import useAuthStore from '../../stores/authStore';
-import { useToastContext } from '../../contexts/ToastContext';
+import { useState } from "react";
+import { Link, useNavigate, useLocation } from "react-router-dom";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
+import { FiEye, FiEyeOff, FiMail, FiLock, FiCode, FiAlertCircle } from "react-icons/fi";
+import useAuthStore from "../../stores/authStore";
+import { useToastContext } from "../../contexts/ToastContext";
 
 // Validation schema
 const loginSchema = z.object({
-  email: z.string().email('Please enter a valid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email("Please enter a valid email address"),
+  password: z.string().min(1, "Password is required"),
 });
 
 const Login = () => {
@@ -28,22 +28,22 @@ const Login = () => {
   } = useForm({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      email: '',
-      password: '',
+      email: "",
+      password: "",
     },
   });
 
   const onSubmit = async (data) => {
     try {
       await login(data);
-      showSuccess('Welcome back!', 'You have successfully logged in.');
-      
+      showSuccess("Welcome back!", "You have successfully logged in.");
+
       // Redirect to the page they were trying to access or dashboard
-      const from = location.state?.from?.pathname || '/';
+      const from = location.state?.from?.pathname || "/";
       navigate(from, { replace: true });
     } catch (error) {
-      const errorMessage = error.response?.data?.message || error.message || 'Login failed';
-      showError('Login Failed', errorMessage);
+      const errorMessage = error.response?.data?.message || error.message || "Login failed";
+      showError("Login Failed", errorMessage);
     }
   };
 
@@ -59,7 +59,7 @@ const Login = () => {
           transition={{
             duration: 20,
             repeat: Infinity,
-            ease: 'linear',
+            ease: "linear",
           }}
           className="absolute top-1/4 left-1/4 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl"
         />
@@ -71,7 +71,7 @@ const Login = () => {
           transition={{
             duration: 25,
             repeat: Infinity,
-            ease: 'linear',
+            ease: "linear",
           }}
           className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-3xl"
         />
@@ -83,7 +83,7 @@ const Login = () => {
           transition={{
             duration: 15,
             repeat: Infinity,
-            ease: 'easeInOut',
+            ease: "easeInOut",
           }}
           className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-500/5 rounded-full blur-3xl"
         />
@@ -100,7 +100,7 @@ const Login = () => {
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
-            transition={{ type: 'spring', duration: 0.6 }}
+            transition={{ type: "spring", duration: 0.6 }}
             className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-blue-600 to-purple-600 rounded-2xl mb-6 shadow-2xl"
           >
             <FiCode className="text-white text-3xl" />
@@ -144,10 +144,10 @@ const Login = () => {
               </label>
               <div className="relative">
                 <input
-                  {...register('email')}
+                  {...register("email")}
                   type="email"
                   className={`w-full px-4 py-3 pl-12 bg-white/10 border ${
-                    errors.email ? 'border-red-500' : 'border-white/20'
+                    errors.email ? "border-red-500" : "border-white/20"
                   } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-blue-400 focus:bg-white/15 transition-all duration-300`}
                   placeholder="Enter your email"
                 />
@@ -172,10 +172,10 @@ const Login = () => {
               </label>
               <div className="relative">
                 <input
-                  {...register('password')}
-                  type={showPassword ? 'text' : 'password'}
+                  {...register("password")}
+                  type={showPassword ? "text" : "password"}
                   className={`w-full px-4 py-3 pl-12 pr-12 bg-white/10 border ${
-                    errors.password ? 'border-red-500' : 'border-white/20'
+                    errors.password ? "border-red-500" : "border-white/20"
                   } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 focus:bg-white/15 transition-all duration-300`}
                   placeholder="Enter your password"
                 />
@@ -223,7 +223,7 @@ const Login = () => {
                   Logging in...
                 </>
               ) : (
-                'Log In'
+                "Log In"
               )}
             </motion.button>
           </form>
@@ -238,7 +238,7 @@ const Login = () => {
           {/* Sign Up Link */}
           <div className="text-center">
             <p className="text-gray-400">
-              Don't have an account?{' '}
+              Don't have an account?{" "}
               <Link
                 to="/register"
                 className="text-blue-400 hover:text-blue-300 font-semibold transition-colors"

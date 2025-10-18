@@ -1,6 +1,6 @@
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
-import { AnimatePresence } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import {
   FiCode,
   FiMenu,
@@ -16,6 +16,7 @@ import {
   FiPlayCircle,
   FiFileText,
   FiAward,
+  FiSettings,
 } from "react-icons/fi";
 import useAuthStore from "../stores/authStore";
 
@@ -57,6 +58,7 @@ const Navbar = () => {
 
   // Check if user is admin or superadmin
   const isAdmin = user?.role === "ADMIN" || user?.role === "SUPERADMIN";
+  const isSuperAdmin = user?.role === "SUPERADMIN";
 
   const isActivePath = (path) => location.pathname === path;
 
@@ -86,9 +88,13 @@ const Navbar = () => {
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 group">
-            <div className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg hover:scale-110 hover:rotate-12 transition-transform duration-300">
+            <motion.div
+              whileHover={{ scale: 1.1, rotate: 360 }}
+              transition={{ duration: 0.5 }}
+              className="w-10 h-10 bg-gradient-to-r from-blue-600 to-purple-600 rounded-xl flex items-center justify-center shadow-lg"
+            >
               <FiCode className="text-white text-xl" />
-            </div>
+            </motion.div>
             <span className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
               LeetLab
             </span>
@@ -136,18 +142,24 @@ const Navbar = () => {
           {/* Right Side Actions */}
           <div className="hidden md:flex items-center space-x-3">
             {/* Theme Toggle */}
-            <button
+            <motion.button
+              whileHover={{ scale: 1.1 }}
+              whileTap={{ scale: 0.9 }}
               onClick={toggleTheme}
-              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200 hover:scale-110 active:scale-90"
+              className="p-2 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-all duration-200"
             >
               {isDark ? <FiSun className="text-xl" /> : <FiMoon className="text-xl" />}
-            </button>
+            </motion.button>
 
             {isAuthenticated ? (
               <>
                 {/* Profile Link */}
                 <Link to="/profile">
-                  <button className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 active:scale-95">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
+                  >
                     <FiUser />
                     <span className="font-medium">{user?.name || "Profile"}</span>
                     {user?.role && (
@@ -155,29 +167,39 @@ const Navbar = () => {
                         {user.role}
                       </span>
                     )}
-                  </button>
+                  </motion.button>
                 </Link>
 
                 {/* Logout Button */}
-                <button
+                <motion.button
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
                   onClick={handleLogout}
-                  className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200 hover:scale-105 active:scale-95"
+                  className="p-2 rounded-lg bg-red-500/20 hover:bg-red-500/30 text-red-400 hover:text-red-300 transition-all duration-200"
                   title="Logout"
                 >
                   <FiLogOut className="text-xl" />
-                </button>
+                </motion.button>
               </>
             ) : (
               <>
                 <Link to="/login">
-                  <button className="px-4 py-2 rounded-lg text-white hover:bg-white/10 transition-all duration-200 hover:scale-105 active:scale-95">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 rounded-lg text-white hover:bg-white/10 transition-all duration-200"
+                  >
                     Login
-                  </button>
+                  </motion.button>
                 </Link>
                 <Link to="/register">
-                  <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all duration-200 hover:scale-105 active:scale-95">
+                  <motion.button
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="px-4 py-2 rounded-lg bg-gradient-to-r from-blue-600 to-purple-600 text-white hover:from-blue-700 hover:to-purple-700 transition-all duration-200"
+                  >
                     Sign Up
-                  </button>
+                  </motion.button>
                 </Link>
               </>
             )}
@@ -196,7 +218,12 @@ const Navbar = () => {
       {/* Mobile Menu */}
       <AnimatePresence>
         {isOpen && (
-          <div className="md:hidden bg-slate-900/95 backdrop-blur-xl border-t border-white/10 animate-in fade-in slide-in-from-top duration-200">
+          <motion.div
+            initial={{ opacity: 0, height: 0 }}
+            animate={{ opacity: 1, height: "auto" }}
+            exit={{ opacity: 0, height: 0 }}
+            className="md:hidden bg-slate-900/95 backdrop-blur-xl border-t border-white/10"
+          >
             <div className="px-4 py-4 space-y-2">
               {isAuthenticated &&
                 navLinks.map((link) => (
@@ -282,7 +309,7 @@ const Navbar = () => {
                 <span className="font-medium">{isDark ? "Light Mode" : "Dark Mode"}</span>
               </button>
             </div>
-          </div>
+          </motion.div>
         )}
       </AnimatePresence>
     </nav>
