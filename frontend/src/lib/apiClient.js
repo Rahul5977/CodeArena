@@ -24,6 +24,22 @@ apiClient.interceptors.request.use(
   }
 );
 
+// Flag to prevent multiple simultaneous refresh attempts
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+
+  failedQueue = [];
+};
+
 // Response interceptor - Handle responses and errors globally
 apiClient.interceptors.response.use(
   (response) => {
@@ -33,23 +49,50 @@ apiClient.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
+    // Don't retry if this is the refresh token endpoint itself
+    if (originalRequest.url?.includes("/auth/refresh-token")) {
+      // Clear auth state if refresh token fails
+      localStorage.removeItem("leetlab-auth-storage");
+      return Promise.reject(error);
+    }
+
     // Handle 401 Unauthorized errors
     if (error.response?.status === 401 && !originalRequest._retry) {
+      if (isRefreshing) {
+        // If already refreshing, queue this request
+        return new Promise((resolve, reject) => {
+          failedQueue.push({ resolve, reject });
+        })
+          .then(() => {
+            return apiClient(originalRequest);
+          })
+          .catch((err) => {
+            return Promise.reject(err);
+          });
+      }
+
       originalRequest._retry = true;
+      isRefreshing = true;
 
       try {
         // Try to refresh the token
         await apiClient.post("/auth/refresh-token");
 
+        isRefreshing = false;
+        processQueue(null);
+
         // Retry the original request
         return apiClient(originalRequest);
       } catch (refreshError) {
-        // If refresh fails, redirect to login
-        // Clear any stored user data
-        localStorage.removeItem("user");
+        isRefreshing = false;
+        processQueue(refreshError, null);
 
-        // Only redirect if we're not already on the login page
-        if (window.location.pathname !== "/login") {
+        // If refresh fails, clear auth state
+        localStorage.removeItem("leetlab-auth-storage");
+
+        // Only redirect if we're not already on auth pages
+        const authPages = ["/login", "/register", "/forgot-password", "/reset-password"];
+        if (!authPages.some((page) => window.location.pathname.startsWith(page))) {
           window.location.href = "/login";
         }
 

@@ -34,12 +34,12 @@ import ContestManagement from "./pages/admin/ContestManagement";
 import SheetManagement from "./pages/admin/SheetManagement";
 
 function App() {
-  const { isLoading, checkAuth } = useAuthStore();
+  const { isLoading, fetchCurrentUser } = useAuthStore();
 
   // Check authentication on app load
   useEffect(() => {
-    checkAuth();
-  }, [checkAuth]);
+    fetchCurrentUser();
+  }, [fetchCurrentUser]);
 
   if (isLoading) {
     return <LoadingSpinner />;

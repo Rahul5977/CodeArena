@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import { motion } from 'framer-motion';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useState } from "react";
+import { motion } from "framer-motion";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { z } from "zod";
 import {
   FiUser,
   FiMail,
@@ -14,26 +14,26 @@ import {
   FiShield,
   FiCalendar,
   FiCheck,
-} from 'react-icons/fi';
-import useAuthStore from '../stores/authStore';
-import { useToastContext } from '../contexts/ToastContext';
-import Navbar from '../components/Navbar';
-import apiClient from '../lib/apiClient';
+} from "react-icons/fi";
+import useAuthStore from "../stores/authStore";
+import { useToastContext } from "../contexts/ToastContext";
+import Navbar from "../components/Navbar";
+import apiClient from "../lib/apiClient";
 
 const changePasswordSchema = z
   .object({
-    oldPassword: z.string().min(1, 'Current password is required'),
+    oldPassword: z.string().min(1, "Current password is required"),
     newPassword: z
       .string()
-      .min(8, 'Password must be at least 8 characters')
-      .regex(/[A-Z]/, 'Must contain uppercase letter')
-      .regex(/[a-z]/, 'Must contain lowercase letter')
-      .regex(/[0-9]/, 'Must contain number'),
-    confirmPassword: z.string().min(1, 'Please confirm password'),
+      .min(8, "Password must be at least 8 characters")
+      .regex(/[A-Z]/, "Must contain uppercase letter")
+      .regex(/[a-z]/, "Must contain lowercase letter")
+      .regex(/[0-9]/, "Must contain number"),
+    confirmPassword: z.string().min(1, "Please confirm password"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
     message: "Passwords don't match",
-    path: ['confirmPassword'],
+    path: ["confirmPassword"],
   });
 
 const Profile = () => {
@@ -52,24 +52,24 @@ const Profile = () => {
   } = useForm({
     resolver: zodResolver(changePasswordSchema),
     defaultValues: {
-      oldPassword: '',
-      newPassword: '',
-      confirmPassword: '',
+      oldPassword: "",
+      newPassword: "",
+      confirmPassword: "",
     },
   });
 
   const onChangePassword = async (data) => {
     setIsChangingPassword(true);
     try {
-      await apiClient.post('/auth/change-password', {
+      await apiClient.post("/auth/change-password", {
         oldPassword: data.oldPassword,
         newPassword: data.newPassword,
       });
-      showSuccess('Password Changed', 'Your password has been updated successfully.');
+      showSuccess("Password Changed", "Your password has been updated successfully.");
       reset();
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to change password';
-      showError('Error', errorMessage);
+      const errorMessage = error.response?.data?.message || "Failed to change password";
+      showError("Error", errorMessage);
     } finally {
       setIsChangingPassword(false);
     }
@@ -77,19 +77,19 @@ const Profile = () => {
 
   const getRoleBadgeColor = (role) => {
     switch (role) {
-      case 'SUPERADMIN':
-        return 'bg-red-500/20 text-red-400 border-red-500/30';
-      case 'ADMIN':
-        return 'bg-yellow-500/20 text-yellow-400 border-yellow-500/30';
+      case "SUPERADMIN":
+        return "bg-red-500/20 text-red-400 border-red-500/30";
+      case "ADMIN":
+        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
       default:
-        return 'bg-blue-500/20 text-blue-400 border-blue-500/30';
+        return "bg-blue-500/20 text-blue-400 border-blue-500/30";
     }
   };
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
       <Navbar />
-      
+
       <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
         <div className="max-w-4xl mx-auto">
           <motion.div
@@ -138,11 +138,11 @@ const Profile = () => {
                       <p className="text-xs text-gray-500">Member Since</p>
                       <p className="text-sm">
                         {user?.createdAt
-                          ? new Date(user.createdAt).toLocaleDateString('en-US', {
-                              month: 'long',
-                              year: 'numeric',
+                          ? new Date(user.createdAt).toLocaleDateString("en-US", {
+                              month: "long",
+                              year: "numeric",
                             })
-                          : 'N/A'}
+                          : "N/A"}
                       </p>
                     </div>
                   </div>
@@ -179,7 +179,7 @@ const Profile = () => {
                       </label>
                       <input
                         type="text"
-                        value={user?.name || ''}
+                        value={user?.name || ""}
                         disabled
                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white cursor-not-allowed"
                       />
@@ -190,7 +190,7 @@ const Profile = () => {
                       </label>
                       <input
                         type="email"
-                        value={user?.email || ''}
+                        value={user?.email || ""}
                         disabled
                         className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white cursor-not-allowed"
                       />
@@ -215,10 +215,10 @@ const Profile = () => {
                       </label>
                       <div className="relative">
                         <input
-                          {...register('oldPassword')}
-                          type={showOldPassword ? 'text' : 'password'}
+                          {...register("oldPassword")}
+                          type={showOldPassword ? "text" : "password"}
                           className={`w-full px-4 py-3 pr-12 bg-white/10 border ${
-                            errors.oldPassword ? 'border-red-500' : 'border-white/20'
+                            errors.oldPassword ? "border-red-500" : "border-white/20"
                           } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-all`}
                           placeholder="Enter current password"
                         />
@@ -244,10 +244,10 @@ const Profile = () => {
                       </label>
                       <div className="relative">
                         <input
-                          {...register('newPassword')}
-                          type={showNewPassword ? 'text' : 'password'}
+                          {...register("newPassword")}
+                          type={showNewPassword ? "text" : "password"}
                           className={`w-full px-4 py-3 pr-12 bg-white/10 border ${
-                            errors.newPassword ? 'border-red-500' : 'border-white/20'
+                            errors.newPassword ? "border-red-500" : "border-white/20"
                           } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-all`}
                           placeholder="Enter new password"
                         />
@@ -273,10 +273,10 @@ const Profile = () => {
                       </label>
                       <div className="relative">
                         <input
-                          {...register('confirmPassword')}
-                          type={showConfirmPassword ? 'text' : 'password'}
+                          {...register("confirmPassword")}
+                          type={showConfirmPassword ? "text" : "password"}
                           className={`w-full px-4 py-3 pr-12 bg-white/10 border ${
-                            errors.confirmPassword ? 'border-red-500' : 'border-white/20'
+                            errors.confirmPassword ? "border-red-500" : "border-white/20"
                           } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-all`}
                           placeholder="Confirm new password"
                         />
