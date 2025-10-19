@@ -79,7 +79,7 @@ const ProblemDetails = () => {
     const fetchProblem = async () => {
       try {
         setLoading(true);
-        const response = await apiClient.get(`/problems/get-all-problems/${id}`);
+        const response = await apiClient.get(`/problem/${id}`);
 
         if (response.data.success && response.data.problem) {
           setProblem(response.data.problem);
@@ -159,7 +159,7 @@ const ProblemDetails = () => {
         problemId: id,
       };
 
-      const response = await apiClient.post("/execute-code", payload);
+      const response = await apiClient.post("/execute", payload);
 
       if (response.data.success) {
         setOutput({
