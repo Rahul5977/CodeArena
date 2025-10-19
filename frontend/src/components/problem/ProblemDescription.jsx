@@ -129,16 +129,34 @@ const ProblemDescription = ({ problem, loading = false }) => {
           )}
 
           {/* Constraints */}
-          {problem.constraints && problem.constraints.length > 0 && (
+          {problem.constraints && (
             <div className="mb-8">
               <h2 className="text-xl font-semibold text-base-content mb-3">Constraints</h2>
               <ul className="space-y-2">
-                {problem.constraints.map((constraint, idx) => (
-                  <li key={idx} className="flex items-start gap-2 text-base-content/70">
-                    <FiCheckCircle className="text-success mt-1 flex-shrink-0" />
-                    <span className="text-sm font-mono">{constraint}</span>
-                  </li>
-                ))}
+                {(() => {
+                  // Handle different constraint formats
+                  let constraintList = [];
+
+                  if (Array.isArray(problem.constraints)) {
+                    constraintList = problem.constraints;
+                  } else if (typeof problem.constraints === "string") {
+                    try {
+                      // Try to parse as JSON first
+                      const parsed = JSON.parse(problem.constraints);
+                      constraintList = Array.isArray(parsed) ? parsed : [problem.constraints];
+                    } catch {
+                      // If not JSON, split by newlines
+                      constraintList = problem.constraints.split("\n").filter((c) => c.trim());
+                    }
+                  }
+
+                  return constraintList.map((constraint, idx) => (
+                    <li key={idx} className="flex items-start gap-2 text-base-content/70">
+                      <FiCheckCircle className="text-success mt-1 flex-shrink-0" />
+                      <span className="text-sm font-mono">{constraint}</span>
+                    </li>
+                  ));
+                })()}
               </ul>
             </div>
           )}

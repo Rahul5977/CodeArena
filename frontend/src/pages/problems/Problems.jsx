@@ -25,89 +25,38 @@ const Problems = () => {
   const [search, setSearch] = useState("");
   const { showError } = useToastContext();
 
-  // Mock data for demonstration (replace with API data)
-  const mockProblems = [
-    {
-      id: 1,
-      title: "Two Sum",
-      difficulty: "Easy",
-      category: "Array",
-      acceptance: 49.2,
-      description:
-        "Given an array of integers nums and an integer target, return indices of the two numbers such that they add up to target.",
-      likes: 15420,
-      dislikes: 721,
-      solved: true,
-      bookmarked: false,
-      companies: ["Amazon", "Google", "Facebook"],
-      tags: ["Array", "Hash Table"],
-    },
-    {
-      id: 2,
-      title: "Longest Substring Without Repeating Characters",
-      difficulty: "Medium",
-      category: "String",
-      acceptance: 33.8,
-      description:
-        "Given a string s, find the length of the longest substring without repeating characters.",
-      likes: 25640,
-      dislikes: 1123,
-      solved: false,
-      bookmarked: true,
-      companies: ["Amazon", "Microsoft", "Apple"],
-      tags: ["Hash Table", "String", "Sliding Window"],
-    },
-    {
-      id: 3,
-      title: "Median of Two Sorted Arrays",
-      difficulty: "Hard",
-      category: "Array",
-      acceptance: 34.9,
-      description:
-        "Given two sorted arrays nums1 and nums2 of size m and n respectively, return the median of the two sorted arrays.",
-      likes: 18750,
-      dislikes: 2108,
-      solved: false,
-      bookmarked: false,
-      companies: ["Google", "Adobe", "Yahoo"],
-      tags: ["Array", "Binary Search", "Divide and Conquer"],
-    },
-    {
-      id: 4,
-      title: "Valid Parentheses",
-      difficulty: "Easy",
-      category: "String",
-      acceptance: 40.2,
-      description:
-        "Given a string s containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-      likes: 12890,
-      dislikes: 523,
-      solved: true,
-      bookmarked: false,
-      companies: ["Amazon", "Facebook", "Google"],
-      tags: ["String", "Stack"],
-    },
-  ];
-
   const fetchProblems = async () => {
     try {
       setLoading(true);
-      const response = await api.get("/problems");
-      if (response.data.success) {
-        setProblems(response.data.problems);
+      const response = await api.get("/problems/get-all-problems");
+
+      if (response.data.success && response.data.problems) {
+        // Transform backend data to match frontend structure
+        const transformedProblems = response.data.problems.map((problem) => ({
+          id: problem.id,
+          title: problem.title,
+          difficulty: problem.difficulty.charAt(0) + problem.difficulty.slice(1).toLowerCase(), // EASY -> Easy
+          category: problem.tags?.[0] || "General",
+          acceptance: 0, // TODO: Calculate from submissions
+          description: problem.description,
+          likes: 0, // TODO: Get from backend
+          dislikes: 0, // TODO: Get from backend
+          solved: false, // TODO: Get from user's solved problems
+          bookmarked: false, // TODO: Get from user's bookmarks
+          companies: [], // TODO: Get from backend
+          tags: Array.isArray(problem.tags) ? problem.tags : [],
+        }));
+        setProblems(transformedProblems);
       } else {
-        // Use mock data for demonstration
-        setTimeout(() => {
-          setProblems(mockProblems);
-          setLoading(false);
-        }, 1000);
+        showError("Error", "Failed to load problems");
+        setProblems([]);
       }
     } catch (error) {
-      // Use mock data for demonstration
-      setTimeout(() => {
-        setProblems(mockProblems);
-        setLoading(false);
-      }, 1000);
+      console.error("Failed to fetch problems:", error);
+      showError("Error", error.response?.data?.message || "Failed to load problems");
+      setProblems([]);
+    } finally {
+      setLoading(false);
     }
   };
 
