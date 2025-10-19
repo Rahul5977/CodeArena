@@ -1,17 +1,17 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
-import { FiRefreshCw, FiUser } from 'react-icons/fi';
-import { FiCheckCircle, FiTrophy, FiZap, FiList } from 'react-icons/fi';
-import useAuthStore from '../stores/authStore';
-import { useToastContext } from '../contexts/ToastContext';
-import apiClient from '../lib/apiClient';
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { FiRefreshCw, FiUser } from "react-icons/fi";
+import { FiCheckCircle, FiAward, FiZap, FiList } from "react-icons/fi";
+import useAuthStore from "../stores/authStore";
+import { useToastContext } from "../contexts/ToastContext";
+import apiClient from "../lib/apiClient";
 
 // Dashboard Components
-import StatsCard from '../components/dashboard/StatsCard';
-import QuickActions from '../components/dashboard/QuickActions';
-import RecentSubmissions from '../components/dashboard/RecentSubmissions';
-import RecommendedProblems from '../components/dashboard/RecommendedProblems';
-import ActivityHeatmap from '../components/dashboard/ActivityHeatmap';
+import StatsCard from "../components/dashboard/StatsCard";
+import QuickActions from "../components/dashboard/QuickActions";
+import RecentSubmissions from "../components/dashboard/RecentSubmissions";
+import RecommendedProblems from "../components/dashboard/RecommendedProblems";
+import ActivityHeatmap from "../components/dashboard/ActivityHeatmap";
 
 /**
  * Dashboard Page - Main user dashboard with stats, activity, and recommendations
@@ -50,25 +50,24 @@ const Dashboard = () => {
       // Fetch all data in parallel
       const [statsRes, submissionsRes, problemsRes] = await Promise.allSettled([
         // User stats (solved count, submissions, streak, rank)
-        apiClient.get('/submissions').catch(() => ({ data: { submissions: [] } })),
-        
+        apiClient.get("/submissions").catch(() => ({ data: { submissions: [] } })),
+
         // Recent submissions
-        apiClient.get('/submissions').catch(() => ({ data: { submissions: [] } })),
-        
+        apiClient.get("/submissions").catch(() => ({ data: { submissions: [] } })),
+
         // Get all problems (we'll filter recommended ones client-side for now)
-        apiClient.get('/problem').catch(() => ({ data: { problems: [] } })),
+        apiClient.get("/problem").catch(() => ({ data: { problems: [] } })),
       ]);
 
       // Process stats from submissions
-      const submissions = submissionsRes.status === 'fulfilled' 
-        ? submissionsRes.value.data.submissions || [] 
-        : [];
-      
+      const submissions =
+        submissionsRes.status === "fulfilled" ? submissionsRes.value.data.submissions || [] : [];
+
       // Calculate stats
       const solvedProblems = new Set(
         submissions
-          .filter(s => s.verdict?.toLowerCase().includes('accepted'))
-          .map(s => s.problemId)
+          .filter((s) => s.verdict?.toLowerCase().includes("accepted"))
+          .map((s) => s.problemId)
       ).size;
 
       const totalSubmissions = submissions.length;
@@ -88,18 +87,17 @@ const Dashboard = () => {
         .slice(0, 10);
 
       // Get recommended problems (for now, just get unsolved ones)
-      const allProblems = problemsRes.status === 'fulfilled' 
-        ? problemsRes.value.data.problems || [] 
-        : [];
-      
+      const allProblems =
+        problemsRes.status === "fulfilled" ? problemsRes.value.data.problems || [] : [];
+
       const solvedProblemIds = new Set(
         submissions
-          .filter(s => s.verdict?.toLowerCase().includes('accepted'))
-          .map(s => s.problemId)
+          .filter((s) => s.verdict?.toLowerCase().includes("accepted"))
+          .map((s) => s.problemId)
       );
 
       const recommendedProblems = allProblems
-        .filter(p => !solvedProblemIds.has(p.id))
+        .filter((p) => !solvedProblemIds.has(p.id))
         .slice(0, 6); // Get first 6 unsolved problems
 
       // Update state
@@ -115,8 +113,8 @@ const Dashboard = () => {
         activity,
       });
     } catch (error) {
-      console.error('Error fetching dashboard data:', error);
-      showError('Error', 'Failed to load dashboard data. Please try refreshing.');
+      console.error("Error fetching dashboard data:", error);
+      showError("Error", "Failed to load dashboard data. Please try refreshing.");
     } finally {
       setLoading(false);
       setRefreshing(false);
@@ -130,7 +128,7 @@ const Dashboard = () => {
     if (!submissions || submissions.length === 0) return 0;
 
     const dates = submissions
-      .map(s => new Date(s.createdAt).toDateString())
+      .map((s) => new Date(s.createdAt).toDateString())
       .filter((date, index, self) => self.indexOf(date) === index)
       .sort((a, b) => new Date(b) - new Date(a));
 
@@ -156,8 +154,8 @@ const Dashboard = () => {
   const generateActivityData = (submissions) => {
     const activityMap = {};
 
-    submissions.forEach(submission => {
-      const date = new Date(submission.createdAt).toISOString().split('T')[0];
+    submissions.forEach((submission) => {
+      const date = new Date(submission.createdAt).toISOString().split("T")[0];
       activityMap[date] = (activityMap[date] || 0) + 1;
     });
 
@@ -195,11 +193,9 @@ const Dashboard = () => {
             {/* Welcome Message */}
             <div>
               <h1 className="text-4xl font-bold text-white mb-2">
-                Welcome back, {user?.name || 'Coder'}! 👋
+                Welcome back, {user?.name || "Coder"}! 👋
               </h1>
-              <p className="text-white/80 text-lg">
-                Ready to continue your coding journey?
-              </p>
+              <p className="text-white/80 text-lg">Ready to continue your coding journey?</p>
             </div>
 
             {/* Refresh Button */}
@@ -210,7 +206,7 @@ const Dashboard = () => {
               disabled={refreshing}
               className="btn btn-ghost text-white hover:bg-white/20"
             >
-              <FiRefreshCw className={`text-xl ${refreshing ? 'animate-spin' : ''}`} />
+              <FiRefreshCw className={`text-xl ${refreshing ? "animate-spin" : ""}`} />
               Refresh
             </motion.button>
           </div>
@@ -229,7 +225,7 @@ const Dashboard = () => {
           <StatsCard
             icon={FiCheckCircle}
             title="Problems Solved"
-            value={loading ? '...' : dashboardData.stats?.solvedCount || 0}
+            value={loading ? "..." : dashboardData.stats?.solvedCount || 0}
             subtitle="Keep it up!"
             color="from-green-500 to-emerald-600"
             delay={0.2}
@@ -237,7 +233,7 @@ const Dashboard = () => {
           <StatsCard
             icon={FiZap}
             title="Current Streak"
-            value={loading ? '...' : `${dashboardData.stats?.streak || 0} days`}
+            value={loading ? "..." : `${dashboardData.stats?.streak || 0} days`}
             subtitle="Don't break the chain"
             color="from-orange-500 to-red-600"
             delay={0.3}
@@ -245,15 +241,15 @@ const Dashboard = () => {
           <StatsCard
             icon={FiList}
             title="Total Submissions"
-            value={loading ? '...' : dashboardData.stats?.totalSubmissions || 0}
+            value={loading ? "..." : dashboardData.stats?.totalSubmissions || 0}
             subtitle="All attempts"
             color="from-blue-500 to-cyan-600"
             delay={0.4}
           />
           <StatsCard
-            icon={FiTrophy}
+            icon={FiAward}
             title="Global Rank"
-            value={loading ? '...' : dashboardData.stats?.rank || 'N/A'}
+            value={loading ? "..." : dashboardData.stats?.rank || "N/A"}
             subtitle="Your ranking"
             color="from-purple-500 to-pink-600"
             delay={0.5}
@@ -263,24 +259,15 @@ const Dashboard = () => {
         {/* Two Column Layout: Recent Submissions & Recommended Problems */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mb-8">
           {/* Recent Submissions */}
-          <RecentSubmissions 
-            submissions={dashboardData.submissions} 
-            loading={loading}
-          />
+          <RecentSubmissions submissions={dashboardData.submissions} loading={loading} />
 
           {/* Activity Heatmap */}
-          <ActivityHeatmap 
-            activity={dashboardData.activity} 
-            loading={loading}
-          />
+          <ActivityHeatmap activity={dashboardData.activity} loading={loading} />
         </div>
 
         {/* Recommended Problems (Full Width) */}
         <div className="mb-8">
-          <RecommendedProblems 
-            problems={dashboardData.recommendedProblems} 
-            loading={loading}
-          />
+          <RecommendedProblems problems={dashboardData.recommendedProblems} loading={loading} />
         </div>
 
         {/* Footer Message */}
