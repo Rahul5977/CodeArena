@@ -242,18 +242,23 @@ const ProblemDetails = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-base-100 flex items-center justify-center">
-        <div className="loading loading-spinner loading-lg text-primary"></div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-teal-950 to-pink-950 flex items-center justify-center">
+        <div className="relative">
+          <div className="w-16 h-16 border-4 border-teal-400/30 border-t-teal-400 rounded-full animate-spin"></div>
+        </div>
       </div>
     );
   }
 
   if (!problem) {
     return (
-      <div className="min-h-screen bg-base-100 flex items-center justify-center">
-        <div className="text-center">
-          <h2 className="text-2xl font-bold text-error mb-4">Problem not found</h2>
-          <button onClick={() => navigate("/problems")} className="btn btn-primary">
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-teal-950 to-pink-950 flex items-center justify-center">
+        <div className="text-center bg-slate-900/80 backdrop-blur-xl border border-white/10 rounded-2xl p-8">
+          <h2 className="text-2xl font-bold text-white mb-4">Problem not found</h2>
+          <button
+            onClick={() => navigate("/problems")}
+            className="px-6 py-3 bg-gradient-to-r from-teal-500 to-pink-500 hover:from-teal-600 hover:to-pink-600 text-white font-semibold rounded-xl transition-all"
+          >
             Back to Problems
           </button>
         </div>
@@ -262,27 +267,29 @@ const ProblemDetails = () => {
   }
 
   return (
-    <div className="h-screen bg-base-100 flex flex-col overflow-hidden">
+    <div className="h-screen bg-gradient-to-br from-slate-950 via-teal-950 to-pink-950 flex flex-col overflow-hidden">
       {/* Header */}
       <motion.div
         initial={{ opacity: 0, y: -20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="bg-base-200 border-b border-base-300 px-4 py-3 flex items-center justify-between flex-shrink-0"
+        className="bg-slate-900/80 backdrop-blur-xl border-b border-white/10 px-4 py-3 flex items-center justify-between flex-shrink-0 shadow-lg"
       >
         <div className="flex items-center gap-4">
           <button
             onClick={() => navigate("/problems")}
-            className="btn btn-ghost btn-sm gap-2"
+            className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white transition-all flex items-center gap-2"
             title="Back to Problems"
           >
             <FiArrowLeft size={18} />
             <span className="hidden sm:inline">Back</span>
           </button>
-          <h1 className="text-lg font-bold text-base-content truncate max-w-md">{problem.title}</h1>
+          <h1 className="text-lg font-bold bg-gradient-to-r from-teal-400 to-pink-400 bg-clip-text text-transparent truncate max-w-md">
+            {problem.title}
+          </h1>
         </div>
         <button
           onClick={toggleFullscreen}
-          className="btn btn-ghost btn-sm"
+          className="px-3 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-lg text-white transition-all"
           title={isFullscreen ? "Exit Fullscreen" : "Fullscreen"}
         >
           {isFullscreen ? <FiMinimize2 size={18} /> : <FiMaximize2 size={18} />}
@@ -372,14 +379,14 @@ const ProblemDetails = () => {
         }
 
         .gutter {
-          background-color: oklch(var(--b3));
+          background-color: rgba(148, 163, 184, 0.1);
           background-repeat: no-repeat;
           background-position: 50%;
           transition: background-color 0.2s;
         }
 
         .gutter:hover {
-          background-color: oklch(var(--p) / 0.3);
+          background-color: rgba(20, 184, 166, 0.2);
         }
 
         .gutter.gutter-horizontal {

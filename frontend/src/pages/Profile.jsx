@@ -17,7 +17,7 @@ import {
 } from "react-icons/fi";
 import useAuthStore from "../stores/authStore";
 import { useToastContext } from "../contexts/ToastContext";
-import Navbar from "../components/Navbar";
+import Navbar2 from "../components/Navbar2";
 import apiClient from "../lib/apiClient";
 
 const changePasswordSchema = z
@@ -78,19 +78,26 @@ const Profile = () => {
   const getRoleBadgeColor = (role) => {
     switch (role) {
       case "SUPERADMIN":
-        return "bg-red-500/20 text-red-400 border-red-500/30";
+        return "bg-pink-500/20 text-pink-400 border-pink-500/30";
       case "ADMIN":
-        return "bg-yellow-500/20 text-yellow-400 border-yellow-500/30";
+        return "bg-teal-500/20 text-teal-400 border-teal-500/30";
       default:
         return "bg-blue-500/20 text-blue-400 border-blue-500/30";
     }
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
-      <Navbar />
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-teal-950 to-pink-950 relative">
+      {/* Animated Background Blobs */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute top-0 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob"></div>
+        <div className="absolute top-0 right-1/4 w-96 h-96 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-2000"></div>
+        <div className="absolute bottom-0 left-1/3 w-96 h-96 bg-purple-500/10 rounded-full mix-blend-multiply filter blur-3xl animate-blob animation-delay-4000"></div>
+      </div>
 
-      <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8">
+      <Navbar2 />
+
+      <div className="pt-24 pb-12 px-4 sm:px-6 lg:px-8 relative z-10">
         <div className="max-w-4xl mx-auto">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -99,7 +106,7 @@ const Profile = () => {
           >
             {/* Header */}
             <div className="mb-8">
-              <h1 className="text-4xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent mb-2">
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-pink-400 bg-clip-text text-transparent mb-2">
                 Profile Settings
               </h1>
               <p className="text-gray-400">Manage your account settings and preferences</p>
@@ -111,10 +118,10 @@ const Profile = () => {
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.2 }}
-                className="lg:col-span-1 bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6"
+                className="lg:col-span-1 bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-2xl"
               >
                 <div className="text-center">
-                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-blue-600 to-purple-600 rounded-full mb-4">
+                  <div className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-r from-teal-500 to-pink-500 rounded-full mb-4 shadow-lg">
                     <span className="text-3xl font-bold text-white">
                       {user?.name?.charAt(0).toUpperCase()}
                     </span>
@@ -133,7 +140,7 @@ const Profile = () => {
 
                 <div className="mt-6 pt-6 border-t border-white/10 space-y-3">
                   <div className="flex items-center gap-3 text-gray-300">
-                    <FiCalendar className="text-blue-400" />
+                    <FiCalendar className="text-teal-400" />
                     <div>
                       <p className="text-xs text-gray-500">Member Since</p>
                       <p className="text-sm">
@@ -147,7 +154,7 @@ const Profile = () => {
                     </div>
                   </div>
                   <div className="flex items-center gap-3 text-gray-300">
-                    <FiMail className="text-purple-400" />
+                    <FiMail className="text-pink-400" />
                     <div>
                       <p className="text-xs text-gray-500">Email Status</p>
                       <p className="text-sm flex items-center gap-1">
@@ -167,9 +174,9 @@ const Profile = () => {
                 className="lg:col-span-2 space-y-6"
               >
                 {/* Account Information */}
-                <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-2xl">
                   <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <FiUser className="text-blue-400" />
+                    <FiUser className="text-teal-400" />
                     Account Information
                   </h3>
                   <div className="space-y-4">
@@ -181,7 +188,7 @@ const Profile = () => {
                         type="text"
                         value={user?.name || ""}
                         disabled
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white cursor-not-allowed"
+                        className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-white cursor-not-allowed"
                       />
                     </div>
                     <div>
@@ -192,7 +199,7 @@ const Profile = () => {
                         type="email"
                         value={user?.email || ""}
                         disabled
-                        className="w-full px-4 py-3 bg-white/5 border border-white/10 rounded-xl text-white cursor-not-allowed"
+                        className="w-full px-4 py-3 bg-slate-800/50 border border-white/10 rounded-xl text-white cursor-not-allowed"
                       />
                     </div>
                     <p className="text-xs text-gray-500 mt-2">
@@ -202,9 +209,9 @@ const Profile = () => {
                 </div>
 
                 {/* Change Password */}
-                <div className="bg-white/5 backdrop-blur-xl rounded-2xl border border-white/10 p-6">
+                <div className="bg-slate-900/80 backdrop-blur-xl rounded-2xl border border-white/10 p-6 shadow-2xl">
                   <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
-                    <FiLock className="text-purple-400" />
+                    <FiLock className="text-pink-400" />
                     Change Password
                   </h3>
                   <form onSubmit={handleSubmit(onChangePassword)} className="space-y-4">
@@ -217,9 +224,9 @@ const Profile = () => {
                         <input
                           {...register("oldPassword")}
                           type={showOldPassword ? "text" : "password"}
-                          className={`w-full px-4 py-3 pr-12 bg-white/10 border ${
+                          className={`w-full px-4 py-3 pr-12 bg-slate-800/50 border ${
                             errors.oldPassword ? "border-red-500" : "border-white/20"
-                          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-all`}
+                          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-teal-400 transition-all`}
                           placeholder="Enter current password"
                         />
                         <button
@@ -246,9 +253,9 @@ const Profile = () => {
                         <input
                           {...register("newPassword")}
                           type={showNewPassword ? "text" : "password"}
-                          className={`w-full px-4 py-3 pr-12 bg-white/10 border ${
+                          className={`w-full px-4 py-3 pr-12 bg-slate-800/50 border ${
                             errors.newPassword ? "border-red-500" : "border-white/20"
-                          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-all`}
+                          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-teal-400 transition-all`}
                           placeholder="Enter new password"
                         />
                         <button
@@ -275,9 +282,9 @@ const Profile = () => {
                         <input
                           {...register("confirmPassword")}
                           type={showConfirmPassword ? "text" : "password"}
-                          className={`w-full px-4 py-3 pr-12 bg-white/10 border ${
+                          className={`w-full px-4 py-3 pr-12 bg-slate-800/50 border ${
                             errors.confirmPassword ? "border-red-500" : "border-white/20"
-                          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-purple-400 transition-all`}
+                          } rounded-xl text-white placeholder-gray-400 focus:outline-none focus:border-teal-400 transition-all`}
                           placeholder="Confirm new password"
                         />
                         <button
@@ -301,7 +308,7 @@ const Profile = () => {
                       whileTap={{ scale: 0.98 }}
                       type="submit"
                       disabled={isChangingPassword}
-                      className="w-full py-3 px-4 bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                      className="w-full py-3 px-4 bg-gradient-to-r from-teal-500 to-pink-500 hover:from-teal-600 hover:to-pink-600 text-white font-semibold rounded-xl shadow-lg hover:shadow-xl transition-all duration-300 flex items-center justify-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
                     >
                       {isChangingPassword ? (
                         <>
