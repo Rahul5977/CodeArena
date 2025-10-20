@@ -1,14 +1,11 @@
 import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
-import { motion } from "framer-motion";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { z } from "zod";
-import { FiEye, FiEyeOff, FiMail, FiLock, FiCode, FiAlertCircle } from "react-icons/fi";
+import { FiEye, FiEyeOff, FiMail, FiLock, FiLogIn, FiArrowRight } from "react-icons/fi";
 import useAuthStore from "../../stores/authStore";
 import { useToastContext } from "../../contexts/ToastContext";
-import Button from "../../components/ui/Button";
-import Input from "../../components/ui/Input";
 
 // Validation schema
 const loginSchema = z.object({
@@ -18,6 +15,7 @@ const loginSchema = z.object({
 
 const Login = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [focusedField, setFocusedField] = useState(null);
   const navigate = useNavigate();
   const location = useLocation();
   const { login, isLoading } = useAuthStore();
@@ -49,165 +47,215 @@ const Login = () => {
     }
   };
 
-  return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-slate-900 to-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
-      {/* Animated Background Elements */}
-      <div className="absolute inset-0 overflow-hidden">
-        <motion.div
-          animate={{
-            scale: [1, 1.2, 1],
-            rotate: [0, 90, 0],
-          }}
-          transition={{
-            duration: 20,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute top-1/4 left-1/4 w-96 h-96 bg-teal-500/10 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1.2, 1, 1.2],
-            rotate: [90, 0, 90],
-          }}
-          transition={{
-            duration: 25,
-            repeat: Infinity,
-            ease: "linear",
-          }}
-          className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-slate-700/20 rounded-full blur-3xl"
-        />
-        <motion.div
-          animate={{
-            scale: [1, 1.3, 1],
-            opacity: [0.3, 0.5, 0.3],
-          }}
-          transition={{
-            duration: 15,
-            repeat: Infinity,
-            ease: "easeInOut",
-          }}
-          className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-96 h-96 bg-teal-400/5 rounded-full blur-3xl"
-        />
-      </div>
+  // Generate floating particles
+  const particles = [];
+  for (let i = 0; i < 20; i++) {
+    particles.push({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 2}s`,
+      duration: `${3 + Math.random() * 4}s`,
+    });
+  }
 
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="relative w-full max-w-md z-10"
-      >
-        {/* Logo and Header */}
-        <div className="text-center mb-8">
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            transition={{ type: "spring", duration: 0.6 }}
-            className="inline-flex items-center justify-center w-20 h-20 bg-gradient-to-r from-teal-500 to-teal-600 rounded-2xl mb-6 shadow-2xl shadow-teal-500/20"
-          >
-            <FiCode className="text-white text-3xl" />
-          </motion.div>
-          <motion.h1
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.2 }}
-            className="text-5xl font-bold bg-gradient-to-r from-teal-400 to-teal-500 bg-clip-text text-transparent mb-3"
-          >
-            LeetLab
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="text-slate-400 text-lg"
-          >
-            Welcome back to your coding journey
-          </motion.p>
+  return (
+    <>
+      <style>{`
+        @keyframes slideInFromBottom {
+          from { opacity: 0; transform: translateY(2rem); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.4; }
+        }
+        .floating-particle { animation: float 3s ease-in-out infinite; }
+        .pulse-bg { animation: pulse 3s ease-in-out infinite; }
+        .pulse-bg-delay-1 { animation: pulse 3s ease-in-out infinite; animation-delay: 1s; }
+        .pulse-bg-delay-2 { animation: pulse 3s ease-in-out infinite; animation-delay: 0.5s; }
+      `}</style>
+
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex items-center justify-center p-4 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="pulse-bg absolute -top-40 -right-40 w-80 h-80 bg-teal-500/20 rounded-full mix-blend-multiply filter blur-3xl" />
+          <div className="pulse-bg-delay-1 absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl" />
+          <div className="pulse-bg-delay-2 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-3xl" />
         </div>
 
-        {/* Login Card */}
-        <motion.div
-          initial={{ opacity: 0, scale: 0.9 }}
-          animate={{ opacity: 1, scale: 1 }}
-          transition={{ delay: 0.4 }}
-          className="bg-slate-800/50 backdrop-blur-xl rounded-3xl shadow-2xl border border-slate-700/50 p-8 hover:bg-slate-800/60 transition-all duration-300"
-        >
-          <div className="mb-8 text-center">
-            <h2 className="text-2xl font-bold text-white mb-2">Log In</h2>
-            <p className="text-slate-400">Continue your coding excellence</p>
-          </div>
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-            {/* Email Field */}
-            <Input
-              label="Email Address"
-              type="email"
-              placeholder="Enter your email"
-              leftIcon={<FiMail />}
-              error={errors.email?.message}
-              fullWidth
-              {...register("email")}
+        {/* Floating particles */}
+        <div className="absolute inset-0">
+          {particles.map((particle) => (
+            <div
+              key={particle.id}
+              className="floating-particle absolute w-1 h-1 bg-white rounded-full opacity-30"
+              style={{
+                left: particle.left,
+                top: particle.top,
+                animationDelay: particle.delay,
+                animationDuration: particle.duration,
+              }}
             />
+          ))}
+        </div>
 
-            {/* Password Field */}
-            <Input
-              label="Password"
-              type="password"
-              placeholder="Enter your password"
-              leftIcon={<FiLock />}
-              error={errors.password?.message}
-              fullWidth
-              {...register("password")}
-            />
-
-            {/* Forgot Password Link */}
-            <div className="flex justify-end">
-              <Link
-                to="/forgot-password"
-                className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
-              >
-                Forgot password?
-              </Link>
+        {/* Main Card */}
+        <div className="relative w-full max-w-md z-10 animate-[slideInFromBottom_1s_ease-out]">
+          {/* Header */}
+          <div className="text-center mb-8">
+            <div className="inline-flex items-center justify-center w-12 h-12 bg-gradient-to-r from-teal-500 to-pink-500 rounded-xl mb-4 transition-transform hover:scale-110">
+              <FiLogIn className="w-6 h-6 text-white" />
             </div>
-
-            {/* Submit Button */}
-            <Button type="submit" variant="primary" fullWidth loading={isLoading} size="lg">
-              Log In
-            </Button>
-          </form>
-
-          {/* Divider */}
-          <div className="my-6 flex items-center gap-4">
-            <div className="flex-1 h-px bg-slate-700/50" />
-            <span className="text-slate-400 text-sm">OR</span>
-            <div className="flex-1 h-px bg-slate-700/50" />
+            <h1 className="text-2xl font-bold text-white mb-2">Welcome Back</h1>
+            <p className="text-slate-400 text-sm">Sign in to your account to continue</p>
           </div>
 
-          {/* Sign Up Link */}
-          <div className="text-center">
-            <p className="text-slate-400">
-              Don't have an account?{" "}
-              <Link
-                to="/register"
-                className="text-teal-400 hover:text-teal-300 font-semibold transition-colors"
+          {/* Login Card */}
+          <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl shadow-2xl border border-slate-700/50 p-8">
+            <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
+              {/* Email Field */}
+              <div className="relative">
+                <label
+                  htmlFor="email"
+                  className={`block text-sm mb-2 transition-colors ${
+                    focusedField === "email" ? "text-purple-400" : "text-slate-400"
+                  }`}
+                >
+                  Email
+                </label>
+                <div className="relative">
+                  <FiMail
+                    className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors ${
+                      focusedField === "email" ? "text-purple-400" : "text-slate-400"
+                    }`}
+                  />
+                  <input
+                    id="email"
+                    type="email"
+                    placeholder="john@example.com"
+                    className={`w-full pl-10 pr-4 py-3 bg-slate-700/50 border rounded-lg text-white text-sm outline-none transition-all ${
+                      focusedField === "email"
+                        ? "border-teal-500 shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
+                        : errors.email
+                        ? "border-red-500"
+                        : "border-slate-600"
+                    }`}
+                    onFocus={() => setFocusedField("email")}
+                    onBlur={() => setFocusedField(null)}
+                    {...register("email")}
+                  />
+                  <div
+                    className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-teal-500 to-pink-500 transition-all duration-300 ${
+                      focusedField === "email" ? "w-full" : "w-0"
+                    }`}
+                  />
+                </div>
+                {errors.email && (
+                  <p className="text-red-400 text-xs mt-1">{errors.email.message}</p>
+                )}
+              </div>
+
+              {/* Password Field */}
+              <div className="relative">
+                <label
+                  htmlFor="password"
+                  className={`block text-sm mb-2 transition-colors ${
+                    focusedField === "password" ? "text-purple-400" : "text-slate-400"
+                  }`}
+                >
+                  Password
+                </label>
+                <div className="relative">
+                  <FiLock
+                    className={`absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 transition-colors ${
+                      focusedField === "password" ? "text-purple-400" : "text-slate-400"
+                    }`}
+                  />
+                  <input
+                    id="password"
+                    type={showPassword ? "text" : "password"}
+                    placeholder="••••••••"
+                    className={`w-full pl-10 pr-10 py-3 bg-slate-700/50 border rounded-lg text-white text-sm outline-none transition-all ${
+                      focusedField === "password"
+                        ? "border-teal-500 shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
+                        : errors.password
+                        ? "border-red-500"
+                        : "border-slate-600"
+                    }`}
+                    onFocus={() => setFocusedField("password")}
+                    onBlur={() => setFocusedField(null)}
+                    {...register("password")}
+                  />
+                  <button
+                    type="button"
+                    onClick={() => setShowPassword(!showPassword)}
+                    className="absolute right-3 top-1/2 transform -translate-y-1/2 text-slate-400 hover:text-white transition-colors"
+                  >
+                    {showPassword ? (
+                      <FiEyeOff className="w-4 h-4" />
+                    ) : (
+                      <FiEye className="w-4 h-4" />
+                    )}
+                  </button>
+                  <div
+                    className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-teal-500 to-pink-500 transition-all duration-300 ${
+                      focusedField === "password" ? "w-full" : "w-0"
+                    }`}
+                  />
+                </div>
+                {errors.password && (
+                  <p className="text-red-400 text-xs mt-1">{errors.password.message}</p>
+                )}
+              </div>
+
+              {/* Forgot Password */}
+              <div className="flex justify-end">
+                <Link
+                  to="/forgot-password"
+                  className="text-sm text-purple-400 hover:text-purple-300 transition-colors"
+                >
+                  Forgot password?
+                </Link>
+              </div>
+
+              {/* Submit Button */}
+              <button
+                type="submit"
+                disabled={isLoading}
+                className="group w-full py-3 px-4 bg-gradient-to-r from-teal-500 to-pink-500 hover:from-teal-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all duration-300 flex items-center justify-center gap-2 hover:scale-105 hover:shadow-lg disabled:opacity-50 disabled:cursor-not-allowed"
               >
-                Sign up now
-              </Link>
-            </p>
-          </div>
-        </motion.div>
+                {isLoading ? (
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                ) : (
+                  <>
+                    Sign In
+                    <FiArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </>
+                )}
+              </button>
+            </form>
 
-        {/* Footer */}
-        <motion.p
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.6 }}
-          className="text-center text-slate-400 text-sm mt-8"
-        >
-          © 2024 LeetLab. All rights reserved.
-        </motion.p>
-      </motion.div>
-    </div>
+            {/* Sign Up Link */}
+            <div className="text-center mt-6">
+              <p className="text-slate-400 text-sm">
+                Don't have an account?{" "}
+                <Link
+                  to="/register"
+                  className="text-purple-400 hover:text-purple-300 font-semibold transition-colors"
+                >
+                  Sign up
+                </Link>
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </>
   );
 };
 
