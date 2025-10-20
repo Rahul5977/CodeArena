@@ -6,7 +6,6 @@ import Login from "./pages/auth/Login";
 import Register from "./pages/auth/Register";
 import ForgotPassword from "./pages/auth/ForgotPassword";
 import ResetPassword from "./pages/auth/ResetPassword";
-import Home from "./pages/Home";
 import Dashboard from "./pages/Dashboard";
 import Problems from "./pages/problems/Problems";
 import ProblemDetails from "./pages/problems/ProblemDetails";
@@ -54,17 +53,9 @@ function App() {
         <Route path="/forgot-password" element={<ForgotPassword />} />
         <Route path="/reset-password/:token" element={<ResetPassword />} />
 
-        {/* Protected Routes */}
+        {/* Protected Routes - Dashboard */}
         <Route
           path="/"
-          element={
-            <ProtectedRoute>
-              <Home />
-            </ProtectedRoute>
-          }
-        />
-        <Route
-          path="/dashboard"
           element={
             <ProtectedRoute>
               <Layout />
