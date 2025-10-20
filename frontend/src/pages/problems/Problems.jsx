@@ -153,30 +153,30 @@ const Problems = () => {
         .pulse-bg-delay-2 { animation: pulse 3s ease-in-out infinite; animation-delay: 0.5s; }
       `}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 relative overflow-hidden">
-        {/* Animated background elements */}
-        <div className="absolute inset-0 overflow-hidden">
-          <div className="pulse-bg absolute -top-40 -right-40 w-80 h-80 bg-teal-500/20 rounded-full mix-blend-multiply filter blur-3xl" />
-          <div className="pulse-bg-delay-1 absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl" />
-          <div className="pulse-bg-delay-2 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-3xl" />
-        </div>
+      {/* Animated background elements - Fixed position */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none">
+        <div className="pulse-bg absolute -top-40 -right-40 w-80 h-80 bg-teal-500/20 rounded-full mix-blend-multiply filter blur-3xl" />
+        <div className="pulse-bg-delay-1 absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl" />
+        <div className="pulse-bg-delay-2 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-3xl" />
+      </div>
 
-        {/* Floating particles */}
-        <div className="absolute inset-0 pointer-events-none">
-          {particles.map((particle) => (
-            <div
-              key={particle.id}
-              className="floating-particle absolute w-1 h-1 bg-white rounded-full opacity-30"
-              style={{
-                left: particle.left,
-                top: particle.top,
-                animationDelay: particle.delay,
-                animationDuration: particle.duration,
-              }}
-            />
-          ))}
-        </div>
+      {/* Floating particles - Fixed position */}
+      <div className="fixed inset-0 pointer-events-none">
+        {particles.map((particle) => (
+          <div
+            key={particle.id}
+            className="floating-particle absolute w-1 h-1 bg-white rounded-full opacity-30"
+            style={{
+              left: particle.left,
+              top: particle.top,
+              animationDelay: particle.delay,
+              animationDuration: particle.duration,
+            }}
+          />
+        ))}
+      </div>
 
+      <div className="relative">
         <div className="relative z-10 space-y-6 px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
           {/* Header */}
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">

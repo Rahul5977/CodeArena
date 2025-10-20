@@ -50,18 +50,18 @@ const Navbar = () => {
   ];
 
   return (
-    <nav className="sticky top-0 z-50 bg-dark-bg-secondary/95 dark:bg-dark-bg-secondary/95 backdrop-blur-xl border-b border-dark-border-DEFAULT dark:border-dark-border-DEFAULT shadow-dark-md">
+    <nav className="fixed top-0 left-0 right-0 z-50 bg-slate-900/80 backdrop-blur-xl border-b border-slate-700/50 shadow-2xl">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-3 group">
             <div className="relative">
-              <div className="absolute inset-0 bg-brand-primary rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
-              <div className="relative w-10 h-10 bg-gradient-to-br from-brand-primary to-brand-secondary rounded-lg flex items-center justify-center shadow-glow-sm group-hover:shadow-glow-md transition-all duration-300">
+              <div className="absolute inset-0 bg-teal-500 rounded-lg blur-md opacity-50 group-hover:opacity-75 transition-opacity"></div>
+              <div className="relative w-10 h-10 bg-gradient-to-br from-teal-500 to-pink-500 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-teal-500/50 transition-all duration-300">
                 <FiCode className="text-white text-xl" />
               </div>
             </div>
-            <span className="text-2xl font-bold font-display bg-gradient-to-r from-brand-primary via-brand-secondary to-brand-accent bg-clip-text text-transparent">
+            <span className="text-2xl font-bold bg-gradient-to-r from-teal-400 to-pink-500 bg-clip-text text-transparent">
               LeetLab
             </span>
           </Link>
@@ -75,8 +75,8 @@ const Navbar = () => {
                   to={link.to}
                   className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActivePath(link.to)
-                      ? "bg-brand-primary/10 text-brand-primary border border-brand-primary/30"
-                      : "text-dark-text-secondary dark:text-dark-text-secondary hover:text-brand-primary dark:hover:text-brand-primary hover:bg-dark-bg-tertiary dark:hover:bg-dark-bg-tertiary"
+                      ? "bg-teal-500/20 text-teal-400 border border-teal-500/50"
+                      : "text-slate-300 hover:text-teal-400 hover:bg-slate-800/50"
                   }`}
                 >
                   <link.icon className="w-4 h-4" />
@@ -114,7 +114,7 @@ const Navbar = () => {
               <>
                 {/* Profile Button */}
                 <Link to="/profile">
-                  <button className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-brand-primary to-brand-secondary text-white text-sm font-medium hover:shadow-glow-md transition-all duration-200 hover:scale-105 active:scale-95">
+                  <button className="flex items-center space-x-2 px-4 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-pink-500 hover:from-teal-600 hover:to-pink-600 text-white text-sm font-medium shadow-lg hover:shadow-teal-500/50 transition-all duration-200 hover:scale-105 active:scale-95">
                     <FiUser className="w-4 h-4" />
                     <span>{user?.name || "Profile"}</span>
                     {user?.role && (
@@ -137,12 +137,12 @@ const Navbar = () => {
             ) : (
               <>
                 <Link to="/login">
-                  <button className="px-4 py-2 rounded-lg text-sm font-medium text-dark-text-secondary dark:text-dark-text-secondary hover:text-brand-primary dark:hover:text-brand-primary hover:bg-dark-bg-tertiary dark:hover:bg-dark-bg-tertiary transition-all duration-200">
+                  <button className="px-4 py-2 rounded-lg text-sm font-medium text-slate-300 hover:text-teal-400 hover:bg-slate-800/50 transition-all duration-200">
                     Login
                   </button>
                 </Link>
                 <Link to="/register">
-                  <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-brand-primary to-brand-secondary text-white text-sm font-medium hover:shadow-glow-md transition-all duration-200 hover:scale-105 active:scale-95">
+                  <button className="px-4 py-2 rounded-lg bg-gradient-to-r from-teal-500 to-pink-500 hover:from-teal-600 hover:to-pink-600 text-white text-sm font-medium shadow-lg hover:shadow-teal-500/50 transition-all duration-200 hover:scale-105 active:scale-95">
                     Sign Up
                   </button>
                 </Link>
@@ -153,7 +153,7 @@ const Navbar = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={() => setIsOpen(!isOpen)}
-            className="md:hidden p-2 rounded-lg bg-dark-bg-tertiary dark:bg-dark-bg-tertiary text-dark-text-primary dark:text-dark-text-primary hover:bg-dark-bg-hover dark:hover:bg-dark-bg-hover transition-all duration-200"
+            className="md:hidden p-2 rounded-lg bg-slate-800/50 text-white hover:bg-slate-800/70 transition-all duration-200"
           >
             {isOpen ? <FiX className="w-6 h-6" /> : <FiMenu className="w-6 h-6" />}
           </button>
@@ -162,13 +162,11 @@ const Navbar = () => {
 
       {/* Mobile Menu */}
       {isOpen && (
-        <div className="md:hidden bg-dark-bg-secondary/98 dark:bg-dark-bg-secondary/98 backdrop-blur-xl border-t border-dark-border-DEFAULT dark:border-dark-border-DEFAULT animate-fade-in">
+        <div className="md:hidden bg-slate-900/95 backdrop-blur-xl border-t border-slate-700/50 animate-fade-in">
           <div className="px-4 py-4 space-y-2">
             {/* Theme Toggle Mobile */}
-            <div className="flex items-center justify-between pb-3 mb-3 border-b border-dark-border-DEFAULT dark:border-dark-border-DEFAULT">
-              <span className="text-sm font-medium text-dark-text-secondary dark:text-dark-text-secondary">
-                Theme
-              </span>
+            <div className="flex items-center justify-between pb-3 mb-3 border-b border-slate-700/50">
+              <span className="text-sm font-medium text-slate-300">Theme</span>
               <ThemeToggle />
             </div>
 
@@ -180,8 +178,8 @@ const Navbar = () => {
                   onClick={() => setIsOpen(false)}
                   className={`flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                     isActivePath(link.to)
-                      ? "bg-brand-primary/10 text-brand-primary border border-brand-primary/30"
-                      : "text-dark-text-secondary dark:text-dark-text-secondary hover:text-brand-primary dark:hover:text-brand-primary hover:bg-dark-bg-tertiary dark:hover:bg-dark-bg-tertiary"
+                      ? "bg-teal-500/20 text-teal-400 border border-teal-500/50"
+                      : "text-slate-300 hover:text-teal-400 hover:bg-slate-800/50"
                   }`}
                 >
                   <link.icon className="w-5 h-5" />
@@ -208,11 +206,11 @@ const Navbar = () => {
 
             {isAuthenticated && (
               <>
-                <div className="border-t border-dark-border-DEFAULT dark:border-dark-border-DEFAULT my-3"></div>
+                <div className="border-t border-slate-700/50 my-3"></div>
                 <Link
                   to="/profile"
                   onClick={() => setIsOpen(false)}
-                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium bg-gradient-to-r from-brand-primary to-brand-secondary text-white"
+                  className="flex items-center space-x-3 px-4 py-3 rounded-lg text-sm font-medium bg-gradient-to-r from-teal-500 to-pink-500 text-white"
                 >
                   <FiUser className="w-5 h-5" />
                   <span>{user?.name || "Profile"}</span>
