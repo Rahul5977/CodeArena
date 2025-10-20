@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import Editor from "@monaco-editor/react";
 import PropTypes from "prop-types";
-import { FiChevronDown } from "react-icons/fi";
+import { FiChevronDown, FiRefreshCw } from "react-icons/fi";
 
 /**
  * CodeEditor Component - Monaco Editor with language selection and code templates
@@ -11,8 +11,16 @@ import { FiChevronDown } from "react-icons/fi";
  * @param {string} props.language - Current selected language
  * @param {Function} props.onLanguageChange - Language change handler
  * @param {Object} props.codeSnippets - Code templates from backend
+ * @param {string} props.problemId - Problem ID for localStorage
  */
-const CodeEditor = ({ code, onChange, language, onLanguageChange, codeSnippets = {} }) => {
+const CodeEditor = ({
+  code,
+  onChange,
+  language,
+  onLanguageChange,
+  codeSnippets = {},
+  problemId,
+}) => {
   const [editorTheme, setEditorTheme] = useState("vs-dark");
 
   /**
@@ -80,6 +88,19 @@ const CodeEditor = ({ code, onChange, language, onLanguageChange, codeSnippets =
   };
 
   /**
+   * Reset code to default template
+   */
+  const handleResetCode = () => {
+    if (window.confirm("Are you sure you want to reset your code to the default template?")) {
+      onChange(getCodeTemplate(language));
+      // Clear localStorage for this problem
+      if (problemId) {
+        localStorage.removeItem(`problem_${problemId}_code`);
+      }
+    }
+  };
+
+  /**
    * Monaco Editor options
    */
   const editorOptions = {
@@ -116,16 +137,16 @@ const CodeEditor = ({ code, onChange, language, onLanguageChange, codeSnippets =
   }, []);
 
   return (
-    <div className="flex flex-col h-full bg-base-200 dark:bg-base-300 rounded-lg overflow-hidden">
-      {/* Language Selector */}
-      <div className="flex items-center justify-between p-3 border-b border-base-content/10 bg-base-100 dark:bg-base-200">
+    <div className="flex flex-col h-full bg-slate-900/20 rounded-lg overflow-hidden backdrop-blur-sm">
+      {/* Language Selector - Glassmorphism */}
+      <div className="flex items-center justify-between p-3 border-b border-white/10 bg-slate-800/30 backdrop-blur-xl">
         <div className="flex items-center gap-3">
-          <label className="text-sm font-semibold text-base-content/70">Language:</label>
+          <label className="text-sm font-semibold text-gray-300">Language:</label>
           <div className="relative">
             <select
               value={language}
               onChange={handleLanguageChange}
-              className="select select-sm select-bordered bg-base-200 dark:bg-base-300 pr-8 cursor-pointer"
+              className="px-3 py-1.5 pr-8 bg-slate-900/50 border border-white/10 rounded-lg text-white text-sm cursor-pointer hover:border-teal-400/50 focus:outline-none focus:border-teal-400 transition-all"
             >
               {languages.map((lang) => (
                 <option key={lang.id} value={lang.name}>
@@ -133,16 +154,29 @@ const CodeEditor = ({ code, onChange, language, onLanguageChange, codeSnippets =
                 </option>
               ))}
             </select>
-            <FiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none text-base-content/50" />
+            <FiChevronDown className="absolute right-2 top-1/2 transform -translate-y-1/2 pointer-events-none text-gray-400" />
           </div>
+
+          {/* Reset Code Button */}
+          <button
+            onClick={handleResetCode}
+            className="px-3 py-1.5 bg-slate-900/50 border border-white/10 rounded-lg text-gray-300 text-sm hover:border-orange-400/50 hover:text-orange-400 transition-all flex items-center gap-1.5"
+            title="Reset to default template"
+          >
+            <FiRefreshCw className="text-xs" />
+            <span className="hidden sm:inline">Reset</span>
+          </button>
         </div>
 
-        {/* Editor Theme Toggle (optional) */}
-        <div className="text-xs text-base-content/50">Monaco Editor</div>
+        {/* Editor Theme Badge */}
+        <div className="flex items-center gap-2 text-xs text-gray-400">
+          <div className="w-2 h-2 rounded-full bg-teal-400 animate-pulse"></div>
+          <span>Monaco Editor</span>
+        </div>
       </div>
 
       {/* Monaco Editor */}
-      <div className="flex-1 overflow-hidden">
+      <div className="flex-1 overflow-hidden border border-white/5 rounded-b-lg">
         <Editor
           height="100%"
           language={getMonacoLanguage(language)}
@@ -151,8 +185,11 @@ const CodeEditor = ({ code, onChange, language, onLanguageChange, codeSnippets =
           theme={editorTheme}
           options={editorOptions}
           loading={
-            <div className="flex items-center justify-center h-full">
-              <div className="loading loading-spinner loading-lg text-primary"></div>
+            <div className="flex items-center justify-center h-full bg-slate-900/50">
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 border-4 border-teal-400/30 border-t-teal-400 rounded-full animate-spin"></div>
+                <p className="text-gray-400 text-sm">Loading editor...</p>
+              </div>
             </div>
           }
         />
@@ -167,6 +204,7 @@ CodeEditor.propTypes = {
   language: PropTypes.string.isRequired,
   onLanguageChange: PropTypes.func.isRequired,
   codeSnippets: PropTypes.object,
+  problemId: PropTypes.string,
 };
 
 export default CodeEditor;

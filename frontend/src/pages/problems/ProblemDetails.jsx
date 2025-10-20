@@ -73,6 +73,38 @@ const ProblemDetails = () => {
   };
 
   /**
+   * Load saved code and language from localStorage
+   */
+  useEffect(() => {
+    if (id) {
+      const savedLanguage = localStorage.getItem(`problem_${id}_language`);
+      const savedCode = localStorage.getItem(`problem_${id}_code`);
+
+      if (savedLanguage) {
+        const lang = languages.find((l) => l.name === savedLanguage);
+        if (lang) {
+          setLanguage(savedLanguage);
+          setLanguageId(lang.id);
+        }
+      }
+
+      if (savedCode) {
+        setCode(savedCode);
+      }
+    }
+  }, [id]);
+
+  /**
+   * Save code to localStorage when it changes
+   */
+  useEffect(() => {
+    if (id && code) {
+      localStorage.setItem(`problem_${id}_code`, code);
+      localStorage.setItem(`problem_${id}_language`, language);
+    }
+  }, [id, code, language]);
+
+  /**
    * Fetch problem details
    */
   useEffect(() => {
@@ -83,9 +115,12 @@ const ProblemDetails = () => {
 
         if (response.data.success && response.data.problem) {
           setProblem(response.data.problem);
-          // Set initial code from code snippets
-          const initialCode = getDefaultCode(language);
-          setCode(initialCode);
+          // Set initial code from code snippets only if no saved code
+          const savedCode = localStorage.getItem(`problem_${id}_code`);
+          if (!savedCode) {
+            const initialCode = getDefaultCode(language);
+            setCode(initialCode);
+          }
         } else {
           showError("Error", "Problem not found");
           navigate("/problems");
@@ -156,38 +191,46 @@ const ProblemDetails = () => {
         language_id: languageId,
         stdin: finalStdin,
         expected_outputs: finalExpected,
-        problemId: id,
+        problemId: parseInt(id),
       };
 
       const response = await apiClient.post("/execute-code", payload);
 
       if (response.data.success) {
         setOutput({
-          results: response.data.results,
+          submission: response.data.submission,
         });
 
-        const allPassed = response.data.allPassed;
+        // Show success/failure toast based on overall status
+        const allPassed = response.data.submission.status === "Accepted";
         if (allPassed) {
           showSuccess("Success", "All test cases passed! 🎉");
+        } else {
+          showError("Failed", "Some test cases failed. Check the results below.");
         }
       } else {
         setOutput({
           error: response.data.message || "Execution failed",
         });
+        showError("Error", response.data.message || "Execution failed");
       }
     } catch (error) {
       console.error("Failed to run code:", error);
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to execute code. Please try again.";
       setOutput({
-        error: error.response?.data?.message || "Failed to execute code. Please try again.",
+        error: errorMessage,
       });
-      showError("Error", "Failed to run code");
+      showError("Error", errorMessage);
     } finally {
       setIsRunning(false);
     }
   };
 
   /**
-   * Handle submit code
+   * Handle submit code - Uses same backend endpoint as run
    */
   const handleSubmitCode = async () => {
     if (!code.trim()) {
@@ -197,31 +240,55 @@ const ProblemDetails = () => {
 
     try {
       setIsSubmitting(true);
+      setOutput(null);
 
-      // For now, submit is same as run (backend logic pending)
-      showError(
-        "Info",
-        'Submit functionality is coming soon. Use "Run Code" to test your solution.'
-      );
+      // Get all test cases from problem (not custom input for submit)
+      const stdin = problem.testcases?.map((tc) => tc.input) || [];
+      const expected_outputs = problem.testcases?.map((tc) => tc.output) || [];
 
-      // TODO: Implement proper submit endpoint when backend is ready
-      /*
+      if (stdin.length === 0) {
+        showError("Error", "No test cases available for this problem");
+        return;
+      }
+
       const payload = {
         source_code: code,
         language_id: languageId,
-        problemId: id,
+        stdin,
+        expected_outputs,
+        problemId: parseInt(id),
       };
 
-      const response = await apiClient.post('/execute/submit', payload);
-      
+      const response = await apiClient.post("/execute-code", payload);
+
       if (response.data.success) {
-        showSuccess('Success', 'Code submitted successfully!');
-        // Navigate to submissions or show result
+        setOutput({
+          submission: response.data.submission,
+        });
+
+        // Show success/failure based on overall status
+        const allPassed = response.data.submission.status === "Accepted";
+        if (allPassed) {
+          showSuccess("Accepted", "🎉 Congratulations! All test cases passed!");
+        } else {
+          showError("Not Accepted", "Your solution didn't pass all test cases. Keep trying!");
+        }
+      } else {
+        setOutput({
+          error: response.data.message || "Submission failed",
+        });
+        showError("Error", response.data.message || "Submission failed");
       }
-      */
     } catch (error) {
       console.error("Failed to submit code:", error);
-      showError("Error", error.response?.data?.message || "Failed to submit code");
+      const errorMessage =
+        error.response?.data?.message ||
+        error.response?.data?.error ||
+        "Failed to submit code. Please try again.";
+      setOutput({
+        error: errorMessage,
+      });
+      showError("Error", errorMessage);
     } finally {
       setIsSubmitting(false);
     }
@@ -311,6 +378,7 @@ const ProblemDetails = () => {
                 onChange={setCode}
                 onLanguageChange={handleLanguageChange}
                 codeSnippets={problem.codeSnippets}
+                problemId={id}
               />
             </div>
             <div className="h-64 border-t-4 border-base-300">
@@ -352,6 +420,7 @@ const ProblemDetails = () => {
                   onChange={setCode}
                   onLanguageChange={handleLanguageChange}
                   codeSnippets={problem.codeSnippets}
+                  problemId={id}
                 />
               </div>
 
