@@ -24,6 +24,7 @@ const Problems = () => {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [statusFilter, setStatusFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [focusedField, setFocusedField] = useState(null);
   const { showError } = useToastContext();
 
   const fetchProblems = async () => {
@@ -114,206 +115,282 @@ const Problems = () => {
 
   if (loading) {
     return (
-      <div className="flex justify-center items-center h-96">
-        <span className="loading loading-spinner loading-lg text-primary"></span>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 flex justify-center items-center">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-teal-500 border-t-transparent rounded-full animate-spin"></div>
+          <p className="text-slate-400">Loading problems...</p>
+        </div>
       </div>
     );
   }
 
+  // Generate floating particles
+  const particles = [];
+  for (let i = 0; i < 30; i++) {
+    particles.push({
+      id: i,
+      left: `${Math.random() * 100}%`,
+      top: `${Math.random() * 100}%`,
+      delay: `${Math.random() * 2}s`,
+      duration: `${3 + Math.random() * 4}s`,
+    });
+  }
+
   return (
-    <div className="space-y-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-        <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-teal-500 bg-clip-text text-transparent">
-            Problems
-          </h1>
-          <p className="text-slate-400 mt-1">Sharpen your skills with coding challenges</p>
-        </div>
-      </div>
+    <>
+      <style>{`
+        @keyframes float {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-20px) rotate(180deg); }
+        }
+        @keyframes pulse {
+          0%, 100% { opacity: 0.2; }
+          50% { opacity: 0.4; }
+        }
+        .floating-particle { animation: float 3s ease-in-out infinite; }
+        .pulse-bg { animation: pulse 3s ease-in-out infinite; }
+        .pulse-bg-delay-1 { animation: pulse 3s ease-in-out infinite; animation-delay: 1s; }
+        .pulse-bg-delay-2 { animation: pulse 3s ease-in-out infinite; animation-delay: 0.5s; }
+      `}</style>
 
-      {/* Stats */}
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
-          <div className="stat-title text-xs text-slate-400">Total</div>
-          <div className="stat-value text-2xl text-white">{stats.total}</div>
+      <div className="min-h-screen bg-gradient-to-br from-slate-950 via-purple-950 to-slate-950 relative overflow-hidden">
+        {/* Animated background elements */}
+        <div className="absolute inset-0 overflow-hidden">
+          <div className="pulse-bg absolute -top-40 -right-40 w-80 h-80 bg-teal-500/20 rounded-full mix-blend-multiply filter blur-3xl" />
+          <div className="pulse-bg-delay-1 absolute -bottom-40 -left-40 w-80 h-80 bg-purple-500/20 rounded-full mix-blend-multiply filter blur-3xl" />
+          <div className="pulse-bg-delay-2 absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 w-80 h-80 bg-pink-500/10 rounded-full mix-blend-multiply filter blur-3xl" />
         </div>
-        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
-          <div className="stat-title text-xs text-slate-400">Easy</div>
-          <div className="stat-value text-2xl text-success">{stats.easy}</div>
-        </div>
-        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
-          <div className="stat-title text-xs text-slate-400">Medium</div>
-          <div className="stat-value text-2xl text-warning">{stats.medium}</div>
-        </div>
-        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
-          <div className="stat-title text-xs text-slate-400">Hard</div>
-          <div className="stat-value text-2xl text-error">{stats.hard}</div>
-        </div>
-        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
-          <div className="stat-title text-xs text-slate-400">Solved</div>
-          <div className="stat-value text-2xl text-teal-400">{stats.solved}</div>
-        </div>
-      </div>
 
-      {/* Filters */}
-      <div className="card bg-slate-800/50 border border-slate-700/50 shadow-lg">
-        <div className="card-body">
-          <div className="flex flex-col lg:flex-row gap-4">
-            {/* Search */}
-            <div className="flex-1">
-              <div className="relative">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
-                <input
-                  type="text"
-                  placeholder="Search problems..."
-                  className="input input-bordered w-full pl-10 bg-slate-900/50 border-slate-600 focus:border-teal-500 text-white placeholder-slate-400"
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                />
-              </div>
+        {/* Floating particles */}
+        <div className="absolute inset-0 pointer-events-none">
+          {particles.map((particle) => (
+            <div
+              key={particle.id}
+              className="floating-particle absolute w-1 h-1 bg-white rounded-full opacity-30"
+              style={{
+                left: particle.left,
+                top: particle.top,
+                animationDelay: particle.delay,
+                animationDuration: particle.duration,
+              }}
+            />
+          ))}
+        </div>
+
+        <div className="relative z-10 space-y-6 px-4 sm:px-6 lg:px-8 py-8 max-w-7xl mx-auto">
+          {/* Header */}
+          <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+            <div>
+              <h1 className="text-4xl font-bold bg-gradient-to-r from-teal-400 to-pink-500 bg-clip-text text-transparent">
+                Problems
+              </h1>
+              <p className="text-slate-400 mt-2">Sharpen your skills with coding challenges</p>
             </div>
-
-            {/* Difficulty Filter */}
-            <select
-              className="select select-bordered w-full lg:w-auto bg-slate-900/50 border-slate-600 focus:border-teal-500 text-white"
-              value={difficultyFilter}
-              onChange={(e) => setDifficultyFilter(e.target.value)}
-            >
-              <option value="">All Difficulties</option>
-              <option value="Easy">Easy</option>
-              <option value="Medium">Medium</option>
-              <option value="Hard">Hard</option>
-            </select>
-
-            {/* Category Filter */}
-            <select
-              className="select select-bordered w-full lg:w-auto bg-slate-900/50 border-slate-600 focus:border-teal-500 text-white"
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-            >
-              <option value="">All Categories</option>
-              <option value="Array">Array</option>
-              <option value="String">String</option>
-              <option value="Tree">Tree</option>
-              <option value="Graph">Graph</option>
-              <option value="Dynamic Programming">Dynamic Programming</option>
-            </select>
-
-            {/* Status Filter */}
-            <select
-              className="select select-bordered w-full lg:w-auto bg-slate-900/50 border-slate-600 focus:border-teal-500 text-white"
-              value={statusFilter}
-              onChange={(e) => setStatusFilter(e.target.value)}
-            >
-              <option value="">All Status</option>
-              <option value="solved">Solved</option>
-              <option value="unsolved">Unsolved</option>
-              <option value="bookmarked">Bookmarked</option>
-            </select>
           </div>
-        </div>
-      </div>
 
-      {/* Problems List */}
-      <div className="space-y-4">
-        {filteredProblems.map((problem) => (
-          <div
-            key={problem.id}
-            className="card bg-slate-800/50 border border-slate-700/50 shadow-lg hover:shadow-xl hover:border-teal-500/30 hover:bg-slate-800/70 transition-all"
-          >
-            <div className="card-body">
-              <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
-                {/* Problem Info */}
-                <div className="flex-1">
-                  <div className="flex items-start gap-3 mb-3">
-                    <div className="flex items-center gap-2">
-                      {problem.solved ? (
-                        <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                          <FiCheck className="text-white text-sm" />
+          {/* Stats */}
+          <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 shadow-2xl rounded-xl p-4 hover:bg-slate-800/70 hover:border-teal-500/30 transition-all">
+              <div className="text-xs text-slate-400 mb-1">Total</div>
+              <div className="text-2xl text-white font-bold">{stats.total}</div>
+            </div>
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 shadow-2xl rounded-xl p-4 hover:bg-slate-800/70 hover:border-green-500/30 transition-all">
+              <div className="text-xs text-slate-400 mb-1">Easy</div>
+              <div className="text-2xl text-green-400 font-bold">{stats.easy}</div>
+            </div>
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 shadow-2xl rounded-xl p-4 hover:bg-slate-800/70 hover:border-yellow-500/30 transition-all">
+              <div className="text-xs text-slate-400 mb-1">Medium</div>
+              <div className="text-2xl text-yellow-400 font-bold">{stats.medium}</div>
+            </div>
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 shadow-2xl rounded-xl p-4 hover:bg-slate-800/70 hover:border-red-500/30 transition-all">
+              <div className="text-xs text-slate-400 mb-1">Hard</div>
+              <div className="text-2xl text-red-400 font-bold">{stats.hard}</div>
+            </div>
+            <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 shadow-2xl rounded-xl p-4 hover:bg-slate-800/70 hover:border-teal-500/30 transition-all">
+              <div className="text-xs text-slate-400 mb-1">Solved</div>
+              <div className="text-2xl text-teal-400 font-bold">{stats.solved}</div>
+            </div>
+          </div>
+
+          {/* Filters */}
+          <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 shadow-2xl rounded-2xl p-6">
+            <div className="flex flex-col lg:flex-row gap-4">
+              {/* Search */}
+              <div className="flex-1">
+                <div className="relative">
+                  <FiSearch
+                    className={`absolute left-3 top-1/2 transform -translate-y-1/2 transition-colors ${
+                      focusedField === "search" ? "text-teal-400" : "text-slate-400"
+                    }`}
+                  />
+                  <input
+                    type="text"
+                    placeholder="Search problems..."
+                    className={`w-full pl-10 pr-4 py-3 bg-slate-700/50 border rounded-lg text-white text-sm outline-none transition-all placeholder-slate-400 ${
+                      focusedField === "search"
+                        ? "border-teal-500 shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
+                        : "border-slate-600"
+                    }`}
+                    value={search}
+                    onChange={(e) => setSearch(e.target.value)}
+                    onFocus={() => setFocusedField("search")}
+                    onBlur={() => setFocusedField(null)}
+                  />
+                  <div
+                    className={`absolute bottom-0 left-0 h-0.5 bg-gradient-to-r from-teal-500 to-pink-500 transition-all duration-300 ${
+                      focusedField === "search" ? "w-full" : "w-0"
+                    }`}
+                  />
+                </div>
+              </div>
+
+              {/* Difficulty Filter */}
+              <select
+                className="px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm outline-none transition-all hover:border-teal-500 focus:border-teal-500 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
+                value={difficultyFilter}
+                onChange={(e) => setDifficultyFilter(e.target.value)}
+              >
+                <option value="">All Difficulties</option>
+                <option value="Easy">Easy</option>
+                <option value="Medium">Medium</option>
+                <option value="Hard">Hard</option>
+              </select>
+
+              {/* Category Filter */}
+              <select
+                className="px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm outline-none transition-all hover:border-teal-500 focus:border-teal-500 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
+                value={categoryFilter}
+                onChange={(e) => setCategoryFilter(e.target.value)}
+              >
+                <option value="">All Categories</option>
+                <option value="Array">Array</option>
+                <option value="String">String</option>
+                <option value="Tree">Tree</option>
+                <option value="Graph">Graph</option>
+                <option value="Dynamic Programming">Dynamic Programming</option>
+              </select>
+
+              {/* Status Filter */}
+              <select
+                className="px-4 py-3 bg-slate-700/50 border border-slate-600 rounded-lg text-white text-sm outline-none transition-all hover:border-teal-500 focus:border-teal-500 focus:shadow-[0_0_0_3px_rgba(20,184,166,0.1)]"
+                value={statusFilter}
+                onChange={(e) => setStatusFilter(e.target.value)}
+              >
+                <option value="">All Status</option>
+                <option value="solved">Solved</option>
+                <option value="unsolved">Unsolved</option>
+                <option value="bookmarked">Bookmarked</option>
+              </select>
+            </div>
+          </div>
+
+          {/* Problems List */}
+          <div className="space-y-4">
+            {filteredProblems.map((problem) => (
+              <div
+                key={problem.id}
+                className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 shadow-2xl rounded-2xl p-6 hover:shadow-2xl hover:border-teal-500/50 hover:bg-slate-800/70 transition-all duration-300 hover:scale-[1.01]"
+              >
+                <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
+                  {/* Problem Info */}
+                  <div className="flex-1">
+                    <div className="flex items-start gap-3 mb-3">
+                      <div className="flex items-center gap-2">
+                        {problem.solved ? (
+                          <div className="w-6 h-6 bg-gradient-to-r from-green-500 to-emerald-600 rounded-full flex items-center justify-center">
+                            <FiCheck className="text-white text-sm" />
+                          </div>
+                        ) : (
+                          <div className="w-6 h-6 border-2 border-slate-600 rounded-full"></div>
+                        )}
+                      </div>
+
+                      <div className="flex-1">
+                        <div className="flex items-center gap-3 mb-2">
+                          <RouterLink
+                            to={`/problems/${problem.id}`}
+                            className="font-semibold text-lg text-white hover:text-teal-400 transition-colors"
+                          >
+                            {problem.title}
+                          </RouterLink>
+                          <span
+                            className={`px-2 py-1 rounded-md text-xs font-semibold ${
+                              problem.difficulty === "Easy"
+                                ? "bg-green-500/20 text-green-400 border border-green-500/30"
+                                : problem.difficulty === "Medium"
+                                ? "bg-yellow-500/20 text-yellow-400 border border-yellow-500/30"
+                                : "bg-red-500/20 text-red-400 border border-red-500/30"
+                            }`}
+                          >
+                            {problem.difficulty}
+                          </span>
+                          {problem.bookmarked && <FiBookmark className="text-yellow-400" />}
                         </div>
-                      ) : (
-                        <div className="w-6 h-6 border-2 border-slate-600 rounded-full"></div>
-                      )}
+
+                        <p className="text-slate-400 text-sm mb-3 line-clamp-2">
+                          {problem.description}
+                        </p>
+
+                        <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
+                          <div className="flex items-center gap-1">
+                            <FiTrendingUp className="text-teal-400" />
+                            <span>{problem.acceptance}% acceptance</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <FiStar className="text-teal-400" />
+                            <span>{problem.likes}</span>
+                          </div>
+
+                          <div className="flex items-center gap-1">
+                            <FiLayers className="text-teal-400" />
+                            <span>{problem.category}</span>
+                          </div>
+                        </div>
+                      </div>
                     </div>
 
-                    <div className="flex-1">
-                      <div className="flex items-center gap-3 mb-2">
-                        <RouterLink
-                          to={`/problems/${problem.id}`}
-                          className="link link-hover font-semibold text-lg text-white hover:text-teal-400 transition-colors"
-                        >
-                          {problem.title}
-                        </RouterLink>
+                    {/* Tags */}
+                    <div className="flex flex-wrap gap-2 mt-3">
+                      {problem.tags.map((tag) => (
                         <span
-                          className={`badge ${getDifficultyBadge(problem.difficulty)} badge-sm`}
+                          key={tag}
+                          className="px-2 py-1 rounded-md text-xs bg-teal-500/10 text-teal-400 border border-teal-500/30 hover:bg-teal-500/20 transition-colors"
                         >
-                          {problem.difficulty}
+                          {tag}
                         </span>
-                        {problem.bookmarked && <FiBookmark className="text-warning" />}
-                      </div>
-
-                      <p className="text-slate-400 text-sm mb-3 line-clamp-2">
-                        {problem.description}
-                      </p>
-
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
-                        <div className="flex items-center gap-1">
-                          <FiTrendingUp />
-                          <span>{problem.acceptance}% acceptance</span>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <FiStar />
-                          <span>{problem.likes}</span>
-                        </div>
-
-                        <div className="flex items-center gap-1">
-                          <FiLayers />
-                          <span>{problem.category}</span>
-                        </div>
-                      </div>
+                      ))}
                     </div>
                   </div>
 
-                  {/* Tags */}
-                  <div className="flex flex-wrap gap-2 mt-3">
-                    {problem.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="badge badge-outline badge-sm text-teal-400 border-teal-500/30"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+                  {/* Actions */}
+                  <div className="flex flex-col sm:flex-row items-center gap-2">
+                    <RouterLink to={`/problems/${problem.id}`}>
+                      <button className="group px-4 py-2 bg-gradient-to-r from-teal-500 to-pink-500 hover:from-teal-600 hover:to-pink-600 text-white font-semibold rounded-lg transition-all duration-300 flex items-center gap-2 hover:scale-105 hover:shadow-lg">
+                        <FiPlay className="w-4 h-4" />
+                        Solve
+                        <FiChevronRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                      </button>
+                    </RouterLink>
                   </div>
                 </div>
-
-                {/* Actions */}
-                <div className="flex flex-col sm:flex-row items-center gap-2">
-                  <RouterLink to={`/problems/${problem.id}`}>
-                    <Button variant="primary" size="sm" leftIcon={<FiPlay />}>
-                      Solve
-                    </Button>
-                  </RouterLink>
-                </div>
               </div>
-            </div>
-          </div>
-        ))}
+            ))}
 
-        {filteredProblems.length === 0 && (
-          <div className="text-center py-12">
-            <FiCode className="mx-auto text-4xl text-slate-600 mb-4" />
-            <p className="text-lg text-slate-400">
-              {search || difficultyFilter || categoryFilter || statusFilter
-                ? "No problems found matching your criteria"
-                : "No problems available"}
-            </p>
+            {filteredProblems.length === 0 && (
+              <div className="text-center py-16 bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 shadow-2xl rounded-2xl">
+                <FiCode className="mx-auto text-5xl text-slate-600 mb-4" />
+                <p className="text-lg text-slate-400">
+                  {search || difficultyFilter || categoryFilter || statusFilter
+                    ? "No problems found matching your criteria"
+                    : "No problems available"}
+                </p>
+              </div>
+            )}
           </div>
-        )}
+        </div>
       </div>
-    </div>
+    </>
   );
 };
 

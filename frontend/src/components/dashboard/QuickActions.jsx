@@ -56,7 +56,7 @@ const QuickActions = ({ delay = 0 }) => {
         >
           <Link
             to={action.link}
-            className="block bg-base-200 dark:bg-base-300 rounded-xl border border-base-300 dark:border-base-content/10 p-4 hover:bg-base-300 dark:hover:bg-base-content/5 transition-all duration-300 shadow-md hover:shadow-xl group"
+            className="block bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-xl p-4 hover:bg-slate-800/70 hover:border-teal-500/30 transition-all duration-300 shadow-2xl hover:shadow-teal-500/20 group"
           >
             <div className="flex items-center space-x-4">
               {/* Icon */}
@@ -68,8 +68,8 @@ const QuickActions = ({ delay = 0 }) => {
 
               {/* Text */}
               <div className="flex-1">
-                <h4 className="text-base-content font-semibold text-sm">{action.title}</h4>
-                <p className="text-base-content/60 text-xs">{action.description}</p>
+                <h4 className="text-white font-semibold text-sm">{action.title}</h4>
+                <p className="text-slate-400 text-xs">{action.description}</p>
               </div>
             </div>
           </Link>

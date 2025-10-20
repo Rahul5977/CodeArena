@@ -21,7 +21,7 @@ const StatsCard = ({ icon: Icon, title, value, subtitle, color, delay = 0 }) => 
       whileHover={{ scale: 1.05, y: -5 }}
       className="relative group"
     >
-      <div className="bg-base-200 dark:bg-base-300 rounded-2xl border border-base-300 dark:border-base-content/10 p-6 hover:bg-base-300 dark:hover:bg-base-content/5 transition-all duration-300 shadow-lg hover:shadow-2xl">
+      <div className="bg-slate-800/50 backdrop-blur-xl border border-slate-700/50 rounded-2xl p-6 hover:bg-slate-800/70 hover:border-teal-500/30 transition-all duration-300 shadow-2xl hover:shadow-teal-500/20">
         {/* Gradient Background Effect */}
         <div
           className={`absolute inset-0 bg-gradient-to-br ${color} opacity-0 group-hover:opacity-10 rounded-2xl transition-opacity duration-300`}
@@ -37,13 +37,13 @@ const StatsCard = ({ icon: Icon, title, value, subtitle, color, delay = 0 }) => 
           </div>
 
           {/* Title */}
-          <h3 className="text-base-content/60 text-sm font-medium mb-2">{title}</h3>
+          <h3 className="text-slate-400 text-sm font-medium mb-2">{title}</h3>
 
           {/* Value */}
-          <p className="text-base-content text-3xl font-bold mb-1">{value}</p>
+          <p className="text-white text-3xl font-bold mb-1">{value}</p>
 
           {/* Subtitle */}
-          <p className="text-base-content/50 text-sm">{subtitle}</p>
+          <p className="text-slate-500 text-sm">{subtitle}</p>
         </div>
 
         {/* Glow Effect on Hover */}

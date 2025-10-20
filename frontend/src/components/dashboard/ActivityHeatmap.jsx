@@ -11,12 +11,12 @@ import { FiActivity } from "react-icons/fi";
 const ActivityHeatmap = ({ activity = [], loading = false }) => {
   // Helper to get color intensity
   const getIntensityColor = (count) => {
-    if (count === 0) return "bg-base-content/5";
-    if (count === 1) return "bg-success/30";
-    if (count === 2) return "bg-success/50";
-    if (count === 3) return "bg-success/70";
-    if (count >= 4) return "bg-success";
-    return "bg-success";
+    if (count === 0) return "bg-slate-700/30";
+    if (count === 1) return "bg-green-500/30";
+    if (count === 2) return "bg-green-500/50";
+    if (count === 3) return "bg-green-500/70";
+    if (count >= 4) return "bg-green-500";
+    return "bg-green-500";
   };
 
   // Generate last 90 days of data
@@ -52,39 +52,39 @@ const ActivityHeatmap = ({ activity = [], loading = false }) => {
   const activeDays = activity?.filter((day) => day.count > 0).length || 0;
 
   return (
-    <div className="bg-base-200 dark:bg-base-300 rounded-2xl border border-base-300 dark:border-base-content/10 p-6 shadow-lg h-full flex flex-col">
+    <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-6 shadow-2xl h-full flex flex-col">
       {/* Header */}
       <div className="mb-6">
-        <h2 className="text-2xl font-bold text-base-content flex items-center gap-2 mb-2">
-          <FiActivity className="text-success" />
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2 mb-2">
+          <FiActivity className="text-green-400" />
           Your Coding Activity
         </h2>
-        <p className="text-base-content/60 text-sm">Last 90 days</p>
+        <p className="text-slate-400 text-sm">Last 90 days</p>
       </div>
       {/* Loading Skeleton */}
       {loading ? (
         <div className="flex-1">
           <div className="grid grid-cols-2 gap-4 mb-6">
             {[1, 2].map((i) => (
-              <div key={i} className="bg-base-100/50 rounded-lg p-3 animate-pulse">
-                <div className="h-3 bg-base-content/20 rounded w-1/2 mb-2" />
-                <div className="h-6 bg-base-content/30 rounded w-3/4" />
+              <div key={i} className="bg-slate-700/50 rounded-lg p-3 animate-pulse">
+                <div className="h-3 bg-slate-600 rounded w-1/2 mb-2" />
+                <div className="h-6 bg-slate-600 rounded w-3/4" />
               </div>
             ))}
           </div>
-          <div className="h-32 bg-base-100/50 rounded-lg animate-pulse" />
+          <div className="h-32 bg-slate-700/50 rounded-lg animate-pulse" />
         </div>
       ) : (
         <>
           {/* Stats */}
           <div className="grid grid-cols-2 gap-4 mb-6">
-            <div className="bg-base-100/50 rounded-lg p-3 border border-base-300 dark:border-base-content/10">
-              <p className="text-base-content/60 text-xs mb-1">Total Solved</p>
-              <p className="text-base-content text-2xl font-bold">{totalSolved}</p>
+            <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600/50">
+              <p className="text-slate-400 text-xs mb-1">Total Solved</p>
+              <p className="text-white text-2xl font-bold">{totalSolved}</p>
             </div>
-            <div className="bg-base-100/50 rounded-lg p-3 border border-base-300 dark:border-base-content/10">
-              <p className="text-base-content/60 text-xs mb-1">Active Days</p>
-              <p className="text-base-content text-2xl font-bold">{activeDays}</p>
+            <div className="bg-slate-700/50 rounded-lg p-3 border border-slate-600/50">
+              <p className="text-slate-400 text-xs mb-1">Active Days</p>
+              <p className="text-white text-2xl font-bold">{activeDays}</p>
             </div>
           </div>
           {/* Heatmap */}
@@ -108,13 +108,13 @@ const ActivityHeatmap = ({ activity = [], loading = false }) => {
                         <div
                           className={`w-3.5 h-3.5 rounded-sm ${getIntensityColor(
                             day.count
-                          )} border border-base-content/10 transition-all duration-200`}
+                          )} border border-slate-600/50 transition-all duration-200`}
                         />
                         {/* Tooltip */}
-                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-base-300 dark:bg-base-100 text-base-content text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg border border-base-content/10">
+                        <div className="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 px-2 py-1 bg-slate-800 text-white text-xs rounded whitespace-nowrap opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-20 shadow-lg border border-slate-700">
                           {day.count} {day.count === 1 ? "problem" : "problems"} on{" "}
                           {day.displayDate}
-                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-base-300 dark:border-t-base-100" />
+                          <div className="absolute top-full left-1/2 transform -translate-x-1/2 border-4 border-transparent border-t-slate-800" />
                         </div>
                       </motion.div>
                     ))}

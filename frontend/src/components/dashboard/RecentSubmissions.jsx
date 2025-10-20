@@ -21,25 +21,25 @@ const RecentSubmissions = ({ submissions, loading = false }) => {
 
     if (verdictLower.includes("accepted") || verdictLower.includes("correct")) {
       return {
-        color: "bg-success/20 text-success border-success/30",
+        color: "bg-green-500/20 text-green-400 border-green-500/30",
         icon: FiCheckCircle,
         text: "Accepted",
       };
     } else if (verdictLower.includes("wrong") || verdictLower.includes("incorrect")) {
       return {
-        color: "bg-error/20 text-error border-error/30",
+        color: "bg-red-500/20 text-red-400 border-red-500/30",
         icon: FiXCircle,
         text: "Wrong Answer",
       };
     } else if (verdictLower.includes("tle") || verdictLower.includes("time limit")) {
       return {
-        color: "bg-warning/20 text-warning border-warning/30",
+        color: "bg-yellow-500/20 text-yellow-400 border-yellow-500/30",
         icon: FiClock,
         text: "Time Limit",
       };
     } else {
       return {
-        color: "bg-base-content/20 text-base-content/60 border-base-content/30",
+        color: "bg-slate-500/20 text-slate-400 border-slate-500/30",
         icon: FiCode,
         text: verdict || "Unknown",
       };
@@ -67,16 +67,16 @@ const RecentSubmissions = ({ submissions, loading = false }) => {
   };
 
   return (
-    <div className="bg-base-200 dark:bg-base-300 rounded-2xl border border-base-300 dark:border-base-content/10 p-6 shadow-lg h-full">
+    <div className="bg-slate-800/50 backdrop-blur-xl rounded-2xl border border-slate-700/50 p-6 shadow-2xl h-full">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold text-base-content flex items-center gap-2">
-          <FiCode className="text-primary" />
+        <h2 className="text-2xl font-bold text-white flex items-center gap-2">
+          <FiCode className="text-teal-400" />
           Recent Submissions
         </h2>
         <button
           onClick={() => navigate("/submissions")}
-          className="text-sm text-primary hover:text-primary-focus transition-colors"
+          className="text-sm text-teal-400 hover:text-teal-300 transition-colors"
         >
           View All →
         </button>
@@ -86,9 +86,9 @@ const RecentSubmissions = ({ submissions, loading = false }) => {
       {loading ? (
         <div className="space-y-3">
           {[1, 2, 3].map((i) => (
-            <div key={i} className="bg-base-100/50 rounded-xl p-4 animate-pulse">
-              <div className="h-4 bg-base-content/20 rounded w-3/4 mb-2" />
-              <div className="h-3 bg-base-content/10 rounded w-1/2" />
+            <div key={i} className="bg-slate-700/50 rounded-xl p-4 animate-pulse">
+              <div className="h-4 bg-slate-600 rounded w-3/4 mb-2" />
+              <div className="h-3 bg-slate-600 rounded w-1/2" />
             </div>
           ))}
         </div>
@@ -109,12 +109,12 @@ const RecentSubmissions = ({ submissions, loading = false }) => {
                     transition={{ delay: index * 0.05, duration: 0.3 }}
                     whileHover={{ scale: 1.02, x: 5 }}
                     onClick={() => handleSubmissionClick(submission)}
-                    className="bg-base-100/50 rounded-xl p-4 border border-base-300 dark:border-base-content/10 hover:bg-base-100 hover:border-primary/30 transition-all duration-300 cursor-pointer"
+                    className="bg-slate-700/50 rounded-xl p-4 border border-slate-600/50 hover:bg-slate-700/70 hover:border-teal-500/30 transition-all duration-300 cursor-pointer"
                   >
                     <div className="flex items-start justify-between gap-4">
                       {/* Left Side - Problem Info */}
                       <div className="flex-1 min-w-0">
-                        <h3 className="text-base-content font-semibold mb-2 truncate hover:text-primary transition-colors">
+                        <h3 className="text-white font-semibold mb-2 truncate hover:text-teal-400 transition-colors">
                           {submission.problem?.title ||
                             submission.problemTitle ||
                             "Untitled Problem"}
@@ -131,7 +131,7 @@ const RecentSubmissions = ({ submissions, loading = false }) => {
 
                           {/* Language */}
                           {submission.language && (
-                            <span className="text-base-content/60 flex items-center gap-1">
+                            <span className="text-slate-400 flex items-center gap-1">
                               <FiCode className="text-xs" />
                               {submission.language}
                             </span>
@@ -139,7 +139,7 @@ const RecentSubmissions = ({ submissions, loading = false }) => {
 
                           {/* Execution Time */}
                           {submission.time && (
-                            <span className="text-base-content/60 flex items-center gap-1">
+                            <span className="text-slate-400 flex items-center gap-1">
                               <FiClock className="text-xs" />
                               {submission.time}
                             </span>
@@ -149,7 +149,7 @@ const RecentSubmissions = ({ submissions, loading = false }) => {
 
                       {/* Right Side - Timestamp */}
                       <div className="text-right">
-                        <p className="text-base-content/50 text-xs flex items-center gap-1 whitespace-nowrap">
+                        <p className="text-slate-500 text-xs flex items-center gap-1 whitespace-nowrap">
                           <FiCalendar className="text-xs" />
                           {formatTime(submission.submittedAt || submission.createdAt)}
                         </p>
