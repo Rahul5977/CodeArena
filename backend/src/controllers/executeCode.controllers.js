@@ -9,6 +9,15 @@ export const executeCode = async (req, res) => {
   try {
     const { source_code, language_id, stdin, expected_outputs, problemId } = req.body;
     const userId = req.user.id;
+
+    console.log("Execute code request:", {
+      userId,
+      problemId,
+      language_id,
+      stdinLength: stdin?.length,
+      expectedOutputsLength: expected_outputs?.length,
+    });
+
     //validate test cases
     if (
       !Array.isArray(stdin) ||
@@ -16,8 +25,11 @@ export const executeCode = async (req, res) => {
       !Array.isArray(expected_outputs) ||
       expected_outputs.length !== stdin.length
     ) {
+      console.error("Validation failed:", { stdin, expected_outputs });
       return res.status(400).json({
-        error: "Invalid or Missing test casses",
+        success: false,
+        error: "Invalid or Missing test cases",
+        message: "Invalid or Missing test cases",
       });
     }
     //prepare each test cases for judge0 batch submission

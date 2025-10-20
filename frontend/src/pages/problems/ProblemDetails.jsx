@@ -183,8 +183,23 @@ const ProblemDetails = () => {
       const expected_outputs = problem.testcases?.map((tc) => tc.output) || [];
 
       // If custom input is provided, use it instead
-      const finalStdin = customInput.trim() ? [customInput.trim()] : stdin;
-      const finalExpected = customInput.trim() ? [""] : expected_outputs;
+      let finalStdin, finalExpected;
+
+      if (customInput.trim()) {
+        // For custom input, we don't have expected output, so we just run it
+        finalStdin = [customInput.trim()];
+        // Use empty string as expected output (backend will handle this)
+        finalExpected = [customInput.trim()]; // Dummy expected output to match length
+      } else {
+        // Use problem test cases
+        if (stdin.length === 0) {
+          showError("Error", "No test cases available. Try using custom input.");
+          setIsRunning(false);
+          return;
+        }
+        finalStdin = stdin;
+        finalExpected = expected_outputs;
+      }
 
       const payload = {
         source_code: code,
@@ -193,6 +208,8 @@ const ProblemDetails = () => {
         expected_outputs: finalExpected,
         problemId: parseInt(id),
       };
+
+      console.log("Execute code payload:", payload);
 
       const response = await apiClient.post("/execute-code", payload);
 

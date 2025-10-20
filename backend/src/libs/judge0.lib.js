@@ -37,10 +37,11 @@ export const submitBatch = async (submissions) => {
   //demo
   try {
     const { data } = await axios.request(options);
-    console.log(data);
+    console.log("Judge0 batch submission response:", data);
     return data;
   } catch (error) {
-    console.error("Error is runnig submit batch", error);
+    console.error("Error in submitBatch:", error.response?.data || error.message);
+    throw new Error(`Judge0 API error: ${error.response?.data?.message || error.message}`);
   }
   // console.log("Submission result: ", data);
 
@@ -49,22 +50,39 @@ export const submitBatch = async (submissions) => {
 const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 export const pollBatchResults = async (tokens) => {
-  while (true) {
-    const { data } = await axios.get(`${process.env.JUDGE0_API_URL}/submissions/batch`, {
-      params: {
-        tokens: tokens.join(","),
-        base64_encoded: false,
-      },
-      headers: {
-        Authorization: `Bearer ${process.env.SULU_API_KEY}`,
-        Accept: "application/json",
-      },
-    });
-    const results = data.submissions;
-    const isAllDone = results.every((r) => r.status.id !== 1 && r.status.id !== 2);
-    if (isAllDone) return results;
-    //await sleep(1000);
+  const maxAttempts = 30; // 30 seconds max
+  let attempts = 0;
+
+  while (attempts < maxAttempts) {
+    try {
+      const { data } = await axios.get(`${process.env.JUDGE0_API_URL}/submissions/batch`, {
+        params: {
+          tokens: tokens.join(","),
+          base64_encoded: false,
+        },
+        headers: {
+          Authorization: `Bearer ${process.env.SULU_API_KEY}`,
+          Accept: "application/json",
+        },
+      });
+
+      const results = data.submissions;
+      const isAllDone = results.every((r) => r.status.id !== 1 && r.status.id !== 2);
+
+      if (isAllDone) {
+        console.log("All submissions completed");
+        return results;
+      }
+
+      await sleep(1000);
+      attempts++;
+    } catch (error) {
+      console.error("Error polling batch results:", error.response?.data || error.message);
+      throw new Error(`Failed to get results: ${error.response?.data?.message || error.message}`);
+    }
   }
+
+  throw new Error("Execution timeout - results not available");
 };
 export function getLanguageName(languageId) {
   const LANGUAGE_NAMES = {
