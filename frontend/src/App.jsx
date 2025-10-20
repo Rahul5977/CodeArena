@@ -23,7 +23,7 @@ import ContestLeaderboard from "./pages/contests/ContestLeaderboard";
 import ContestSubmit from "./pages/contests/ContestSubmit";
 
 // Sheets Pages
-import SheetList from "./pages/sheets/SheetList";
+import SheetsList from "./pages/sheets/SheetsList";
 import SheetDetail from "./pages/sheets/SheetDetail";
 
 // Admin Pages
@@ -137,8 +137,8 @@ function App() {
             </ProtectedRoute>
           }
         >
-          <Route index element={<SheetList />} />
-          <Route path=":id" element={<SheetDetail />} />
+          <Route index element={<SheetsList />} />
+          <Route path=":sheetId" element={<SheetDetail />} />
         </Route>
 
         {/* Admin Routes */}
