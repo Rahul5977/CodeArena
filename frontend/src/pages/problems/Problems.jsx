@@ -15,6 +15,7 @@ import {
 } from "react-icons/fi";
 import api from "../../utils/api";
 import { useToastContext } from "../../contexts/ToastContext";
+import Button from "../../components/ui/Button";
 
 const Problems = () => {
   const [problems, setProblems] = useState([]);
@@ -124,49 +125,49 @@ const Problems = () => {
       {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+          <h1 className="text-3xl font-bold bg-gradient-to-r from-teal-400 to-teal-500 bg-clip-text text-transparent">
             Problems
           </h1>
-          <p className="text-base-content/70 mt-1">Sharpen your skills with coding challenges</p>
+          <p className="text-slate-400 mt-1">Sharpen your skills with coding challenges</p>
         </div>
       </div>
 
       {/* Stats */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
-        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
-          <div className="stat-title text-xs">Total</div>
-          <div className="stat-value text-2xl">{stats.total}</div>
+        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
+          <div className="stat-title text-xs text-slate-400">Total</div>
+          <div className="stat-value text-2xl text-white">{stats.total}</div>
         </div>
-        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
-          <div className="stat-title text-xs">Easy</div>
+        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
+          <div className="stat-title text-xs text-slate-400">Easy</div>
           <div className="stat-value text-2xl text-success">{stats.easy}</div>
         </div>
-        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
-          <div className="stat-title text-xs">Medium</div>
+        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
+          <div className="stat-title text-xs text-slate-400">Medium</div>
           <div className="stat-value text-2xl text-warning">{stats.medium}</div>
         </div>
-        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
-          <div className="stat-title text-xs">Hard</div>
+        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
+          <div className="stat-title text-xs text-slate-400">Hard</div>
           <div className="stat-value text-2xl text-error">{stats.hard}</div>
         </div>
-        <div className="stat bg-base-100 shadow-lg rounded-lg p-4">
-          <div className="stat-title text-xs">Solved</div>
-          <div className="stat-value text-2xl text-primary">{stats.solved}</div>
+        <div className="stat bg-slate-800/50 border border-slate-700/50 shadow-lg rounded-lg p-4 hover:bg-slate-800/70 transition-colors">
+          <div className="stat-title text-xs text-slate-400">Solved</div>
+          <div className="stat-value text-2xl text-teal-400">{stats.solved}</div>
         </div>
       </div>
 
       {/* Filters */}
-      <div className="card bg-base-100 shadow-lg">
+      <div className="card bg-slate-800/50 border border-slate-700/50 shadow-lg">
         <div className="card-body">
           <div className="flex flex-col lg:flex-row gap-4">
             {/* Search */}
             <div className="flex-1">
               <div className="relative">
-                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-base-content/50" />
+                <FiSearch className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400" />
                 <input
                   type="text"
                   placeholder="Search problems..."
-                  className="input input-bordered w-full pl-10"
+                  className="input input-bordered w-full pl-10 bg-slate-900/50 border-slate-600 focus:border-teal-500 text-white placeholder-slate-400"
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
                 />
@@ -175,7 +176,7 @@ const Problems = () => {
 
             {/* Difficulty Filter */}
             <select
-              className="select select-bordered w-full lg:w-auto"
+              className="select select-bordered w-full lg:w-auto bg-slate-900/50 border-slate-600 focus:border-teal-500 text-white"
               value={difficultyFilter}
               onChange={(e) => setDifficultyFilter(e.target.value)}
             >
@@ -187,7 +188,7 @@ const Problems = () => {
 
             {/* Category Filter */}
             <select
-              className="select select-bordered w-full lg:w-auto"
+              className="select select-bordered w-full lg:w-auto bg-slate-900/50 border-slate-600 focus:border-teal-500 text-white"
               value={categoryFilter}
               onChange={(e) => setCategoryFilter(e.target.value)}
             >
@@ -201,7 +202,7 @@ const Problems = () => {
 
             {/* Status Filter */}
             <select
-              className="select select-bordered w-full lg:w-auto"
+              className="select select-bordered w-full lg:w-auto bg-slate-900/50 border-slate-600 focus:border-teal-500 text-white"
               value={statusFilter}
               onChange={(e) => setStatusFilter(e.target.value)}
             >
@@ -219,7 +220,7 @@ const Problems = () => {
         {filteredProblems.map((problem) => (
           <div
             key={problem.id}
-            className="card bg-base-100 shadow-lg hover:shadow-xl transition-all"
+            className="card bg-slate-800/50 border border-slate-700/50 shadow-lg hover:shadow-xl hover:border-teal-500/30 hover:bg-slate-800/70 transition-all"
           >
             <div className="card-body">
               <div className="flex flex-col lg:flex-row items-start lg:items-center gap-4">
@@ -229,10 +230,10 @@ const Problems = () => {
                     <div className="flex items-center gap-2">
                       {problem.solved ? (
                         <div className="w-6 h-6 bg-success rounded-full flex items-center justify-center">
-                          <FiCheck className="text-success-content text-sm" />
+                          <FiCheck className="text-white text-sm" />
                         </div>
                       ) : (
-                        <div className="w-6 h-6 border-2 border-base-content/20 rounded-full"></div>
+                        <div className="w-6 h-6 border-2 border-slate-600 rounded-full"></div>
                       )}
                     </div>
 
@@ -240,7 +241,7 @@ const Problems = () => {
                       <div className="flex items-center gap-3 mb-2">
                         <RouterLink
                           to={`/problems/${problem.id}`}
-                          className="link link-hover font-semibold text-lg"
+                          className="link link-hover font-semibold text-lg text-white hover:text-teal-400 transition-colors"
                         >
                           {problem.title}
                         </RouterLink>
@@ -252,11 +253,11 @@ const Problems = () => {
                         {problem.bookmarked && <FiBookmark className="text-warning" />}
                       </div>
 
-                      <p className="text-base-content/70 text-sm mb-3 line-clamp-2">
+                      <p className="text-slate-400 text-sm mb-3 line-clamp-2">
                         {problem.description}
                       </p>
 
-                      <div className="flex flex-wrap items-center gap-4 text-sm text-base-content/70">
+                      <div className="flex flex-wrap items-center gap-4 text-sm text-slate-400">
                         <div className="flex items-center gap-1">
                           <FiTrendingUp />
                           <span>{problem.acceptance}% acceptance</span>
@@ -278,7 +279,10 @@ const Problems = () => {
                   {/* Tags */}
                   <div className="flex flex-wrap gap-2 mt-3">
                     {problem.tags.map((tag) => (
-                      <span key={tag} className="badge badge-outline badge-sm">
+                      <span
+                        key={tag}
+                        className="badge badge-outline badge-sm text-teal-400 border-teal-500/30"
+                      >
                         {tag}
                       </span>
                     ))}
@@ -287,9 +291,10 @@ const Problems = () => {
 
                 {/* Actions */}
                 <div className="flex flex-col sm:flex-row items-center gap-2">
-                  <RouterLink to={`/problems/${problem.id}`} className="btn btn-primary btn-sm">
-                    <FiPlay className="mr-1" />
-                    Solve
+                  <RouterLink to={`/problems/${problem.id}`}>
+                    <Button variant="primary" size="sm" leftIcon={<FiPlay />}>
+                      Solve
+                    </Button>
                   </RouterLink>
                 </div>
               </div>
@@ -299,8 +304,8 @@ const Problems = () => {
 
         {filteredProblems.length === 0 && (
           <div className="text-center py-12">
-            <FiCode className="mx-auto text-4xl text-base-content/30 mb-4" />
-            <p className="text-lg text-base-content/50">
+            <FiCode className="mx-auto text-4xl text-slate-600 mb-4" />
+            <p className="text-lg text-slate-400">
               {search || difficultyFilter || categoryFilter || statusFilter
                 ? "No problems found matching your criteria"
                 : "No problems available"}

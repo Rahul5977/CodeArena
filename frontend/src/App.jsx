@@ -46,7 +46,7 @@ function App() {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-900 via-purple-900 to-slate-900">
+    <div className="min-h-screen bg-dark-bg-primary dark:bg-dark-bg-primary text-dark-text-primary dark:text-dark-text-primary transition-colors duration-200">
       <Routes>
         {/* Public Routes */}
         <Route path="/login" element={<Login />} />
