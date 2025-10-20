@@ -18,11 +18,13 @@ The `SULU_API_KEY` in `/backend/.env` was **invalid or expired**.
 ### Updated Backend .env
 
 Changed from:
+
 ```bash
 SULU_API_KEY=<old-invalid-key>  # ❌ Invalid
 ```
 
 To:
+
 ```bash
 SULU_API_KEY=<new-valid-key>  # ✅ Valid
 ```
@@ -30,6 +32,7 @@ SULU_API_KEY=<new-valid-key>  # ✅ Valid
 ### Verification
 
 Tested the new key directly with Judge0:
+
 ```bash
 curl -X POST https://judge0-ce.p.sulu.sh/submissions \
   -H "Authorization: Bearer <your-api-key>" \

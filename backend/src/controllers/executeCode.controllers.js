@@ -10,9 +10,12 @@ export const executeCode = async (req, res) => {
     const { source_code, language_id, stdin, expected_outputs, problemId } = req.body;
     const userId = req.user.id;
 
+    // Ensure problemId is a string for database compatibility
+    const problemIdStr = typeof problemId === "number" ? String(problemId) : problemId;
+
     console.log("Execute code request:", {
       userId,
-      problemId,
+      problemId: problemIdStr,
       language_id,
       stdinLength: stdin?.length,
       expectedOutputsLength: expected_outputs?.length,
@@ -89,7 +92,7 @@ export const executeCode = async (req, res) => {
     const submission = await db.submission.create({
       data: {
         userId,
-        problemId,
+        problemId: problemIdStr,
         sourceCode: { code: source_code, language_id }, // Store as JSON
         language: getLanguageName(language_id),
         stdin: stdin.join("\n"),
@@ -115,13 +118,13 @@ export const executeCode = async (req, res) => {
         where: {
           userId_problemId: {
             userId,
-            problemId,
+            problemId: problemIdStr,
           },
         },
         update: {},
         create: {
           userId,
-          problemId,
+          problemId: problemIdStr,
         },
       });
     }
