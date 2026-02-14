@@ -270,7 +270,6 @@ CodeArena/
 ├── 📄 sample-problem.sql      # Sample problem data
 ├── 📄 more-problems.sql       # Additional problems
 ├── 📄 .env.example            # Environment variables template
-├── 📄 SHEETS_TESTING_GUIDE.md # Sheet testing guide
 └── 📄 README.md               # This file
 ```
 
