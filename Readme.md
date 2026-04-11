@@ -1,4 +1,4 @@
-# 🚀 LeetLab - Advanced Coding Platform
+# 🚀 CodeArena
 
 LeetLab is a comprehensive full-stack coding platform designed for developers to practice coding problems, participate in contests, access premium problem sheets, and get real-time code execution feedback. Built with modern technologies and containerized for easy deployment.
 
