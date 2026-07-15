@@ -91,7 +91,7 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 (validates on the VPS via Codebox — see DEPLOY.md §4).
 
 ### Beyond v0.1 — remaining to reach Phase 11 (multi-session)
-- **Phase 5 (frontend):** Submissions, Sheets, Contests, Leaderboard, Profile, Settings, Onboarding pages.
+- **Phase 5 (frontend):** ✓ Submissions / Settings / Profile done; remaining: Sheets, Contests, Leaderboard, Onboarding.
 - **Phase 4 (auth):** GitHub/Google OAuth, real SMTP email (verify + reset), Redis sessions. *(needs creds)*
 - **Phase 6 (community):** profiles, solutions, discuss, votes, follow, global leaderboard, moderation.
 - **Phase 7:** live Razorpay checkout on the Support page. *(needs keys)*
@@ -126,12 +126,11 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 - [x] Support page shell (pay-what-you-want, presets + custom amount).
 - [x] Landing + Login shells; all nav routes scaffolded (Placeholder) so the shell is navigable.
 - [x] Build + lint green (`vite build`, `eslint`); demo user in `store/auth.js` renders the shell.
-- [ ] Onboarding; full Auth (wire to backend in Phase 4).
-- [ ] Problems list (filters/search/pagination) + ProblemEditor (Monaco, Run/Submit → Codebox, results).
-- [ ] Sheets (list + detail/progress), Submissions (history + detail).
-- [ ] Contests (hub + live board via Socket.IO), Leaderboard (podium + ranks).
-- [ ] Profile (public), Settings.
-- [ ] Wire real API (react-query), loading/empty/error states, responsive; replace mock data.
+- [x] Problems list (filter/search) + ProblemEditor (Monaco, Run/Submit, results) — wired to real API.
+- [x] Submissions (history), Settings (edit profile + change password), Profile (own stats + solved-by-difficulty).
+- [ ] Sheets (list + detail/progress), Contests (hub + live board via Socket.IO), Leaderboard (podium + ranks).
+- [ ] Onboarding (4-step first-run).
+- [ ] Public profiles by username (community phase); react-query caching + responsive pass.
 
 ## Phase 6 — Community
 - [ ] Public profiles by username; solutions per problem + upvotes; discussion threads + comments; follow/feed.
@@ -192,3 +191,6 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 | 2026-07-15 | D6 10k-concurrent, low cost | Single VPS + Cloudflare free; scale up not out. |
 | 2026-07-15 | D7 Organic design system | Port `styles.css`; build to the design. |
 | 2026-07-15 | Pricing → Support | Drop Free/Pro/Teams + Stripe; pay-what-you-want via Razorpay. |
+| 2026-07-15 | Hosting = **Oracle Cloud Always Free** | 4 vCPU / 24 GB ARM, free forever; runs full stack incl. executor. Runbook to be tailored for ARM. |
+| 2026-07-15 | Build OAuth + SMTP + Razorpay now | Owner adds real keys to `.env` (never in chat); flows built to read env. |
+| 2026-07-15 | Next priority = **finish frontend pages (Phase 5)** | Submissions → Settings → Profile → Sheets → Contests → Leaderboard → Onboarding. |
