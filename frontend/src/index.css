@@ -26,3 +26,9 @@ body { margin: 0; overflow: hidden; }
 .hover-row:hover { background: color-mix(in srgb, var(--color-text) 5%, transparent); }
 .hover-lift { transition: transform .14s, box-shadow .14s; }
 .hover-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
+
+/* react-split gutters */
+.gutter { background-color: transparent; background-repeat: no-repeat; background-position: 50%; }
+.gutter.gutter-horizontal { cursor: col-resize; position: relative; }
+.gutter.gutter-horizontal::after { content: ""; position: absolute; top: 50%; left: 50%; transform: translate(-50%, -50%); width: 4px; height: 40px; border-radius: 999px; background: var(--color-divider); }
+.ca-split > div { min-width: 0; }
