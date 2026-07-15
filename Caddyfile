@@ -1,0 +1,32 @@
+# CodeArena — reverse proxy + automatic HTTPS for codearena.kodexa.in
+#
+# Default: Caddy provisions a Let's Encrypt cert automatically (works when the
+# DNS record is "DNS only" / grey-cloud in Cloudflare, or not proxied).
+#
+# If you put Cloudflare in front (orange-cloud, recommended for CDN + DDoS),
+# either use a Cloudflare Origin Certificate here:
+#     tls /etc/caddy/origin.pem /etc/caddy/origin.key
+# and set Cloudflare SSL mode to Full (Strict); or use the Cloudflare DNS
+# challenge (needs the caddy-dns/cloudflare plugin + a CF API token).
+
+codearena.kodexa.in {
+	encode zstd gzip
+
+	# API + realtime → backend
+	@api path /api/* /socket.io/*
+	handle @api {
+		reverse_proxy backend:8080
+	}
+
+	# Everything else → the SPA (nginx)
+	handle {
+		reverse_proxy frontend:80
+	}
+
+	header {
+		X-Frame-Options SAMEORIGIN
+		X-Content-Type-Options nosniff
+		Referrer-Policy strict-origin-when-cross-origin
+		-Server
+	}
+}

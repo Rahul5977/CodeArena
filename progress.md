@@ -78,8 +78,10 @@ Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
 - [~] ② Codebox executor — `executor.lib.js` swapped (X-Auth-Token, ≤20 chunking), committed. Codebox builds/runs locally + accepts submissions, but its docker-executor is incompatible with local Docker 29 (`ReadonlyRootfs` + `putArchive`) and has **no LICENSE**. Decision: keep Codebox; **execution validates on the VPS (`EXECUTOR_TYPE=isolate`)** at deploy. Judge0 stays break-glass.
 - [x] ③ Auth wired FE↔BE — real login/register/logout + session hydrate (`/auth/me`), protected routes, shell logout; **verified through the Vite proxy** (login + problems + hydrate).
 - [x] ④ Core frontend on real API — Problems list, **ProblemEditor** (Monaco split view, language select, Run + Submit), and **Dashboard** (real stats via new `/dashboard` endpoint). Backend `executeCode` refactored to be **secure** (fetches testcases server-side by `problemId`; client never sees hidden cases) + a `/execute-code/run` custom-input endpoint. Run/Submit UI works; actual execution validates on the VPS. (Submissions page still stubbed.)
-- [ ] ⑤ Light hardening (helmet + rate-limit on auth/execute).
-- [ ] ⑥ Prod deploy artifacts (compose, Caddy, .env, runbook) + provisioning.
+- [x] ⑤ Light hardening — helmet, `trust proxy`, rate-limits (api/auth/execute), body-limit 1mb, real 404 handler; verified (headers + 404 + boot).
+- [x] ⑥ Prod deploy artifacts — `Caddyfile`, `docker-compose.prod.yml`, Node-20 Dockerfiles, `DEPLOY.md` runbook (VPS + Cloudflare + Codebox + migrate/seed + backups + scaling). Compose + Caddyfile **validated**. Provisioning (VPS/DNS/secrets) is the owner's step.
+
+**→ v0.1 is code-complete. Ready to deploy following `DEPLOY.md` (the only executor caveat: validate Codebox on the Linux host — §4).**
 
 ## Phase 2 — Executor → Codebox
 - [ ] Self-host `codebox-redis` + `codebox-api` + `codebox-worker` on an isolated network; build language images.
