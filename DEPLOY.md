@@ -6,6 +6,24 @@ Target: a single VPS serving **`codearena.kodexa.in`**, behind **Cloudflare (fre
 
 ---
 
+## 0. Where to host it — including free-forever options
+
+You don't need to spend much, or anything. Ranked by fit for the **full stack** (Postgres + Redis + Node API + the **Codebox** executor + Caddy — wants ~2 GB+ RAM):
+
+| Option | Free? | Specs | Verdict |
+|---|---|---|---|
+| **Oracle Cloud — Always Free (ARM Ampere A1)** | ✅ **forever** | up to **4 vCPU / 24 GB RAM** / 200 GB | **Best free option** — runs the whole stack comfortably, executor included. It's arm64 (all our images have arm64 builds). A1 capacity can be scarce — retry, or pick a different home region. |
+| **AWS EC2 Free Tier** | ⏳ 12 months | `t2/t3.micro` = **1 GB RAM** | Too small for the full stack + Codebox (it will OOM). Workable only if you drop the executor or add swap and trim hard. Realistic AWS floor is `t3.small` (2 GB, ~$15/mo). |
+| **GCP Free Tier** | ✅ forever | `e2-micro` **1 GB** | Same 1 GB limitation as AWS micro. |
+| **GitHub Student Pack** | ✅ if a student | DigitalOcean **$200** credit, Azure $100, etc. | If eligible: months of a proper 2–4 GB droplet for free, plus a free domain. |
+| **Hetzner / DigitalOcean / Vultr** | 💶 ~€4–14/mo | 2–8 GB | Cheapest *paid* — best price/perf once you outgrow free. |
+
+**Recommendation: Oracle Cloud Always Free (4 vCPU / 24 GB ARM)** — genuinely free forever and powerful enough for everything. The runbook below is cloud-agnostic; on Oracle also open **80/443 in the instance's Security List / NSG** (in addition to `ufw`). On a 1 GB box (AWS/GCP micro) run only Postgres + API + Caddy and host the executor elsewhere — not recommended for the full experience.
+
+> ⚠️ **You provision the server + DNS — I can't create cloud accounts or handle their credentials.** Pick a host and I'll tailor the exact commands (incl. the AWS EC2 or Oracle specifics).
+
+---
+
 ## 1. Provision the VPS
 
 Recommended: **Hetzner CPX31** (4 vCPU / 8 GB, ~€14/mo), scale to **CPX41** (8 vCPU / 16 GB) under load. Ubuntu 24.04, **KVM-capable** (so Codebox can use the `isolate` sandbox).
