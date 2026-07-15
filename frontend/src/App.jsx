@@ -1,166 +1,48 @@
 import { Routes, Route, Navigate } from "react-router-dom";
-import { useEffect } from "react";
-import useAuthStore from "./stores/authStore";
-import Layout from "./components/Layout";
-import Login from "./pages/auth/Login";
-import Register from "./pages/auth/Register";
-import ForgotPassword from "./pages/auth/ForgotPassword";
-import ResetPassword from "./pages/auth/ResetPassword";
-import Dashboard from "./pages/Dashboard";
-import Problems from "./pages/problems/Problems";
-import ProblemDetails from "./pages/problems/ProblemDetails";
-import Playlists from "./pages/playlists/Playlists";
-import PlaylistDetail from "./pages/playlists/PlaylistDetail";
-import Submissions from "./pages/submissions/Submissions";
-import Profile from "./pages/Profile";
-import LoadingSpinner from "./components/LoadingSpinner";
-import ProtectedRoute from "./components/ProtectedRoute";
+import AppShell from "./components/AppShell.jsx";
+import Landing from "./pages/Landing.jsx";
+import Login from "./pages/auth/Login.jsx";
+import Dashboard from "./pages/Dashboard.jsx";
+import Problems from "./pages/Problems.jsx";
+import ProblemEditor from "./pages/ProblemEditor.jsx";
+import Sheets from "./pages/Sheets.jsx";
+import Playlists from "./pages/Playlists.jsx";
+import Contests from "./pages/Contests.jsx";
+import Leaderboard from "./pages/Leaderboard.jsx";
+import Submissions from "./pages/Submissions.jsx";
+import Profile from "./pages/Profile.jsx";
+import Settings from "./pages/Settings.jsx";
+import Support from "./pages/Support.jsx";
+import Admin from "./pages/Admin.jsx";
 
-// Contest Pages
-import ContestList from "./pages/contests/ContestList";
-import ContestDetail from "./pages/contests/ContestDetail";
-import ContestLeaderboard from "./pages/contests/ContestLeaderboard";
-import ContestSubmit from "./pages/contests/ContestSubmit";
-
-// Sheets Pages
-import SheetsList from "./pages/sheets/SheetsList";
-import SheetDetail from "./pages/sheets/SheetDetail";
-
-// Admin Pages
-import UserManagement from "./pages/admin/UserManagement";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import ContestManagement from "./pages/admin/ContestManagement";
-import SheetManagement from "./pages/admin/SheetManagement";
-
-function App() {
-  const { isLoading, fetchCurrentUser } = useAuthStore();
-
-  // Check authentication on app load
-  useEffect(() => {
-    fetchCurrentUser();
-  }, [fetchCurrentUser]);
-
-  if (isLoading) {
-    return <LoadingSpinner />;
-  }
-
+export default function App() {
   return (
-    <div className="min-h-screen bg-dark-bg-primary dark:bg-dark-bg-primary text-dark-text-primary dark:text-dark-text-primary transition-colors duration-200">
-      <Routes>
-        {/* Public Routes */}
-        <Route path="/login" element={<Login />} />
-        <Route path="/register" element={<Register />} />
-        <Route path="/forgot-password" element={<ForgotPassword />} />
-        <Route path="/reset-password/:token" element={<ResetPassword />} />
+    <Routes>
+      {/* Public, shell-less */}
+      <Route path="/" element={<Landing />} />
+      <Route path="/login" element={<Login />} />
+      <Route path="/register" element={<Login />} />
 
-        {/* Protected Routes - Dashboard */}
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Dashboard />} />
-        </Route>
+      {/* In-app, inside the AppShell (sidebar + top bar) */}
+      <Route element={<AppShell />}>
+        <Route path="/app" element={<Dashboard />} />
+        <Route path="/problems" element={<Problems />} />
+        <Route path="/problems/:slug" element={<ProblemEditor />} />
+        <Route path="/sheets" element={<Sheets />} />
+        <Route path="/sheets/:id" element={<Sheets />} />
+        <Route path="/playlists" element={<Playlists />} />
+        <Route path="/contests" element={<Contests />} />
+        <Route path="/contests/:id" element={<Contests />} />
+        <Route path="/leaderboard" element={<Leaderboard />} />
+        <Route path="/submissions" element={<Submissions />} />
+        <Route path="/profile" element={<Profile />} />
+        <Route path="/u/:username" element={<Profile />} />
+        <Route path="/settings" element={<Settings />} />
+        <Route path="/support" element={<Support />} />
+        <Route path="/admin" element={<Admin />} />
+      </Route>
 
-        {/* Problems */}
-        <Route
-          path="/problems"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Problems />} />
-          <Route path=":id" element={<ProblemDetails />} />
-        </Route>
-
-        {/* Playlists */}
-        <Route
-          path="/playlists"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Playlists />} />
-          <Route path=":id" element={<PlaylistDetail />} />
-        </Route>
-
-        {/* Submissions */}
-        <Route
-          path="/submissions"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<Submissions />} />
-        </Route>
-
-        {/* Profile */}
-        <Route
-          path="/profile"
-          element={
-            <ProtectedRoute>
-              <Profile />
-            </ProtectedRoute>
-          }
-        />
-
-        {/* Contests */}
-        <Route
-          path="/contests"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<ContestList />} />
-          <Route path=":id" element={<ContestDetail />} />
-          <Route path=":id/leaderboard" element={<ContestLeaderboard />} />
-          <Route path=":contestId/problems/:problemId/submit" element={<ContestSubmit />} />
-        </Route>
-
-        {/* Sheets */}
-        <Route
-          path="/sheets"
-          element={
-            <ProtectedRoute>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<SheetsList />} />
-          <Route path=":sheetId" element={<SheetDetail />} />
-        </Route>
-
-        {/* Admin Routes */}
-        <Route
-          path="/admin"
-          element={
-            <ProtectedRoute allowedRoles={["ADMIN", "SUPERADMIN"]}>
-              <Layout />
-            </ProtectedRoute>
-          }
-        >
-          <Route index element={<AdminDashboard />} />
-          <Route path="users" element={<UserManagement />} />
-          <Route path="contests" element={<ContestManagement />} />
-          <Route path="sheets" element={<SheetManagement />} />
-        </Route>
-
-        {/* Redirect */}
-        <Route path="*" element={<Navigate to="/" replace />} />
-      </Routes>
-    </div>
+      <Route path="*" element={<Navigate to="/app" replace />} />
+    </Routes>
   );
 }
-
-export default App;

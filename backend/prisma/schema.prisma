@@ -1,8 +1,12 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
+// CodeArena — target Prisma schema (rewamp).
+// Changes vs the old LeetLab schema (see architecture.md):
+//  - Single admin: UserRole { USER, ADMIN } — SUPERADMIN + RoleChange removed.
+//  - Fully free: Payment/UserSheet/SheetType removed; a lean Donation model added.
+//  - Community: Solution/Discussion/Comment/Vote/Follow/Report added.
+//  - Identity/SEO: User.username, Problem.slug/published/companies; OAuthAccount.
+//  - Sessions move to Redis (UserSession + User.refreshToken removed).
+// NOTE: controllers are migrated to this schema in Phase 1 (progress.md); do not
+// `prisma generate` against this until the controller layer is updated.
 
 generator client {
   provider = "prisma-client-js"
@@ -15,9 +19,8 @@ datasource db {
 }
 
 enum UserRole {
-  SUPERADMIN
-  ADMIN
   USER
+  ADMIN
 }
 
 enum Difficulty {
@@ -33,79 +36,83 @@ enum ContestStatus {
   CANCELLED
 }
 
-enum SheetType {
-  FREE
-  PREMIUM
-}
-
 model User {
-  id                     String          @id @default(uuid())
+  id                     String    @id @default(uuid())
   name                   String
-  email                  String          @unique
+  username               String?   @unique
+  email                  String    @unique
   image                  String?
-  role                   UserRole        @default(USER)
-  password               String
-  refreshToken           String? // For JWT refresh tokens
-  passwordResetToken     String? // For password reset
-  passwordResetExpiry    DateTime? // Expiry for reset token
-  lastLoginAt            DateTime? // Track last login
-  isActive               Boolean         @default(true) // Account status
-  emailVerified          Boolean         @default(false) // Email verification
-  emailVerificationToken String? // Email verification token
-  promotedBy             String? // Track who promoted this user
-  promotedAt             DateTime? // When they were promoted
-  createdAt              DateTime        @default(now())
-  updatedAt              DateTime        @updatedAt
-  problems               Problem[]
-  submission             Submission[]
-  problemSolved          ProblemSolved[]
-  playlists              Playlist[]
+  bio                    String?
+  githubUrl              String?
+  websiteUrl             String?
+  role                   UserRole  @default(USER)
+  password               String? // nullable for OAuth-only accounts
+  points                 Int       @default(0) // global leaderboard score
+  passwordResetToken     String?
+  passwordResetExpiry    DateTime?
+  emailVerified          Boolean   @default(false)
+  emailVerificationToken String?
+  lastLoginAt            DateTime?
+  isActive               Boolean   @default(true)
+  createdAt              DateTime  @default(now())
+  updatedAt              DateTime  @updatedAt
 
-  // New relations for contests
+  // Auth
+  oauthAccounts OAuthAccount[]
+
+  // Practice
+  problems      Problem[] // authored
+  submissions   Submission[]
+  problemSolved ProblemSolved[]
+  playlists     Playlist[]
+
+  // Contests
   contestParticipants ContestParticipant[]
   contestSubmissions  ContestSubmission[]
   contestLeaderboard  ContestLeaderboard[]
 
-  // New relations for sheets
-  userSheets    UserSheet[]
+  // Sheets
   sheetProgress SheetProgress[]
-  payments      Payment[]
 
-  // New relations for role changes
-  promotedUsers RoleChange[] @relation("PromotedBy")
-  roleChanges   RoleChange[] @relation("UserRoleChanges")
+  // Community
+  solutions   Solution[]
+  discussions Discussion[]
+  comments    Comment[]
+  votes       Vote[]
+  reports     Report[]
+  following   Follow[] @relation("follower")
+  followers   Follow[] @relation("followee")
 
-  // Session management
-  userSessions UserSession[]
+  // Support
+  donations Donation[]
 
   @@index([email])
-  @@index([refreshToken])
-  @@index([passwordResetToken])
+  @@index([username])
 }
 
-model RoleChange {
-  id           String   @id @default(uuid())
-  userId       String
-  changedBy    String
-  previousRole UserRole
-  newRole      UserRole
-  reason       String? // Optional reason for role change
-  createdAt    DateTime @default(now())
+model OAuthAccount {
+  id         String   @id @default(uuid())
+  userId     String
+  provider   String // "github" | "google"
+  providerId String // provider's user id
+  createdAt  DateTime @default(now())
 
-  user          User @relation("UserRoleChanges", fields: [userId], references: [id], onDelete: Cascade)
-  changedByUser User @relation("PromotedBy", fields: [changedBy], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
 
+  @@unique([provider, providerId])
   @@index([userId])
-  @@index([changedBy])
 }
 
 model Problem {
   id          String     @id @default(uuid())
+  slug        String     @unique
   title       String
   description String
   difficulty  Difficulty
   tags        String[]
-  userId      String
+  companies   String[]   @default([])
+  published   Boolean    @default(false)
+  authorId    String
   examples    Json
   constraints String
   hints       String?
@@ -115,17 +122,20 @@ model Problem {
   codeSnippets       Json
   referenceSolutions Json
 
-  createdAt         DateTime            @default(now())
-  updatedAt         DateTime            @updatedAt
-  //RelationShips
-  user              User                @relation(fields: [userId], references: [id], onDelete: Cascade)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  author            User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
   submission        Submission[]
   solvedBy          ProblemSolved[]
   problemsPlaylists ProblemInPlaylist[]
-
-  // New relations
   contestSubmissions ContestSubmission[]
   sheetProgress      SheetProgress[]
+  solutions          Solution[]
+  discussions        Discussion[]
+
+  @@index([published, difficulty])
+  @@index([authorId])
 }
 
 model Submission {
@@ -138,7 +148,7 @@ model Submission {
   stdout        String?
   stderr        String?
   compileOutput String?
-  status        String //Accepted , wrong answer
+  status        String // Accepted, Wrong Answer, ...
   memory        String?
   time          String?
 
@@ -148,6 +158,9 @@ model Submission {
   user      User             @relation(fields: [userId], references: [id], onDelete: Cascade)
   problem   Problem          @relation(fields: [problemId], references: [id], onDelete: Cascade)
   testCases TestCaseResult[]
+
+  @@index([userId, createdAt])
+  @@index([problemId])
 }
 
 model TestCaseResult {
@@ -191,7 +204,7 @@ model Playlist {
   problems    ProblemInPlaylist[]
   user        User                @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  @@unique([name, userId]) //unique playlist name per user
+  @@unique([name, userId])
 }
 
 model ProblemInPlaylist {
@@ -213,11 +226,11 @@ model Contest {
   description     String?
   startTime       DateTime
   endTime         DateTime
-  duration        Int // in minutes
-  problemIds      String[] // Array of problem IDs
+  duration        Int // minutes
+  problemIds      String[]
   maxParticipants Int?
   status          ContestStatus @default(UPCOMING)
-  rules           Json? // Contest specific rules
+  rules           Json?
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
@@ -245,9 +258,9 @@ model ContestSubmission {
   problemId   String
   sourceCode  Json
   language    String
-  status      String // AC, WA, TLE, etc.
+  status      String
   score       Int      @default(0)
-  penalty     Int      @default(0) // time penalty in minutes
+  penalty     Int      @default(0)
   submittedAt DateTime @default(now())
 
   user    User    @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -279,31 +292,13 @@ model Sheet {
   topic          String
   difficulty     Difficulty
   problemIds     String[]
-  price          Float      @default(0) // 0 means free
-  type           SheetType  @default(FREE)
   estimatedHours Int?
   prerequisites  String[]
   isActive       Boolean    @default(true)
   createdAt      DateTime   @default(now())
   updatedAt      DateTime   @updatedAt
 
-  userSheets UserSheet[]
-  progress   SheetProgress[]
-}
-
-model UserSheet {
-  id          String   @id @default(uuid())
-  userId      String
-  sheetId     String
-  purchasedAt DateTime @default(now())
-  paymentId   String? // Payment gateway transaction ID
-  amount      Float
-  isActive    Boolean  @default(true)
-
-  user  User  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  sheet Sheet @relation(fields: [sheetId], references: [id], onDelete: Cascade)
-
-  @@unique([userId, sheetId])
+  progress SheetProgress[]
 }
 
 model SheetProgress {
@@ -322,37 +317,126 @@ model SheetProgress {
   @@unique([userId, sheetId, problemId])
 }
 
-model Payment {
+// ── Community ──────────────────────────────────────────────────────────────
+
+model Solution {
+  id        String   @id @default(uuid())
+  userId    String
+  problemId String
+  title     String
+  body      String // markdown writeup
+  language  String?
+  code      String?
+  votes     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem  Problem   @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  comments Comment[]
+
+  @@index([problemId])
+  @@index([userId])
+}
+
+model Discussion {
+  id        String   @id @default(uuid())
+  userId    String
+  problemId String? // null = general discussion
+  title     String
+  body      String
+  votes     Int      @default(0)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user     User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  problem  Problem?  @relation(fields: [problemId], references: [id], onDelete: Cascade)
+  comments Comment[]
+
+  @@index([problemId])
+  @@index([userId])
+}
+
+model Comment {
+  id           String   @id @default(uuid())
+  userId       String
+  parentId     String? // threaded replies
+  solutionId   String?
+  discussionId String?
+  body         String
+  votes        Int      @default(0)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  user       User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent     Comment?    @relation("thread", fields: [parentId], references: [id], onDelete: NoAction, onUpdate: NoAction)
+  replies    Comment[]   @relation("thread")
+  solution   Solution?   @relation(fields: [solutionId], references: [id], onDelete: Cascade)
+  discussion Discussion? @relation(fields: [discussionId], references: [id], onDelete: Cascade)
+
+  @@index([solutionId])
+  @@index([discussionId])
+  @@index([parentId])
+}
+
+model Vote {
+  id         String   @id @default(uuid())
+  userId     String
+  targetType String // "solution" | "discussion" | "comment"
+  targetId   String
+  value      Int // +1 / -1
+  createdAt  DateTime @default(now())
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, targetType, targetId])
+  @@index([targetType, targetId])
+}
+
+model Follow {
+  followerId String
+  followeeId String
+  createdAt  DateTime @default(now())
+
+  follower User @relation("follower", fields: [followerId], references: [id], onDelete: Cascade)
+  followee User @relation("followee", fields: [followeeId], references: [id], onDelete: Cascade)
+
+  @@id([followerId, followeeId])
+  @@index([followeeId])
+}
+
+model Report {
+  id         String   @id @default(uuid())
+  reporterId String
+  targetType String // "solution" | "discussion" | "comment" | "user"
+  targetId   String
+  reason     String
+  status     String   @default("open") // open | actioned | dismissed
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  reporter User @relation(fields: [reporterId], references: [id], onDelete: Cascade)
+
+  @@index([status])
+}
+
+// ── Support (pay-what-you-want donations) ───────────────────────────────────
+
+model Donation {
   id               String   @id @default(uuid())
-  userId           String
-  sheetId          String?
+  userId           String? // null = anonymous donor
   amount           Float
   currency         String   @default("INR")
-  paymentGateway   String // razorpay, stripe
   gatewayOrderId   String
   gatewayPaymentId String?
-  status           String // pending, completed, failed, refunded
-  metadata         Json?
+  status           String   @default("created") // created | paid | failed
+  name             String? // optional display name for the supporters wall
+  message          String?
+  showOnWall       Boolean  @default(false)
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-}
+  user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-model UserSession {
-  id           String   @id @default(uuid())
-  userId       String
-  deviceInfo   String? // Browser, OS, etc.
-  ipAddress    String?
-  refreshToken String   @unique
-  isActive     Boolean  @default(true)
-  lastUsed     DateTime @default(now())
-  expiresAt    DateTime
-  createdAt    DateTime @default(now())
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  @@index([userId])
-  @@index([refreshToken])
-  @@index([expiresAt])
+  @@index([status, createdAt])
 }
