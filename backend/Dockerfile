@@ -1,32 +1,26 @@
-# Backend Dockerfile
-FROM node:18-alpine
+# CodeArena API
+FROM node:20-alpine
 
 WORKDIR /app
 
-# Copy package files
+# Install deps (full — prisma CLI is needed for generate/migrate)
 COPY package*.json ./
+RUN npm ci
 
-# Install dependencies
-RUN npm ci --only=production
-
-# Copy source code
+# App source
 COPY . .
 
-# Generate Prisma client
+# Generate the Prisma client
 RUN npx prisma generate
 
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs
-RUN adduser -S nodeuser -u 1001
-
-# Change ownership of the app directory
-RUN chown -R nodeuser:nodejs /app
+# Non-root
+RUN addgroup -g 1001 -S nodejs && adduser -S nodeuser -u 1001 && chown -R nodeuser:nodejs /app
 USER nodeuser
 
 EXPOSE 8080
 
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD curl -f http://localhost:8080/api/v1/auth/health || exit 1
+# Node-based health check (no curl needed on alpine)
+HEALTHCHECK --interval=30s --timeout=4s --start-period=10s --retries=3 \
+  CMD node -e "require('http').get('http://localhost:8080/',r=>process.exit(r.statusCode<500?0:1)).on('error',()=>process.exit(1))"
 
 CMD ["npm", "run", "start"]

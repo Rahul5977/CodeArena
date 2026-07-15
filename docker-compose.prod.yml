@@ -1,0 +1,92 @@
+# CodeArena — production stack for a single VPS.
+#   Caddy (edge, auto-TLS) → frontend (SPA) + backend (API) → Postgres + Redis
+#   The Codebox executor runs from its own repo/compose on the same host
+#   (bound to 127.0.0.1:3000); the backend reaches it via host.docker.internal.
+# See DEPLOY.md for the full runbook.
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: codearena-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on: [frontend, backend]
+    networks: [codearena]
+
+  frontend:
+    build: ./frontend
+    container_name: codearena-frontend
+    restart: unless-stopped
+    depends_on: [backend]
+    networks: [codearena]
+
+  backend:
+    build: ./backend
+    container_name: codearena-backend
+    restart: unless-stopped
+    environment:
+      NODE_ENV: production
+      PORT: 8080
+      DATABASE_URL: postgresql://${POSTGRES_USER}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB}
+      REDIS_URL: redis://redis:6379
+      SECRET: ${SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      FRONTEND_ORIGIN: ${FRONTEND_ORIGIN}
+      CODEBOX_API_URL: ${CODEBOX_API_URL:-http://host.docker.internal:3000}
+      CODEBOX_AUTH_TOKEN: ${CODEBOX_AUTH_TOKEN}
+      RAZORPAY_KEY_ID: ${RAZORPAY_KEY_ID:-}
+      RAZORPAY_KEY_SECRET: ${RAZORPAY_KEY_SECRET:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway" # reach the Codebox engine on the host
+    depends_on:
+      postgres: { condition: service_healthy }
+      redis: { condition: service_healthy }
+    networks: [codearena]
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: codearena-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_DB: ${POSTGRES_DB}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks: [codearena]
+
+  redis:
+    image: redis:7-alpine
+    container_name: codearena-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks: [codearena]
+
+volumes:
+  postgres_data:
+  redis_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  codearena:
+    driver: bridge
