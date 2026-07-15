@@ -4,7 +4,7 @@ import jwt from "jsonwebtoken";
 import crypto from "crypto";
 import { ApiError } from "../utils/api-error.js";
 import { ApiResponse } from "../utils/api-response.js";
-import { sendPasswordResetEmail } from "../libs/email.lib.js";
+import { sendPasswordResetEmail, sendVerificationEmail } from "../libs/email.lib.js";
 
 // Single-admin model: the one admin is whoever registers with ADMIN_EMAIL.
 const roleFor = (email) =>
@@ -27,10 +27,12 @@ export const register = async (req, res) => {
 
     const hashedPassword = await bcrypt.hash(password, 12);
     const role = roleFor(email);
+    const emailVerificationToken = generateResetToken();
 
     const newUser = await db.user.create({
-      data: { email: email.toLowerCase(), password: hashedPassword, name: name.trim(), role },
+      data: { email: email.toLowerCase(), password: hashedPassword, name: name.trim(), role, emailVerificationToken },
     });
+    sendVerificationEmail(newUser.email, emailVerificationToken).catch(() => {});
 
     const { accessToken, refreshToken } = generateTokens(newUser.id);
     await db.user.update({ where: { id: newUser.id }, data: { refreshToken } });
@@ -266,6 +268,22 @@ export const check = async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { user }, "User authenticated successfully"));
   } catch (error) {
     return handleError(res, error, "Error in check route");
+  }
+};
+
+// Clicked from the verification email → mark verified, bounce back to the app.
+export const verifyEmail = async (req, res) => {
+  const origin = process.env.FRONTEND_ORIGIN || "http://localhost:3000";
+  const { token } = req.query;
+  if (!token) return res.redirect(`${origin}/login`);
+  try {
+    const user = await db.user.findFirst({ where: { emailVerificationToken: token } });
+    if (!user) return res.redirect(`${origin}/login?verified=invalid`);
+    await db.user.update({ where: { id: user.id }, data: { emailVerified: true, emailVerificationToken: null } });
+    return res.redirect(`${origin}/app?verified=1`);
+  } catch (error) {
+    console.error("Verify email error:", error);
+    return res.redirect(`${origin}/login?verified=error`);
   }
 };
 

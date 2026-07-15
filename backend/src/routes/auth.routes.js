@@ -14,7 +14,9 @@ import {
   getProfile,
   updateProfile,
   healthCheck,
+  verifyEmail,
 } from "../controllers/auth.controllers.js";
+import { githubAuth, githubCallback, googleAuth, googleCallback } from "../controllers/oauth.controllers.js";
 
 const authRoutes = express.Router();
 
@@ -25,6 +27,13 @@ authRoutes.post("/login", login);
 authRoutes.post("/forgot-password", forgotPassword);
 authRoutes.post("/reset-password", resetPassword);
 authRoutes.post("/refresh-token", refreshToken);
+authRoutes.get("/verify-email", verifyEmail);
+
+// OAuth (redirect → provider → callback)
+authRoutes.get("/oauth/github", githubAuth);
+authRoutes.get("/oauth/github/callback", githubCallback);
+authRoutes.get("/oauth/google", googleAuth);
+authRoutes.get("/oauth/google/callback", googleCallback);
 
 // Protected
 authRoutes.use(authMiddleware);

@@ -5,7 +5,7 @@
 >
 > **Legend:** `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked · `[-]` dropped/deferred
 >
-> _Last updated: 2026-07-15 — status: **Phase 5 core pages complete; building on toward Phase 11 (auth integrations next).**_
+> _Last updated: 2026-07-15 — status: **Phase 5 pages + Phase 4 auth integrations (OAuth + email) done; community layer next.**_
 
 ---
 
@@ -17,7 +17,7 @@
 | 1 | DB & backend reshape (single-admin, schema) | `[x]` migrated + seeded + verified end-to-end on Postgres |
 | 2 | Executor → Codebox (+ pilot gate) | `[~]` lib swapped + wired; execution validates on VPS |
 | 3 | Backend build-out & hardening | `[~]` helmet/rate-limit/404/CORS/answer-free/secure-judge done; zod + Redis cache + more endpoints pending |
-| 4 | Auth: OAuth + real email + Redis sessions | `[~]` email/password wired; OAuth + real SMTP + Redis sessions pending (needs creds) |
+| 4 | Auth: OAuth + real email + Redis sessions | `[~]` OAuth (GitHub+Google) + real email (nodemailer: verify + reset) built — add keys to `.env`; Redis sessions pending |
 | 5 | Frontend build (AppShell → pages) | `[x]` all core pages wired to the API; polish (react-query/responsive) + public profiles (Phase 6) remain |
 | 6 | Community layer | `[ ]` |
 | 7 | Support page (Razorpay pay-what-you-want) | `[~]` UI + backend order/verify done; live checkout needs Razorpay keys |
@@ -92,7 +92,7 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 
 ### Beyond v0.1 — remaining to reach Phase 11 (multi-session)
 - **Phase 5 (frontend):** ✓ **all core pages done** (Landing, Auth, Onboarding, Dashboard, Problems, Editor, Submissions, Sheets, Contests, Leaderboard, Profile, Settings, Support). Remaining: public profiles (Phase 6), react-query + responsive polish.
-- **Phase 4 (auth):** GitHub/Google OAuth, real SMTP email (verify + reset), Redis sessions. *(needs creds)*
+- **Phase 4 (auth):** ✓ OAuth + real email (verify + reset) built (owner adds keys to `.env`); remaining: Redis sessions.
 - **Phase 6 (community):** profiles, solutions, discuss, votes, follow, global leaderboard, moderation.
 - **Phase 7:** live Razorpay checkout on the Support page. *(needs keys)*
 - **Phase 8:** admin dashboard UI (KPIs, manage tabs).
@@ -115,10 +115,11 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 - [ ] Per-user submit rate limit + bounded executor queue + queue-position response.
 
 ## Phase 4 — Auth
-- [ ] GitHub + Google OAuth (`OAuthAccount`, nullable password).
-- [ ] `nodemailer` + SMTP: verify-email route; email reset token (remove from response body).
-- [ ] Redis refresh-token sessions (retire `UserSession`); real logout-everywhere.
-- [ ] Gate community posting on `emailVerified`.
+- [x] GitHub + Google OAuth (manual flow via `oauth.controllers.js`; `OAuthAccount` linking; nullable password; CSRF state cookie). Callback = `${FRONTEND_ORIGIN}/api/v1/auth/oauth/<provider>/callback`. FE buttons wired. **Needs owner client IDs/secrets in `.env`.**
+- [x] `nodemailer` in `email.lib.js` (SMTP when configured, else dev-log); register sends a verification email; `GET /auth/verify-email`. Password reset already emails the token (never returned).
+- [x] Frontend: OAuth buttons (Login + Register) + Forgot/Reset-password pages + routes + "Forgot password?" link.
+- [ ] Redis refresh-token sessions (retire transitional `refreshToken`); real logout-everywhere.
+- [ ] Gate community posting on `emailVerified` (community phase).
 
 ## Phase 5 — Frontend build *(to the Organic design)*
 - [x] `AppShell` (sidebar Practice/Account, `isAdmin` gating, top bar: search/streak/notifications/avatar) + router.

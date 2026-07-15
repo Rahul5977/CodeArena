@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useAuth } from "../../store/auth.js";
 import { AuthShell } from "./Login.jsx";
+import OAuthButtons from "../../components/OAuthButtons.jsx";
 
 export default function Register() {
   const navigate = useNavigate();
@@ -47,6 +48,7 @@ export default function Register() {
         {error && <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", fontSize: 13, padding: "9px 12px", borderRadius: 12, marginBottom: 14 }}>{error}</div>}
         <button className="btn btn-primary btn-block" disabled={busy}>{busy ? "Creating…" : "Create account"}</button>
       </form>
+      <OAuthButtons />
       <p style={{ fontSize: 13, textAlign: "center", color: "color-mix(in srgb, var(--color-text) 55%, transparent)", marginTop: 16, marginBottom: 0 }}>
         Already have an account? <Link to="/login">Sign in</Link>
       </p>
