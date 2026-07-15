@@ -1,80 +1,28 @@
-@import "tailwindcss";
+/* App base — imports the Organic design system, then app-level layout resets.
+   NOTE: intentionally does NOT import Tailwind/DaisyUI — the Organic tokens are the styling contract. */
+@import "./styles/organic.css";
 
-/* Custom utilities */
-@layer components {
-  .btn-brand {
-    background-color: #3b82f6; /* bg-blue-500 */
-    color: #fff; /* text-white */
-    border: none; /* border-none */
-    border-radius: 0.5rem; /* rounded-lg */
-    padding-left: 1rem; /* px-4 */
-    padding-right: 1rem; /* px-4 */
-    padding-top: 0.5rem; /* py-2 */
-    padding-bottom: 0.5rem; /* py-2 */
-    font-weight: 500; /* font-medium */
-    transition-property: background-color;
-    transition-duration: 150ms; /* transition-colors */
-  }
-  .btn-brand:hover {
-    background-color: #2563eb; /* hover:bg-blue-600 */
-  }
-  
-  .card-hover {
-    transition: box-shadow 0.2s;
-  }
-  .card-hover:hover {
-    box-shadow: 0 10px 15px -3px rgba(59, 130, 246, 0.1), 0 4px 6px -4px rgba(59, 130, 246, 0.1);
-  }
-  
-  .gradient-bg {
-    background-image: linear-gradient(to bottom right, #3b82f6, #1d4ed8);
-  }
-  
-  .stat-custom {
-    background-color: #fff; /* bg-white */
-    box-shadow: 0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -4px rgba(0,0,0,0.1); /* shadow-lg */
-    border-radius: 0.5rem; /* rounded-lg */
-    padding: 1.5rem; /* p-6 */
-  }
-}
+html, body, #root { height: 100%; }
+body { margin: 0; overflow: hidden; }
+#root { display: flex; }
 
-/* Custom scrollbar */
-::-webkit-scrollbar {
-  width: 6px;
-}
+/* thin, warm scrollbars to match the ground */
+* { scrollbar-width: thin; scrollbar-color: var(--color-neutral-400) transparent; }
+*::-webkit-scrollbar { width: 10px; height: 10px; }
+*::-webkit-scrollbar-thumb { background: var(--color-neutral-400); border-radius: 999px; border: 3px solid var(--color-bg); }
+*::-webkit-scrollbar-thumb:hover { background: var(--color-neutral-500); }
 
-::-webkit-scrollbar-track {
-  background: #f1f5f9;
+/* used by AppShell nav links so active/hover states match the design without inline JS */
+.nav-item {
+  display: flex; align-items: center; gap: 12px;
+  padding: 9px 11px; border-radius: 14px; font-size: 14px;
+  text-decoration: none; margin-bottom: 2px; font-weight: 500;
+  color: color-mix(in srgb, var(--color-text) 76%, transparent);
 }
+.nav-item:hover { background: color-mix(in srgb, var(--color-text) 6%, transparent); color: color-mix(in srgb, var(--color-text) 76%, transparent); }
+.nav-item.active { background: var(--color-accent-100); color: var(--color-accent-800); font-weight: 700; }
+.nav-item svg { flex: none; }
 
-::-webkit-scrollbar-thumb {
-  background: #cbd5e1;
-  border-radius: 3px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: #94a3b8;
-}
-
-/* Remove default styles */
-* {
-  box-sizing: border-box;
-}
-
-body {
-  margin: 0;
-  font-family: system-ui, -apple-system, sans-serif;
-}
-
-/* Dark theme support */
-[data-theme="dark"] ::-webkit-scrollbar-track {
-  background: #1e293b;
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb {
-  background: #475569;
-}
-
-[data-theme="dark"] ::-webkit-scrollbar-thumb:hover {
-  background: #64748b;
-}
+.hover-row:hover { background: color-mix(in srgb, var(--color-text) 5%, transparent); }
+.hover-lift { transition: transform .14s, box-shadow .14s; }
+.hover-lift:hover { transform: translateY(-3px); box-shadow: var(--shadow-md); }
