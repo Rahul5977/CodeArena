@@ -16,6 +16,7 @@ You don't need to spend much, or anything. Ranked by fit for the **full stack** 
 | **AWS EC2 Free Tier** | ⏳ 12 months | `t2/t3.micro` = **1 GB RAM** | Too small for the full stack + Codebox (it will OOM). Workable only if you drop the executor or add swap and trim hard. Realistic AWS floor is `t3.small` (2 GB, ~$15/mo). |
 | **GCP Free Tier** | ✅ forever | `e2-micro` **1 GB** | Same 1 GB limitation as AWS micro. |
 | **GitHub Student Pack** | ✅ if a student | DigitalOcean **$200** credit, Azure $100, etc. | If eligible: months of a proper 2–4 GB droplet for free, plus a free domain. |
+| **Hostinger VPS** | 💶 ~$5–9/mo | KVM 2: 2 vCPU / 8 GB | Easy hPanel, full root; **no cloud firewall to configure** (just `ufw`). |
 | **Hetzner / DigitalOcean / Vultr** | 💶 ~€4–14/mo | 2–8 GB | Cheapest *paid* — best price/perf once you outgrow free. |
 
 **Recommendation: Oracle Cloud Always Free (4 vCPU / 24 GB ARM)** — genuinely free forever and powerful enough for everything. The runbook below is cloud-agnostic; on Oracle also open **80/443 in the instance's Security List / NSG** (in addition to `ufw`). On a 1 GB box (AWS/GCP micro) run only Postgres + API + Caddy and host the executor elsewhere — not recommended for the full experience.
