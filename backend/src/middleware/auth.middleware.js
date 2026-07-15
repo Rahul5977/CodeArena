@@ -47,6 +47,30 @@ export const authMiddleware = async (req, res, next) => {
   }
 };
 
+// Attaches req.user when a valid token is present, but never rejects — for
+// public-but-personalizable reads (e.g. the problem list).
+export const optionalAuth = async (req, res, next) => {
+  try {
+    let token = req.cookies.accessToken || req.cookies.jwt;
+    if (!token && req.headers.authorization) token = req.headers.authorization.replace("Bearer ", "");
+    if (token) {
+      try {
+        const decoded = jwt.verify(token, process.env.SECRET);
+        const user = await db.user.findUnique({
+          where: { id: decoded.id },
+          select: { id: true, name: true, username: true, email: true, image: true, role: true, isActive: true, emailVerified: true },
+        });
+        if (user?.isActive) req.user = user;
+      } catch {
+        /* invalid token → treat as anonymous */
+      }
+    }
+    next();
+  } catch {
+    next();
+  }
+};
+
 export const checkRole = (requiredRoles) => {
   return (req, res, next) => {
     if (!requiredRoles.includes(req.user?.role)) {
