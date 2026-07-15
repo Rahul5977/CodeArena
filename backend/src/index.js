@@ -19,7 +19,12 @@ import donationRoutes from "./routes/donation.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
 import leaderboardRoutes from "./routes/leaderboard.routes.js";
 import userManagementRoutes from "./routes/userManagement.routes.js";
+import communityRoutes from "./routes/community.routes.js";
+import adminContentRoutes from "./routes/adminContent.routes.js";
+import healthRoutes from "./routes/health.routes.js";
+import { donationWebhook } from "./controllers/donationWebhook.controllers.js";
 
+import { httpLogger } from "./libs/logger.js";
 import { initializeSocket } from "./libs/socket.js";
 
 dotenv.config();
@@ -35,12 +40,18 @@ app.set("trust proxy", 1);
 initializeSocket(server);
 
 app.use(helmet({ contentSecurityPolicy: false })); // API only; CSP lives on the SPA edge
+app.use(httpLogger);
 app.use(
   cors({
     origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
     credentials: true,
   })
 );
+
+// Razorpay webhook needs the RAW body for HMAC signature verification — must be
+// registered before express.json() consumes it.
+app.post("/api/v1/support/webhook", express.raw({ type: "application/json" }), donationWebhook);
+
 app.use(express.json({ limit: "1mb" }));
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 app.use(cookieParser());
@@ -83,6 +94,9 @@ app.use("/api/v1/support", donationRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
 app.use("/api/v1/leaderboard", leaderboardRoutes);
 app.use("/api/v1/admin/users", userManagementRoutes);
+app.use("/api/v1/community", communityRoutes);
+app.use("/api/v1/admin/content", adminContentRoutes);
+app.use("/api/v1/health", healthRoutes);
 
 // 404
 app.use((req, res) => {

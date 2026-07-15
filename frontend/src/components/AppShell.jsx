@@ -1,7 +1,7 @@
 import { NavLink, Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import {
   Code2, LayoutDashboard, Library, ListChecks, Trophy, BarChart3,
-  FileCheck2, User, Settings, ShieldCheck, Heart, Flame, Bell, Search, LogOut,
+  FileCheck2, MessagesSquare, User, Settings, ShieldCheck, Heart, Flame, Bell, Search, LogOut,
 } from "lucide-react";
 import { useAuth } from "../store/auth.js";
 
@@ -16,6 +16,7 @@ const NAV = [
     { key: "contests", label: "Contests", to: "/contests", title: "Contests", Icon: Trophy },
     { key: "leaderboard", label: "Leaderboard", to: "/leaderboard", title: "Leaderboard", Icon: BarChart3 },
     { key: "submissions", label: "Submissions", to: "/submissions", title: "Submissions", Icon: FileCheck2 },
+    { key: "discuss", label: "Discuss", to: "/discuss", title: "Discuss", Icon: MessagesSquare },
   ]},
   { group: "Account", items: [
     { key: "profile", label: "Profile", to: "/profile", title: "Profile", Icon: User },

@@ -1,6 +1,7 @@
 // CodeArena seed — an admin user + a handful of starter problems so the
 // platform isn't empty for v0.1. Reference solutions read stdin and print
 // stdout (the stdin/stdout judge contract). Run: `node prisma/seed.js`.
+import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "../src/generated/prisma/index.js";
 
@@ -145,6 +146,190 @@ const PROBLEMS = [
     referenceSolutions: {
       PYTHON: "n = int(input())\na, b = 0, 1\nfor _ in range(n):\n    a, b = b, a + b\nprint(a)\n",
       JAVASCRIPT: "const n = Number(require('fs').readFileSync(0, 'utf8').trim());\nlet a = 0, b = 1;\nfor (let i = 0; i < n; i++) { [a, b] = [b, a + b]; }\nconsole.log(a);\n",
+    },
+  },
+  {
+    slug: "even-or-odd",
+    title: "Even or Odd",
+    difficulty: "EASY",
+    tags: ["Math"],
+    description: "Given an integer **n**, print `Even` if it is divisible by 2, otherwise print `Odd`.",
+    constraints: "-1000000000 <= n <= 1000000000",
+    examples: [{ input: "4", output: "Even", explanation: "4 is divisible by 2." }],
+    testcases: [
+      { input: "4", output: "Even" },
+      { input: "7", output: "Odd" },
+      { input: "0", output: "Even" },
+      { input: "-3", output: "Odd" },
+    ],
+    codeSnippets: {
+      PYTHON: "n = int(input())\n# print(...)\n",
+      JAVASCRIPT: "const n = Number(require('fs').readFileSync(0, 'utf8').trim());\n// console.log(...);\n",
+    },
+    referenceSolutions: {
+      PYTHON: "n = int(input())\nprint(\"Even\" if n % 2 == 0 else \"Odd\")\n",
+      JAVASCRIPT: "const n = Number(require('fs').readFileSync(0, 'utf8').trim());\nconsole.log(n % 2 === 0 ? \"Even\" : \"Odd\");\n",
+    },
+  },
+  {
+    slug: "sum-1-to-n",
+    title: "Sum 1..N",
+    difficulty: "EASY",
+    tags: ["Math"],
+    description: "Given a positive integer **n**, print the sum 1 + 2 + ... + n.",
+    constraints: "1 <= n <= 100000",
+    examples: [{ input: "5", output: "15", explanation: "1 + 2 + 3 + 4 + 5 = 15." }],
+    testcases: [
+      { input: "1", output: "1" },
+      { input: "5", output: "15" },
+      { input: "10", output: "55" },
+      { input: "100", output: "5050" },
+    ],
+    codeSnippets: {
+      PYTHON: "n = int(input())\n# print(...)\n",
+      JAVASCRIPT: "const n = Number(require('fs').readFileSync(0, 'utf8').trim());\n// console.log(...);\n",
+    },
+    referenceSolutions: {
+      PYTHON: "n = int(input())\nprint(n * (n + 1) // 2)\n",
+      JAVASCRIPT: "const n = Number(require('fs').readFileSync(0, 'utf8').trim());\nconsole.log(n * (n + 1) / 2);\n",
+    },
+  },
+  {
+    slug: "count-digits",
+    title: "Count Digits",
+    difficulty: "EASY",
+    tags: ["Math"],
+    description: "Given a non-negative integer **n**, print how many digits it has.",
+    constraints: "0 <= n <= 1000000000",
+    examples: [{ input: "12345", output: "5", explanation: "12345 has 5 digits." }],
+    testcases: [
+      { input: "5", output: "1" },
+      { input: "100", output: "3" },
+      { input: "12345", output: "5" },
+      { input: "0", output: "1" },
+    ],
+    codeSnippets: {
+      PYTHON: "n = int(input())\n# print(...)\n",
+      JAVASCRIPT: "const s = require('fs').readFileSync(0, 'utf8').trim();\n// console.log(...);\n",
+    },
+    referenceSolutions: {
+      PYTHON: "n = int(input())\nprint(len(str(n)))\n",
+      JAVASCRIPT: "const s = require('fs').readFileSync(0, 'utf8').trim();\nconsole.log(String(Number(s)).length);\n",
+    },
+  },
+  {
+    slug: "celsius-to-fahrenheit",
+    title: "Celsius to Fahrenheit",
+    difficulty: "EASY",
+    tags: ["Math"],
+    description: "Given a temperature **C** in Celsius (a multiple of 5), print it in Fahrenheit using F = C * 9 / 5 + 32.",
+    constraints: "-1000 <= C <= 1000, and C is a multiple of 5 so the answer is a whole number",
+    examples: [{ input: "100", output: "212", explanation: "100 * 9 / 5 + 32 = 212." }],
+    testcases: [
+      { input: "0", output: "32" },
+      { input: "100", output: "212" },
+      { input: "25", output: "77" },
+      { input: "-40", output: "-40" },
+    ],
+    codeSnippets: {
+      PYTHON: "c = int(input())\n# print(...)\n",
+      JAVASCRIPT: "const c = Number(require('fs').readFileSync(0, 'utf8').trim());\n// console.log(...);\n",
+    },
+    referenceSolutions: {
+      PYTHON: "c = int(input())\nprint(c * 9 // 5 + 32)\n",
+      JAVASCRIPT: "const c = Number(require('fs').readFileSync(0, 'utf8').trim());\nconsole.log(c * 9 / 5 + 32);\n",
+    },
+  },
+  {
+    slug: "largest-of-three",
+    title: "Largest of Three",
+    difficulty: "EASY",
+    tags: ["Math"],
+    description: "Given three space-separated integers **a**, **b**, and **c** on one line, print the largest.",
+    constraints: "-1000000000 <= a, b, c <= 1000000000",
+    examples: [{ input: "3 7 5", output: "7", explanation: "7 is the largest of 3, 7, and 5." }],
+    testcases: [
+      { input: "3 7 5", output: "7" },
+      { input: "10 10 2", output: "10" },
+      { input: "-1 -5 -3", output: "-1" },
+      { input: "100 200 150", output: "200" },
+    ],
+    codeSnippets: {
+      PYTHON: "a, b, c = map(int, input().split())\n# print(...)\n",
+      JAVASCRIPT: "const [a, b, c] = require('fs').readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\n// console.log(...);\n",
+    },
+    referenceSolutions: {
+      PYTHON: "a, b, c = map(int, input().split())\nprint(max(a, b, c))\n",
+      JAVASCRIPT: "const [a, b, c] = require('fs').readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconsole.log(Math.max(a, b, c));\n",
+    },
+  },
+  {
+    slug: "string-length",
+    title: "String Length",
+    difficulty: "EASY",
+    tags: ["String"],
+    description: "Given a single word **s** (no spaces), print the number of characters in it.",
+    constraints: "1 <= |s| <= 1000",
+    examples: [{ input: "hello", output: "5", explanation: "\"hello\" has 5 characters." }],
+    testcases: [
+      { input: "hello", output: "5" },
+      { input: "CodeArena", output: "9" },
+      { input: "a", output: "1" },
+      { input: "abcdef", output: "6" },
+    ],
+    codeSnippets: {
+      PYTHON: "s = input().strip()\n# print(...)\n",
+      JAVASCRIPT: "const s = require('fs').readFileSync(0, 'utf8').trim();\n// console.log(...);\n",
+    },
+    referenceSolutions: {
+      PYTHON: "s = input().strip()\nprint(len(s))\n",
+      JAVASCRIPT: "const s = require('fs').readFileSync(0, 'utf8').trim();\nconsole.log(s.length);\n",
+    },
+  },
+  {
+    slug: "power-of-two",
+    title: "Power of Two",
+    difficulty: "EASY",
+    tags: ["Math"],
+    description: "Given a positive integer **n**, print `true` if it is a power of two (1, 2, 4, 8, ...), otherwise print `false`.",
+    constraints: "1 <= n <= 1000000000",
+    examples: [{ input: "8", output: "true", explanation: "8 = 2^3, so it is a power of two." }],
+    testcases: [
+      { input: "1", output: "true" },
+      { input: "16", output: "true" },
+      { input: "6", output: "false" },
+      { input: "1024", output: "true" },
+    ],
+    codeSnippets: {
+      PYTHON: "n = int(input())\n# print(...)\n",
+      JAVASCRIPT: "const n = Number(require('fs').readFileSync(0, 'utf8').trim());\n// console.log(...);\n",
+    },
+    referenceSolutions: {
+      PYTHON: "n = int(input())\nprint(\"true\" if n > 0 and (n & (n - 1)) == 0 else \"false\")\n",
+      JAVASCRIPT: "const n = Number(require('fs').readFileSync(0, 'utf8').trim());\nconsole.log(n > 0 && (n & (n - 1)) === 0 ? \"true\" : \"false\");\n",
+    },
+  },
+  {
+    slug: "average-of-n-numbers",
+    title: "Average of N Numbers",
+    difficulty: "EASY",
+    tags: ["Array", "Math"],
+    description: "The first line has an integer **n**, the second line has **n** space-separated integers. Print their average (the sum is guaranteed to be divisible by n).",
+    constraints: "1 <= n <= 1000; the sum of the numbers is divisible by n",
+    examples: [{ input: "4\n2 4 6 8", output: "5", explanation: "(2 + 4 + 6 + 8) / 4 = 20 / 4 = 5." }],
+    testcases: [
+      { input: "4\n2 4 6 8", output: "5" },
+      { input: "3\n10 20 30", output: "20" },
+      { input: "1\n42", output: "42" },
+      { input: "5\n1 2 3 4 5", output: "3" },
+    ],
+    codeSnippets: {
+      PYTHON: "import sys\ndata = sys.stdin.read().split()\nn = int(data[0])\narr = list(map(int, data[1:1+n]))\n# print(...)\n",
+      JAVASCRIPT: "const d = require('fs').readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst n = d[0];\nconst arr = d.slice(1, 1 + n);\n// console.log(...);\n",
+    },
+    referenceSolutions: {
+      PYTHON: "import sys\nd = sys.stdin.read().split()\nn = int(d[0])\narr = list(map(int, d[1:1+n]))\nprint(sum(arr) // n)\n",
+      JAVASCRIPT: "const d = require('fs').readFileSync(0, 'utf8').trim().split(/\\s+/).map(Number);\nconst n = d[0];\nconst arr = d.slice(1, 1 + n);\nconsole.log(arr.reduce((a, b) => a + b, 0) / n);\n",
     },
   },
 ];

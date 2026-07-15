@@ -21,6 +21,10 @@ import Profile from "./pages/Profile.jsx";
 import Settings from "./pages/Settings.jsx";
 import Support from "./pages/Support.jsx";
 import Admin from "./pages/Admin.jsx";
+import PublicProfile from "./pages/PublicProfile.jsx";
+import Discuss from "./pages/Discuss.jsx";
+import DiscussionThread from "./pages/DiscussionThread.jsx";
+import ProblemSolutions from "./pages/ProblemSolutions.jsx";
 
 export default function App() {
   const hydrate = useAuth((s) => s.hydrate);
@@ -49,6 +53,7 @@ export default function App() {
         <Route path="/app" element={<Dashboard />} />
         <Route path="/problems" element={<Problems />} />
         <Route path="/problems/:slug" element={<ProblemEditor />} />
+        <Route path="/problems/:slug/solutions" element={<ProblemSolutions />} />
         <Route path="/sheets" element={<Sheets />} />
         <Route path="/sheets/:id" element={<Sheets />} />
         <Route path="/playlists" element={<Playlists />} />
@@ -56,8 +61,10 @@ export default function App() {
         <Route path="/contests/:id" element={<Contests />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/submissions" element={<Submissions />} />
+        <Route path="/discuss" element={<Discuss />} />
+        <Route path="/discuss/:id" element={<DiscussionThread />} />
         <Route path="/profile" element={<Profile />} />
-        <Route path="/u/:username" element={<Profile />} />
+        <Route path="/u/:username" element={<PublicProfile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/support" element={<Support />} />
         <Route
