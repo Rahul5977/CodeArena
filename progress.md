@@ -23,7 +23,7 @@
 | 7 | Support page (Razorpay pay-what-you-want) | `[x]` live checkout + signature-verified webhook (needs Razorpay keys) |
 | 8 | Admin dashboard | `[x]` overview KPIs + problem management (endpoints + UI); tested |
 | 9 | DSA content pipeline & seeding | `[~]` 14 validated seed problems (114/114); full OneDay authoring pipeline still pending |
-| 10 | Deploy + scale to 10k | `[~]` prod artifacts ready + validated; deploying to **Google Cloud** ($300/90-day trial VM); owner provisions, guided |
+| 10 | Deploy + scale to 10k | `[~]` prod artifacts ready + validated; deploying to **AWS Lightsail** (2 GB, ~$10/mo, 3 months free); owner provisions, guided |
 | 11 | Launch hardening & observability | `[x]` pino logging + `/health` + SEO/robots/sitemap; uptime/error-tracking optional |
 
 Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
@@ -204,5 +204,6 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 | 2026-07-15 | Pricing → Support | Drop Free/Pro/Teams + Stripe; pay-what-you-want via Razorpay. |
 | 2026-07-15 | Hosting = **Oracle Cloud Always Free** | 4 vCPU / 24 GB ARM, free forever; runs full stack incl. executor. Runbook to be tailored for ARM. |
 | 2026-07-15 | Hosting → **Google Cloud $300 trial** | Oracle blocked; Hostinger monthly price too high (~₹1.5k). GCP 90-day $300 trial runs an 8 GB e2-standard-2 free for the trial. Standard Linux Docker → Codebox works. |
+| 2026-07-15 | Hosting → **AWS Lightsail** | GCP too complex; owner already has AWS. Lightsail 2 GB (~$10/mo, first 3 months free) + swap; simplest AWS compute. prod compose now passes OAuth/SMTP/webhook envs. |
 | 2026-07-15 | Build OAuth + SMTP + Razorpay now | Owner adds real keys to `.env` (never in chat); flows built to read env. |
 | 2026-07-15 | Next priority = **finish frontend pages (Phase 5)** | Submissions → Settings → Profile → Sheets → Contests → Leaderboard → Onboarding. |
