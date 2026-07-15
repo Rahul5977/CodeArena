@@ -5,7 +5,7 @@
 >
 > **Legend:** `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked · `[-]` dropped/deferred
 >
-> _Last updated: 2026-07-15 — status: **Phases 6/7/8/9/11 built via a 6-agent workflow + integrated & tested. Nearly feature-complete; deploy next.**_
+> _Last updated: 2026-07-15 — status: **Deployed to AWS Lightsail (13.203.127.204) — app stack up + seeded + verified; DNS + executor pending.**_
 
 ---
 
@@ -23,7 +23,7 @@
 | 7 | Support page (Razorpay pay-what-you-want) | `[x]` live checkout + signature-verified webhook (needs Razorpay keys) |
 | 8 | Admin dashboard | `[x]` overview KPIs + problem management (endpoints + UI); tested |
 | 9 | DSA content pipeline & seeding | `[~]` 14 validated seed problems (114/114); full OneDay authoring pipeline still pending |
-| 10 | Deploy + scale to 10k | `[~]` prod artifacts ready + validated; deploying to **AWS Lightsail** (2 GB, ~$10/mo, 3 months free); owner provisions, guided |
+| 10 | Deploy + scale to 10k | `[~]` **app live on AWS Lightsail** (13.203.127.204): stack up, migrated, seeded, /health db:true; DNS + Codebox executor pending |
 | 11 | Launch hardening & observability | `[x]` pino logging + `/health` + SEO/robots/sitemap; uptime/error-tracking optional |
 
 Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
