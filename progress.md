@@ -5,7 +5,7 @@
 >
 > **Legend:** `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked · `[-]` dropped/deferred
 >
-> _Last updated: 2026-07-15 — status: **v0.1 code-complete + production-tested (14/15, one test-script artifact); building on toward Phase 11.**_
+> _Last updated: 2026-07-15 — status: **Phase 5 core pages complete; building on toward Phase 11 (auth integrations next).**_
 
 ---
 
@@ -18,7 +18,7 @@
 | 2 | Executor → Codebox (+ pilot gate) | `[~]` lib swapped + wired; execution validates on VPS |
 | 3 | Backend build-out & hardening | `[~]` helmet/rate-limit/404/CORS/answer-free/secure-judge done; zod + Redis cache + more endpoints pending |
 | 4 | Auth: OAuth + real email + Redis sessions | `[~]` email/password wired; OAuth + real SMTP + Redis sessions pending (needs creds) |
-| 5 | Frontend build (AppShell → pages) | `[~]` core loop wired (Auth/Problems/Editor/Dashboard/Support); Submissions/Sheets/Contests/Leaderboard/Profile/Settings/Onboarding pending |
+| 5 | Frontend build (AppShell → pages) | `[x]` all core pages wired to the API; polish (react-query/responsive) + public profiles (Phase 6) remain |
 | 6 | Community layer | `[ ]` |
 | 7 | Support page (Razorpay pay-what-you-want) | `[~]` UI + backend order/verify done; live checkout needs Razorpay keys |
 | 8 | Admin dashboard | `[ ]` backend stats/users endpoints exist; UI pending |
@@ -91,7 +91,7 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 (validates on the VPS via Codebox — see DEPLOY.md §4).
 
 ### Beyond v0.1 — remaining to reach Phase 11 (multi-session)
-- **Phase 5 (frontend):** ✓ Submissions / Settings / Profile done; remaining: Sheets, Contests, Leaderboard, Onboarding.
+- **Phase 5 (frontend):** ✓ **all core pages done** (Landing, Auth, Onboarding, Dashboard, Problems, Editor, Submissions, Sheets, Contests, Leaderboard, Profile, Settings, Support). Remaining: public profiles (Phase 6), react-query + responsive polish.
 - **Phase 4 (auth):** GitHub/Google OAuth, real SMTP email (verify + reset), Redis sessions. *(needs creds)*
 - **Phase 6 (community):** profiles, solutions, discuss, votes, follow, global leaderboard, moderation.
 - **Phase 7:** live Razorpay checkout on the Support page. *(needs keys)*
@@ -128,9 +128,9 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 - [x] Build + lint green (`vite build`, `eslint`); demo user in `store/auth.js` renders the shell.
 - [x] Problems list (filter/search) + ProblemEditor (Monaco, Run/Submit, results) — wired to real API.
 - [x] Submissions (history), Settings (edit profile + change password), Profile (own stats + solved-by-difficulty).
-- [ ] Sheets (list + detail/progress), Contests (hub + live board via Socket.IO), Leaderboard (podium + ranks).
-- [ ] Onboarding (4-step first-run).
-- [ ] Public profiles by username (community phase); react-query caching + responsive pass.
+- [x] Sheets (list + detail/progress), Contests (list by status), Leaderboard (podium + ranks; new `/leaderboard` endpoint).
+- [x] Onboarding (4-step first-run flow, `/onboarding`).
+- [ ] Public profiles by username (community phase); react-query caching + responsive polish pass.
 
 ## Phase 6 — Community
 - [ ] Public profiles by username; solutions per problem + upvotes; discussion threads + comments; follow/feed.
