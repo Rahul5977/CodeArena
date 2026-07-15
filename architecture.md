@@ -300,7 +300,7 @@ Phases 0–4 (backend/DB/executor/auth) run alongside 5 (frontend). 9 (content) 
 
 **Phase 0 — Foundation & design system.** ✓ Frontend rebuilt fresh in `frontend/`; Organic `styles.css` ported; AppShell + Dashboard(1a) + Support built; builds/lints green. ◻ Remaining: rename `leetlab-*`→`codearena-*`, drop `backend/cookies.txt`, consolidate `SECRET`/`JWT_SECRET`, rewrite `.env.example` (add `CODEBOX_*`/`FRONTEND_ORIGIN`/OAuth/SMTP/Razorpay; drop Sulu/Judge0). **Gate:** clean repo, green builds.
 
-**Phase 1 — DB & backend reshape.** ✓ Target schema written + validated (single-admin, community, donation, oauth, slugs). ✓ Foundation controller migration: `auth.middleware.js` (single-admin, aliased exports), `problem.controllers.js` (authorId/slug/published, answer-free projection + pagination, all 3 audit bugs fixed). ◻ Remaining = **§12.2 controller migration**. **Gate:** `prisma generate`+`migrate dev` clean; all controllers run on the new schema; audit bugs closed.
+**Phase 1 — DB & backend reshape.** ✓ Target schema written + validated (single-admin, community, donation, oauth, slugs). ✓ **All controllers migrated** (§12.2) — middleware, problem (3 audit bugs fixed), auth (email-the-reset-token, `ADMIN_EMAIL` bootstrap), userManagement (single-admin), sheets (de-monetized), donation (Support), `index.js` (env CORS + support route); rbac removed. `prisma generate` clean, **backend boots**. ◻ Remaining: `prisma migrate dev` against a real Postgres + integration smoke-test. **Gate:** audit bugs closed ✓; migrations applied.
 
 **Phase 2 — Executor → Codebox.** Self-host `codebox-{redis,api,worker}` (isolated network); rewrite `executor.lib.js` (base URL both fns, `X-Auth-Token`, ≤20 batch chunking); **pilot gate** (run reference set, soak under load, verify sandbox, confirm LICENSE) before cutover. **Gate:** sample problems judged correctly + sandbox verified.
 
@@ -338,7 +338,7 @@ Execution is isolated behind `executor.lib.js`; the schema reshape only touches 
 | `libs/payments.lib.js` → `donation` | ◻ repurpose | Reuse `createRazorpayOrder(amount)` / `verifyRazorpayPayment` for the Support page; add `donation.controllers.js` + route. |
 | `index.js` | ◻ update | Env-driven CORS (`FRONTEND_ORIGIN`), wire donation route, drop any removed route groups. |
 
-Then `prisma generate` + `prisma migrate dev` on a dev DB and smoke-test. Until every ◻ is done, do not regenerate the client (the un-migrated controllers still reference removed models).
+**Status: complete.** All controllers migrated to the new schema; `prisma generate` clean (v6.19.3); every file `node --check`s and the backend boots (`GET /` serves the CodeArena API). The `◻` rows above are done. Remaining for Phase 1: `prisma migrate dev` against a real Postgres, then an integration smoke-test with a live DB + executor.
 
 ---
 

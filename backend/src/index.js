@@ -13,6 +13,7 @@ import playlistRoutes from "./routes/playlist.routes.js";
 import aiCodeReviewRoutes from "./routes/aiCodeReview.routes.js";
 import contestRoutes from "./routes/contest.routes.js";
 import sheetsRoutes from "./routes/sheets.routes.js";
+import donationRoutes from "./routes/donation.routes.js";
 
 // Import new user management routes
 import userManagementRoutes from "./routes/userManagement.routes.js";
@@ -29,7 +30,7 @@ initializeSocket(server);
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
     credentials: true,
   })
 );
@@ -39,9 +40,9 @@ app.use(cookieParser());
 
 app.get("/", (req, res) => {
   res.json({
-    message: "Welcome to LeetLab API",
+    message: "Welcome to CodeArena API",
     version: "2.0.0",
-    features: ["Problems", "Contests", "DSA Sheets", "AI Code Review", "Role-Based Access Control"],
+    features: ["Problems", "Contests", "DSA Sheets", "Community", "Support"],
   });
 });
 
@@ -54,6 +55,7 @@ app.use("/api/v1/playlist", playlistRoutes);
 app.use("/api/v1/aiCodeReview", aiCodeReviewRoutes);
 app.use("/api/v1/contests", contestRoutes);
 app.use("/api/v1/sheets", sheetsRoutes);
+app.use("/api/v1/support", donationRoutes);
 
 // New user management routes
 app.use("/api/v1/admin/users", userManagementRoutes);
