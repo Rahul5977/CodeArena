@@ -5,7 +5,7 @@
 >
 > **Legend:** `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked · `[-]` dropped/deferred
 >
-> _Last updated: 2026-07-15 — status: **building in parallel — FE vertical slice + BE schema landed.**_
+> _Last updated: 2026-07-15 — status: **v0.1 code-complete + production-tested (14/15, one test-script artifact); building on toward Phase 11.**_
 
 ---
 
@@ -15,16 +15,16 @@
 |---|---|---|
 | 0 | Foundation, cleanup, port Organic design system | `[~]` |
 | 1 | DB & backend reshape (single-admin, schema) | `[x]` migrated + seeded + verified end-to-end on Postgres |
-| 2 | Executor → Codebox (+ pilot gate) | `[ ]` |
-| 3 | Backend build-out & hardening | `[ ]` |
-| 4 | Auth: OAuth + real email + Redis sessions | `[ ]` |
-| 5 | Frontend build (AppShell → pages) | `[~]` shell + slice done |
+| 2 | Executor → Codebox (+ pilot gate) | `[~]` lib swapped + wired; execution validates on VPS |
+| 3 | Backend build-out & hardening | `[~]` helmet/rate-limit/404/CORS/answer-free/secure-judge done; zod + Redis cache + more endpoints pending |
+| 4 | Auth: OAuth + real email + Redis sessions | `[~]` email/password wired; OAuth + real SMTP + Redis sessions pending (needs creds) |
+| 5 | Frontend build (AppShell → pages) | `[~]` core loop wired (Auth/Problems/Editor/Dashboard/Support); Submissions/Sheets/Contests/Leaderboard/Profile/Settings/Onboarding pending |
 | 6 | Community layer | `[ ]` |
-| 7 | Support page (Razorpay pay-what-you-want) | `[ ]` |
-| 8 | Admin dashboard | `[ ]` |
-| 9 | DSA content pipeline & seeding | `[ ]` |
-| 10 | Deploy + scale to 10k | `[ ]` |
-| 11 | Launch hardening & observability | `[ ]` |
+| 7 | Support page (Razorpay pay-what-you-want) | `[~]` UI + backend order/verify done; live checkout needs Razorpay keys |
+| 8 | Admin dashboard | `[ ]` backend stats/users endpoints exist; UI pending |
+| 9 | DSA content pipeline & seeding | `[~]` 6 seed problems + validation harness; full OneDay pipeline pending |
+| 10 | Deploy + scale to 10k | `[~]` prod artifacts ready + validated; not yet deployed (owner's VPS) |
+| 11 | Launch hardening & observability | `[~]` helmet/rate-limit/README done; pino/health/SEO/uptime pending |
 
 Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
 
@@ -82,6 +82,23 @@ Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
 - [x] ⑥ Prod deploy artifacts — `Caddyfile`, `docker-compose.prod.yml`, Node-20 Dockerfiles, `DEPLOY.md` runbook (VPS + Cloudflare + Codebox + migrate/seed + backups + scaling). Compose + Caddyfile **validated**. Provisioning (VPS/DNS/secrets) is the owner's step.
 
 **→ v0.1 is code-complete. Ready to deploy following `DEPLOY.md` (the only executor caveat: validate Codebox on the Linux host — §4).**
+
+### Production test — 2026-07-15 (14/15 checks; 1 is a test-script artifact → real behavior 15/15)
+Full stack up (Postgres + hardened backend). ✅ admin+user login & correct roles · register ·
+public problem list (6, answer-free) · user detail hides testcases/solutions · admin detail
+includes them · dashboard · sheets · supporters wall · admin guards (200 admin / 403 user /
+401 anon) · 404 handler · helmet headers. Only **code execution** is not locally tested
+(validates on the VPS via Codebox — see DEPLOY.md §4).
+
+### Beyond v0.1 — remaining to reach Phase 11 (multi-session)
+- **Phase 5 (frontend):** Submissions, Sheets, Contests, Leaderboard, Profile, Settings, Onboarding pages.
+- **Phase 4 (auth):** GitHub/Google OAuth, real SMTP email (verify + reset), Redis sessions. *(needs creds)*
+- **Phase 6 (community):** profiles, solutions, discuss, votes, follow, global leaderboard, moderation.
+- **Phase 7:** live Razorpay checkout on the Support page. *(needs keys)*
+- **Phase 8:** admin dashboard UI (KPIs, manage tabs).
+- **Phase 9:** OneDay → problem-bank pipeline (author + oracle-generate + validated seed).
+- **Phase 3/11:** zod validation, Redis caching, pino logging, `/health`, SEO, uptime; load-test to 10k.
+- **Phase 10:** actually deploy (owner provisions the VPS — see `DEPLOY.md` incl. the **free-hosting** section).
 
 ## Phase 2 — Executor → Codebox
 - [ ] Self-host `codebox-redis` + `codebox-api` + `codebox-worker` on an isolated network; build language images.
