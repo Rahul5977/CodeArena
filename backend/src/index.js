@@ -17,6 +17,7 @@ import contestRoutes from "./routes/contest.routes.js";
 import sheetsRoutes from "./routes/sheets.routes.js";
 import donationRoutes from "./routes/donation.routes.js";
 import dashboardRoutes from "./routes/dashboard.routes.js";
+import leaderboardRoutes from "./routes/leaderboard.routes.js";
 import userManagementRoutes from "./routes/userManagement.routes.js";
 
 import { initializeSocket } from "./libs/socket.js";
@@ -80,6 +81,7 @@ app.use("/api/v1/contests", contestRoutes);
 app.use("/api/v1/sheets", sheetsRoutes);
 app.use("/api/v1/support", donationRoutes);
 app.use("/api/v1/dashboard", dashboardRoutes);
+app.use("/api/v1/leaderboard", leaderboardRoutes);
 app.use("/api/v1/admin/users", userManagementRoutes);
 
 // 404
