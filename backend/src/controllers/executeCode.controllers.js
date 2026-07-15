@@ -1,5 +1,5 @@
 import dotenv from "dotenv";
-import { getLanguageName, pollBatchResults, submitBatch } from "../libs/judge0.lib.js";
+import { getLanguageName, pollBatchResults, submitBatch } from "../libs/executor.lib.js";
 import { db } from "../libs/db.js";
 // import { all } from "axios";
 export const executeCode = async (req, res) => {
