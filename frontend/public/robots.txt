@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://codearena.kodexa.in/sitemap.xml
