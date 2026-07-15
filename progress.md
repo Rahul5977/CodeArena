@@ -14,7 +14,7 @@
 | Phase | Theme | Status |
 |---|---|---|
 | 0 | Foundation, cleanup, port Organic design system | `[~]` |
-| 1 | DB & backend reshape (single-admin, schema) | `[~]` schema done; controllers next |
+| 1 | DB & backend reshape (single-admin, schema) | `[~]` schema + all controllers migrated (boots); `migrate dev` on real DB pending |
 | 2 | Executor → Codebox (+ pilot gate) | `[ ]` |
 | 3 | Backend build-out & hardening | `[ ]` |
 | 4 | Auth: OAuth + real email + Redis sessions | `[ ]` |
@@ -57,17 +57,18 @@ Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
 - [x] Dropped premium/`UserSheet`/`SheetType`; sheets are free curation.
 - [x] Transitional `User.refreshToken` re-added (auth keeps working pre-Redis).
 
-**Controller migration** (architecture.md §12.2) — do NOT `prisma generate`/`migrate` until all ◻ done:
-- [x] `auth.middleware.js` → single-admin (`checkAdmin` + back-compat aliases); syntax-checked.
-- [x] `problem.controllers.js` → `authorId`/`slug`/`published`, answer-free projection + pagination; **fixed** answer leak, SUPERADMIN-block, create-in-loop bugs; syntax-checked.
+**Controller migration** (architecture.md §12.2) — **DONE**; backend boots clean (`GET /` serves the CodeArena API):
+- [x] `auth.middleware.js` → single-admin (`checkAdmin` + back-compat aliases).
+- [x] `problem.controllers.js` → `authorId`/`slug`/`published`, answer-free projection + pagination; **fixed** answer leak, SUPERADMIN-block, create-in-loop bugs.
 - [x] Confirmed no-change controllers: `executeCode`, `submission`, `playlist`, `contest`, `aiCodeReview`.
-- [ ] Remove `rbac.controllers.js` + strip its imports from `auth.routes.js`.
-- [ ] Simplify `userManagement.controllers.js` (+routes) to single-admin (drop promote/demote/`RoleChange`).
-- [ ] De-monetize `sheets.controllers.js` (+routes): remove `UserSheet`/`Payment`/`SheetType`/`price`.
-- [ ] Migrate `auth.controllers.js` (+routes): role refs, remove `UserSession`, **email reset token (don't return it)**, bootstrap admin via `ADMIN_EMAIL`.
-- [ ] `donation.controllers.js` + route (reuse `payments.lib.js` for Support page).
-- [ ] `index.js`: env CORS (`FRONTEND_ORIGIN`), wire donation route.
-- [ ] `prisma generate` + `migrate dev` on a dev DB; smoke-test.
+- [x] Removed `rbac.controllers.js` + `rbac.routes.js`; stripped from `auth.routes.js`.
+- [x] `userManagement` (+routes) → single-admin: list / get / ban / delete / stats (dropped promote/demote/`RoleChange`).
+- [x] `sheets` (+routes) de-monetized: removed `UserSheet`/`Payment`/premium; free CRUD + progress.
+- [x] `auth.controllers.js` → role refs, removed `UserSession`, **emails the reset token via `email.lib.js` (no longer returned)**, admin bootstrap via `ADMIN_EMAIL`.
+- [x] `donation.controllers.js` + `donation.routes.js` (`/api/v1/support`); `payments.lib.js` lazy-inits Razorpay (API boots without keys).
+- [x] `index.js`: env CORS (`FRONTEND_ORIGIN`), wired support route, CodeArena branding.
+- [x] `prisma generate` clean (v6.19.3); all files `node --check` + boot-verified.
+- [ ] `prisma migrate dev` against a real Postgres (needs a running DB) — then integration smoke-test.
 
 ## Phase 2 — Executor → Codebox
 - [ ] Self-host `codebox-redis` + `codebox-api` + `codebox-worker` on an isolated network; build language images.

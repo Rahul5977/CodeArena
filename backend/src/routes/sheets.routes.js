@@ -4,29 +4,19 @@ import {
   createSheet,
   getAllSheets,
   getSheetById,
-  createPaymentOrder,
-  verifyPayment,
   updateProgress,
-  getMySheets,
   getSheetStats,
 } from "../controllers/sheets.controllers.js";
 
 const sheetsRoutes = express.Router();
 
-// Public routes (with auth)
-sheetsRoutes.get("/", authMiddleware, getAllSheets);
-sheetsRoutes.get("/my-sheets", authMiddleware, getMySheets);
-sheetsRoutes.get("/:sheetId", authMiddleware, getSheetById);
-
-// Payment routes
-sheetsRoutes.post("/create-order", authMiddleware, createPaymentOrder);
-sheetsRoutes.post("/verify-payment", authMiddleware, verifyPayment);
-
-// Progress routes
-sheetsRoutes.post("/:sheetId/problems/:problemId/complete", authMiddleware, updateProgress);
-
-// Admin routes
+// Admin (declare specific paths before the /:sheetId catch)
 sheetsRoutes.post("/create", authMiddleware, checkAdmin, createSheet);
 sheetsRoutes.get("/admin/stats", authMiddleware, checkAdmin, getSheetStats);
+
+// Free for all authenticated users
+sheetsRoutes.get("/", authMiddleware, getAllSheets);
+sheetsRoutes.get("/:sheetId", authMiddleware, getSheetById);
+sheetsRoutes.post("/:sheetId/problems/:problemId/complete", authMiddleware, updateProgress);
 
 export default sheetsRoutes;

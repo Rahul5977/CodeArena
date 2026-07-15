@@ -428,7 +428,7 @@ model Donation {
   userId           String? // null = anonymous donor
   amount           Float
   currency         String   @default("INR")
-  gatewayOrderId   String
+  gatewayOrderId   String   @unique
   gatewayPaymentId String?
   status           String   @default("created") // created | paid | failed
   name             String? // optional display name for the supporters wall

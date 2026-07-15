@@ -1,36 +1,22 @@
 import express from "express";
-import {
-  authMiddleware,
-  checkSuperAdmin,
-  checkAdminOrSuperAdmin,
-  checkPermission,
-} from "../middleware/auth.middleware.js";
+import { authMiddleware, checkAdmin } from "../middleware/auth.middleware.js";
 import {
   getAllUsers,
   getUserById,
-  promoteUser,
-  demoteUser,
-  createAdmin,
+  toggleUserStatus,
   deleteUser,
-  getRoleChangeHistory,
   getSystemStats,
 } from "../controllers/userManagement.controllers.js";
 
 const userManagementRoutes = express.Router();
 
-// All routes require authentication
-userManagementRoutes.use(authMiddleware);
+// All admin-only (single admin).
+userManagementRoutes.use(authMiddleware, checkAdmin);
 
-// User listing and details (Admin+ can access)
-userManagementRoutes.get("/", checkAdminOrSuperAdmin, getAllUsers);
-userManagementRoutes.get("/stats", checkSuperAdmin, getSystemStats);
-userManagementRoutes.get("/role-history", checkSuperAdmin, getRoleChangeHistory);
-userManagementRoutes.get("/:userId", checkAdminOrSuperAdmin, getUserById);
-
-// Role management (SUPERADMIN only)
-userManagementRoutes.post("/create-admin", checkSuperAdmin, createAdmin);
-userManagementRoutes.patch("/:userId/promote", checkSuperAdmin, promoteUser);
-userManagementRoutes.patch("/:userId/demote", checkSuperAdmin, demoteUser);
-userManagementRoutes.delete("/:userId", checkSuperAdmin, deleteUser);
+userManagementRoutes.get("/", getAllUsers);
+userManagementRoutes.get("/stats", getSystemStats);
+userManagementRoutes.get("/:userId", getUserById);
+userManagementRoutes.patch("/:userId/status", toggleUserStatus);
+userManagementRoutes.delete("/:userId", deleteUser);
 
 export default userManagementRoutes;
