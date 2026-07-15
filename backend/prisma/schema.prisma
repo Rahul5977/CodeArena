@@ -47,6 +47,7 @@ model User {
   websiteUrl             String?
   role                   UserRole  @default(USER)
   password               String? // nullable for OAuth-only accounts
+  refreshToken           String? // transitional; refresh-token state moves to Redis in Phase 4
   points                 Int       @default(0) // global leaderboard score
   passwordResetToken     String?
   passwordResetExpiry    DateTime?
