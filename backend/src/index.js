@@ -14,6 +14,7 @@ import aiCodeReviewRoutes from "./routes/aiCodeReview.routes.js";
 import contestRoutes from "./routes/contest.routes.js";
 import sheetsRoutes from "./routes/sheets.routes.js";
 import donationRoutes from "./routes/donation.routes.js";
+import dashboardRoutes from "./routes/dashboard.routes.js";
 
 // Import new user management routes
 import userManagementRoutes from "./routes/userManagement.routes.js";
@@ -56,6 +57,7 @@ app.use("/api/v1/aiCodeReview", aiCodeReviewRoutes);
 app.use("/api/v1/contests", contestRoutes);
 app.use("/api/v1/sheets", sheetsRoutes);
 app.use("/api/v1/support", donationRoutes);
+app.use("/api/v1/dashboard", dashboardRoutes);
 
 // New user management routes
 app.use("/api/v1/admin/users", userManagementRoutes);
