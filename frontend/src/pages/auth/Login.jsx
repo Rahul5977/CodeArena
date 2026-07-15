@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Code2 } from "lucide-react";
 import { useAuth } from "../../store/auth.js";
+import OAuthButtons from "../../components/OAuthButtons.jsx";
 
 export default function Login() {
   const navigate = useNavigate();
@@ -42,8 +43,9 @@ export default function Login() {
         {error && <div style={errorStyle}>{error}</div>}
         <button className="btn btn-primary btn-block" disabled={busy}>{busy ? "Signing in…" : "Continue"}</button>
       </form>
+      <OAuthButtons />
       <p style={footStyle}>
-        New here? <Link to="/register">Create an account</Link>
+        New here? <Link to="/register">Create an account</Link> · <Link to="/forgot-password">Forgot password?</Link>
       </p>
     </AuthShell>
   );
