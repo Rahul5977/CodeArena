@@ -5,7 +5,7 @@
 >
 > **Legend:** `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked · `[-]` dropped/deferred
 >
-> _Last updated: 2026-07-15 — status: **Phase 5 pages + Phase 4 auth integrations (OAuth + email) done; community layer next.**_
+> _Last updated: 2026-07-15 — status: **Phases 6/7/8/9/11 built via a 6-agent workflow + integrated & tested. Nearly feature-complete; deploy next.**_
 
 ---
 
@@ -19,12 +19,12 @@
 | 3 | Backend build-out & hardening | `[~]` helmet/rate-limit/404/CORS/answer-free/secure-judge done; zod + Redis cache + more endpoints pending |
 | 4 | Auth: OAuth + real email + Redis sessions | `[~]` OAuth (GitHub+Google) + real email (nodemailer: verify + reset) built — add keys to `.env`; Redis sessions pending |
 | 5 | Frontend build (AppShell → pages) | `[x]` all core pages wired to the API; polish (react-query/responsive) + public profiles (Phase 6) remain |
-| 6 | Community layer | `[ ]` |
-| 7 | Support page (Razorpay pay-what-you-want) | `[~]` UI + backend order/verify done; live checkout needs Razorpay keys |
-| 8 | Admin dashboard | `[ ]` backend stats/users endpoints exist; UI pending |
-| 9 | DSA content pipeline & seeding | `[~]` 6 seed problems + validation harness; full OneDay pipeline pending |
-| 10 | Deploy + scale to 10k | `[~]` prod artifacts ready + validated; not yet deployed (owner's VPS) |
-| 11 | Launch hardening & observability | `[~]` helmet/rate-limit/README done; pino/health/SEO/uptime pending |
+| 6 | Community layer | `[x]` solutions/discuss/comments/votes/follow/public-profiles/reports — BE + FE, tested |
+| 7 | Support page (Razorpay pay-what-you-want) | `[x]` live checkout + signature-verified webhook (needs Razorpay keys) |
+| 8 | Admin dashboard | `[x]` overview KPIs + problem management (endpoints + UI); tested |
+| 9 | DSA content pipeline & seeding | `[~]` 14 validated seed problems (114/114); full OneDay authoring pipeline still pending |
+| 10 | Deploy + scale to 10k | `[~]` prod artifacts ready + validated; not yet deployed (Oracle Cloud — owner provisions) |
+| 11 | Launch hardening & observability | `[x]` pino logging + `/health` + SEO/robots/sitemap; uptime/error-tracking optional |
 
 Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
 
@@ -133,21 +133,24 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 - [x] Onboarding (4-step first-run flow, `/onboarding`).
 - [ ] Public profiles by username (community phase); react-query caching + responsive polish pass.
 
-## Phase 6 — Community
-- [ ] Public profiles by username; solutions per problem + upvotes; discussion threads + comments; follow/feed.
-- [ ] Streak/heatmap (from `Submission.createdAt`, cached); global leaderboard (points).
-- [ ] Moderation: `Report` + admin queue.
+## Phase 6 — Community  ✅
+- [x] Public profiles by username (`/u/:username`); solutions per problem + votes; discussion threads + comments; follow/unfollow. (`/api/v1/community/*`)
+- [x] Global leaderboard (Phase 5). Streak/heatmap: deferred (derive from `Submission.createdAt`, cache in Redis later).
+- [x] Moderation: `Report` create + admin list/action (`/community/reports`).
+- Tested: create discussion → vote (count updates) → comment → follow; all pass.
 
-## Phase 7 — Support page (pay-what-you-want)
-- [ ] `/support` page (custom amount + presets), reusing the design's checkout layout.
-- [ ] Razorpay: custom-amount order → Checkout → verify signature/webhook → `Donation` row → thank-you.
-- [ ] Repurpose sidebar "Go Premium" → "Support CodeArena."
-- [ ] Optional opt-in supporters wall.
+## Phase 7 — Support page (pay-what-you-want)  ✅
+- [x] `/support` page (custom amount + presets 99/299/499/999, name/message, "show on wall").
+- [x] Razorpay: custom-amount order → **live Checkout** → verify signature → `Donation` "paid" → thank-you; graceful "not enabled" fallback.
+- [x] Signature-verified **webhook** (`POST /support/webhook`, raw body before `express.json`).
+- [x] Sidebar "Support CodeArena" card; opt-in supporters wall.
+- Needs owner `RAZORPAY_KEY_ID/SECRET` (+ `RAZORPAY_WEBHOOK_SECRET`) in `.env` to charge for real.
 
-## Phase 8 — Admin dashboard *(single admin)*
-- [ ] Overview: KPIs (users, active today, submissions today, donations this month), submissions chart, moderation queue, recent signups.
-- [ ] Manage tabs: Problems (search/filter/CRUD/publish), Sheets, Contests, Users (view/ban), Moderation.
-- [ ] All under `/admin/*`, `checkAdmin`-guarded; hidden from non-admins.
+## Phase 8 — Admin dashboard *(single admin)*  ✅ (core)
+- [x] Overview: KPI cards (users, active today, submissions today, donations this month, problems, open reports), 14-day submissions chart, recent signups.
+- [x] Manage: **Problems** tab (search + All/Published/Draft filter + publish toggle + delete). `/api/v1/admin/content/*`.
+- [ ] Extra manage tabs (Sheets, Contests, Users, Moderation queue) — follow-up.
+- [x] All `checkAdmin`-guarded; non-admins 403 (verified); hidden from non-admins in the shell.
 
 ## Phase 9 — DSA content pipeline & seeding *(post-launch)*
 - [ ] Idempotency: `slug @unique` (done in Phase 1) or `uuidv5(slug)`.
@@ -164,11 +167,18 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 - [ ] Nightly `pg_dump` backup (off-box) + restore test; Redis AOF.
 - [ ] **Load-test to ~10k** (k6/Artillery): cache-hit ratio, socket capacity, executor queue.
 
-## Phase 11 — Launch hardening & observability
-- [ ] `pino` logs + request id; real `/health` (DB+Redis); uptime monitor; error tracking.
-- [ ] SEO: slug routes, meta/OG, sitemap, robots (decide SSR/prerender vs SPA+meta).
-- [ ] Rewrite `README.md` for CodeArena.
+## Phase 11 — Launch hardening & observability  ✅ (core)
+- [x] `pino` + `pino-http` request logging (redacts auth/cookies); `GET /api/v1/health` (DB ping, never crashes).
+- [x] SEO: `robots.txt` + `sitemap.xml` (Vite public/), meta description + theme-color + Open Graph in `index.html`.
+- [x] `README.md` (portfolio-grade) written earlier.
+- [ ] Uptime monitor + error tracking (external, set at deploy); load-test to 10k (Phase 10).
 - [ ] (P2) real AI code review; badges; supporter wall polish.
+
+## Remaining before/at deploy
+- **Phase 3 (P1):** zod validation middleware, Redis caching + Redis-backed rate-limit/sessions, PgBouncer, bounded executor queue — scaling refinements, mostly documented in `DEPLOY.md`.
+- **Phase 9:** full OneDay → problem-bank authoring pipeline (harness generator + validated seeding at scale).
+- **Phase 10:** provision Oracle Cloud + deploy (owner step; I guide).
+- Integrations need owner keys in `.env`: OAuth (GitHub/Google), SMTP, Razorpay.
 
 ---
 
