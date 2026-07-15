@@ -23,7 +23,7 @@
 | 7 | Support page (Razorpay pay-what-you-want) | `[x]` live checkout + signature-verified webhook (needs Razorpay keys) |
 | 8 | Admin dashboard | `[x]` overview KPIs + problem management (endpoints + UI); tested |
 | 9 | DSA content pipeline & seeding | `[~]` 14 validated seed problems (114/114); full OneDay authoring pipeline still pending |
-| 10 | Deploy + scale to 10k | `[~]` prod artifacts ready + validated; not yet deployed (Oracle Cloud — owner provisions) |
+| 10 | Deploy + scale to 10k | `[~]` prod artifacts ready + validated; deploying to **Hostinger VPS** (owner provisions; guided) |
 | 11 | Launch hardening & observability | `[x]` pino logging + `/health` + SEO/robots/sitemap; uptime/error-tracking optional |
 
 Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
@@ -203,5 +203,6 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 | 2026-07-15 | D7 Organic design system | Port `styles.css`; build to the design. |
 | 2026-07-15 | Pricing → Support | Drop Free/Pro/Teams + Stripe; pay-what-you-want via Razorpay. |
 | 2026-07-15 | Hosting = **Oracle Cloud Always Free** | 4 vCPU / 24 GB ARM, free forever; runs full stack incl. executor. Runbook to be tailored for ARM. |
+| 2026-07-15 | Hosting switched → **Hostinger VPS** | Oracle signup blocked. Hostinger KVM 2 (2 vCPU / 8 GB, x86); full root + standard Linux Docker → Codebox docker-executor works; no cloud firewall, just ufw. |
 | 2026-07-15 | Build OAuth + SMTP + Razorpay now | Owner adds real keys to `.env` (never in chat); flows built to read env. |
 | 2026-07-15 | Next priority = **finish frontend pages (Phase 5)** | Submissions → Settings → Profile → Sheets → Contests → Leaderboard → Onboarding. |
