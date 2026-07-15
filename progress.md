@@ -14,7 +14,7 @@
 | Phase | Theme | Status |
 |---|---|---|
 | 0 | Foundation, cleanup, port Organic design system | `[~]` |
-| 1 | DB & backend reshape (single-admin, schema) | `[~]` schema + all controllers migrated (boots); `migrate dev` on real DB pending |
+| 1 | DB & backend reshape (single-admin, schema) | `[x]` migrated + seeded + verified end-to-end on Postgres |
 | 2 | Executor → Codebox (+ pilot gate) | `[ ]` |
 | 3 | Backend build-out & hardening | `[ ]` |
 | 4 | Auth: OAuth + real email + Redis sessions | `[ ]` |
@@ -68,7 +68,18 @@ Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
 - [x] `donation.controllers.js` + `donation.routes.js` (`/api/v1/support`); `payments.lib.js` lazy-inits Razorpay (API boots without keys).
 - [x] `index.js`: env CORS (`FRONTEND_ORIGIN`), wired support route, CodeArena branding.
 - [x] `prisma generate` clean (v6.19.3); all files `node --check` + boot-verified.
-- [ ] `prisma migrate dev` against a real Postgres (needs a running DB) — then integration smoke-test.
+- [x] Fresh migration baseline `20260715135603_init` applied to Postgres (old LeetLab migrations reset).
+- [x] `optionalAuth` middleware → public problem browsing (personalized when logged in).
+- [x] Seed (`prisma/seed.js`): admin (`ADMIN_EMAIL`) + 6 starter problems; **50/50 reference-solution checks pass** locally.
+- [x] **End-to-end verified**: public list is answer-free, anon detail hides answers, admin login works and admin detail includes testcases/referenceSolutions.
+
+**v0.1 build track** (target: a genuinely usable, deployable product):
+- [x] ① Phase 1 done — running backend + real DB + seeded problems.
+- [ ] ② Codebox executor (`executor.lib.js` swap + self-host).
+- [ ] ③ Auth wired FE↔BE (email/password; OAuth later).
+- [ ] ④ Core frontend pages on real API (Problems, ProblemEditor, Auth, Dashboard, Submissions).
+- [ ] ⑤ Light hardening (helmet + rate-limit on auth/execute).
+- [ ] ⑥ Prod deploy artifacts (compose, Caddy, .env, runbook) + provisioning.
 
 ## Phase 2 — Executor → Codebox
 - [ ] Self-host `codebox-redis` + `codebox-api` + `codebox-worker` on an isolated network; build language images.
