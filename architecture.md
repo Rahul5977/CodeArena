@@ -296,6 +296,50 @@ Frontend and backend proceed largely in parallel. Ordering favours a working ver
 
 Phases 0–4 (backend/DB/executor/auth) run alongside 5 (frontend). 9 (content) needs 2 (executor) + a working problem model. 10 needs 1–8.
 
+### 12.1 Detailed phase-by-phase plan
+
+**Phase 0 — Foundation & design system.** ✓ Frontend rebuilt fresh in `frontend/`; Organic `styles.css` ported; AppShell + Dashboard(1a) + Support built; builds/lints green. ◻ Remaining: rename `leetlab-*`→`codearena-*`, drop `backend/cookies.txt`, consolidate `SECRET`/`JWT_SECRET`, rewrite `.env.example` (add `CODEBOX_*`/`FRONTEND_ORIGIN`/OAuth/SMTP/Razorpay; drop Sulu/Judge0). **Gate:** clean repo, green builds.
+
+**Phase 1 — DB & backend reshape.** ✓ Target schema written + validated (single-admin, community, donation, oauth, slugs). ✓ Foundation controller migration: `auth.middleware.js` (single-admin, aliased exports), `problem.controllers.js` (authorId/slug/published, answer-free projection + pagination, all 3 audit bugs fixed). ◻ Remaining = **§12.2 controller migration**. **Gate:** `prisma generate`+`migrate dev` clean; all controllers run on the new schema; audit bugs closed.
+
+**Phase 2 — Executor → Codebox.** Self-host `codebox-{redis,api,worker}` (isolated network); rewrite `executor.lib.js` (base URL both fns, `X-Auth-Token`, ≤20 batch chunking); **pilot gate** (run reference set, soak under load, verify sandbox, confirm LICENSE) before cutover. **Gate:** sample problems judged correctly + sandbox verified.
+
+**Phase 3 — Backend build-out & hardening.** Every endpoint the design needs (problems public/paginated, sheets, submissions, contests, leaderboard, profiles, settings); `zod` validation, `express-rate-limit` (Redis), `helmet`, env CORS, `asyncHandler`+consistent `ApiError`, 404; Redis caching of hot reads; per-user submit rate-limit + bounded executor queue. **Gate:** API complete + hardened; answer-free public reads verified.
+
+**Phase 4 — Auth.** GitHub + Google OAuth (`OAuthAccount`, nullable password); `nodemailer`+SMTP (verify-email route; email the reset token — never return it); move refresh-token state to **Redis** (retire the transitional `User.refreshToken`); gate community posting on `emailVerified`. **Gate:** all login/verify/reset flows working.
+
+**Phase 5 — Frontend build.** ✓ AppShell + router + Dashboard(1a) + Support + Landing/Login + scaffolds. ◻ Build the remaining designed pages (Problems, ProblemEditor, Sheets, Submissions, Contests, Leaderboard, Profile, Settings, Onboarding) against the real API; react-query cache; loading/empty/error states; responsive; replace mock data. **Gate:** core solve loop end-to-end.
+
+**Phase 6 — Community.** Profiles by username, solutions+upvotes, discussions+comments, follow/feed, streak/heatmap (from `Submission.createdAt`, cached), global leaderboard (points), moderation (`Report`+admin queue). **Gate:** MVP community live.
+
+**Phase 7 — Support page.** Razorpay custom-amount order → Checkout → verify signature/webhook → `Donation` row → thank-you; admin donations view; optional supporters wall. **Gate:** donations end-to-end.
+
+**Phase 8 — Admin dashboard.** Overview KPIs (users/active/submissions/donations), submissions chart, moderation queue, signups; manage tabs (problems/sheets/contests/users). All `checkAdmin`-guarded. **Gate:** single admin can run the platform.
+
+**Phase 9 — DSA content pipeline.** OneDay = curriculum manifest; author originals; per-language I/O harness; oracle-generate tests; `seed-problems.js` validation gate + idempotent upsert; Waves 1→3. **Gate:** problems seeded + validated.
+
+**Phase 10 — Deploy + scale to 10k.** Hetzner + Cloudflare; Caddy → PM2-cluster API → PgBouncer → PG + Redis; Codebox isolated; backups; firewall; **load-test to ~10k**. **Gate:** public HTTPS holding 10k.
+
+**Phase 11 — Launch hardening.** `pino` logs, `/health`, uptime, error tracking, SEO (slugs/meta/sitemap), rewrite README. **Gate:** ready for community.
+
+### 12.2 Backend controller migration (Phase 1 breakdown)
+
+Execution is isolated behind `executor.lib.js`; the schema reshape only touches controllers that referenced removed models/fields. Status:
+
+| File | Status | Work |
+|---|---|---|
+| `middleware/auth.middleware.js` | ✓ done | Single-admin (`USER\|ADMIN`), `checkAdmin` + back-compat aliases, drop permission matrix / `promotedBy`/`promotedAt` from select. |
+| `controllers/problem.controllers.js` | ✓ done | `authorId`, `slug`, `published`, answer-free `PUBLIC_*_SELECT`, pagination/filters; fixed answer leak, SUPERADMIN-block, create-in-loop bugs. |
+| `controllers/executeCode`, `submission`, `playlist`, `contest`, `aiCodeReview` | ✓ no change | No removed-model refs (contest models, submissions, playlists unchanged). |
+| `controllers/rbac.controllers.js` + its imports in `auth.routes.js` | ◻ remove | SUPERADMIN/`RoleChange` machinery — delete; strip the rbac imports/routes from `auth.routes.js`. |
+| `controllers/userManagement.controllers.js` (+ routes) | ◻ simplify | Drop promote/demote/`RoleChange`/`promotedBy`; keep single-admin list / get / ban / activate. |
+| `controllers/sheets.controllers.js` (+ routes) | ◻ de-monetize | Remove `UserSheet`/`Payment`/`SheetType`/`price`; all sheets free; keep CRUD + `SheetProgress`. |
+| `controllers/auth.controllers.js` (+ routes) | ◻ migrate | Role refs → `USER\|ADMIN`; remove `UserSession` usage (keep transitional `refreshToken`); **email the reset token, stop returning it**; bootstrap admin via `ADMIN_EMAIL`. |
+| `libs/payments.lib.js` → `donation` | ◻ repurpose | Reuse `createRazorpayOrder(amount)` / `verifyRazorpayPayment` for the Support page; add `donation.controllers.js` + route. |
+| `index.js` | ◻ update | Env-driven CORS (`FRONTEND_ORIGIN`), wire donation route, drop any removed route groups. |
+
+Then `prisma generate` + `prisma migrate dev` on a dev DB and smoke-test. Until every ◻ is done, do not regenerate the client (the un-migrated controllers still reference removed models).
+
 ---
 
 ## 13. DSA content pipeline (OneDay → CodeArena) — summary

@@ -55,10 +55,19 @@ Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
 - [x] `Problem`: `slug @unique`, `published`, `companies[]`, `@@index([published, difficulty])`.
 - [x] `OAuthAccount`; community models (`Solution`, `Discussion`, `Comment`, `Vote`, `Follow`, `Report`); `Donation`.
 - [x] Dropped premium/`UserSheet`/`SheetType`; sheets are free curation.
-- [ ] **Controllers not yet migrated** to the new schema (they still reference SUPERADMIN/Payment/etc.) — next step; do not `prisma generate`/`migrate` until done.
-- [ ] Bootstrap admin via `ADMIN_EMAIL` (seed/first-login).
-- [ ] Fix audit bugs: answer leak (`getAllProblem`), inline `role !== "ADMIN"` gate, reference-solution loop, reset-token leak, hardcoded CORS.
-- [ ] Generate migration + apply to a dev DB.
+- [x] Transitional `User.refreshToken` re-added (auth keeps working pre-Redis).
+
+**Controller migration** (architecture.md §12.2) — do NOT `prisma generate`/`migrate` until all ◻ done:
+- [x] `auth.middleware.js` → single-admin (`checkAdmin` + back-compat aliases); syntax-checked.
+- [x] `problem.controllers.js` → `authorId`/`slug`/`published`, answer-free projection + pagination; **fixed** answer leak, SUPERADMIN-block, create-in-loop bugs; syntax-checked.
+- [x] Confirmed no-change controllers: `executeCode`, `submission`, `playlist`, `contest`, `aiCodeReview`.
+- [ ] Remove `rbac.controllers.js` + strip its imports from `auth.routes.js`.
+- [ ] Simplify `userManagement.controllers.js` (+routes) to single-admin (drop promote/demote/`RoleChange`).
+- [ ] De-monetize `sheets.controllers.js` (+routes): remove `UserSheet`/`Payment`/`SheetType`/`price`.
+- [ ] Migrate `auth.controllers.js` (+routes): role refs, remove `UserSession`, **email reset token (don't return it)**, bootstrap admin via `ADMIN_EMAIL`.
+- [ ] `donation.controllers.js` + route (reuse `payments.lib.js` for Support page).
+- [ ] `index.js`: env CORS (`FRONTEND_ORIGIN`), wire donation route.
+- [ ] `prisma generate` + `migrate dev` on a dev DB; smoke-test.
 
 ## Phase 2 — Executor → Codebox
 - [ ] Self-host `codebox-redis` + `codebox-api` + `codebox-worker` on an isolated network; build language images.
