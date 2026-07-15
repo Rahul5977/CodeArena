@@ -1,7 +1,7 @@
-import { NavLink, Link, useLocation, Outlet } from "react-router-dom";
+import { NavLink, Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import {
   Code2, LayoutDashboard, Library, ListChecks, Trophy, BarChart3,
-  FileCheck2, User, Settings, ShieldCheck, Heart, Flame, Bell, Search, ChevronDown,
+  FileCheck2, User, Settings, ShieldCheck, Heart, Flame, Bell, Search, LogOut,
 } from "lucide-react";
 import { useAuth } from "../store/auth.js";
 
@@ -43,10 +43,16 @@ function matchRoute(pathname) {
 }
 
 export default function AppShell() {
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
   const active = matchRoute(location.pathname);
   const showSearch = active.search !== false;
+
+  const handleLogout = async () => {
+    await logout();
+    navigate("/login", { replace: true });
+  };
 
   return (
     <div style={{ display: "flex", width: "100%", height: "100%", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "var(--font-body)", overflow: "hidden" }}>
@@ -89,7 +95,9 @@ export default function AppShell() {
             <div style={{ fontSize: 13, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{user?.name}</div>
             <div style={{ fontSize: 11, color: "color-mix(in srgb, var(--color-text) 55%, transparent)" }}>{user?.role}</div>
           </div>
-          <ChevronDown size={16} strokeWidth={2.5} color="color-mix(in srgb, var(--color-text) 45%, transparent)" />
+          <button onClick={handleLogout} className="btn btn-ghost btn-icon" title="Log out" aria-label="Log out" style={{ width: 30, height: 30, color: "color-mix(in srgb, var(--color-text) 55%, transparent)" }}>
+            <LogOut size={16} strokeWidth={2.5} />
+          </button>
         </div>
       </aside>
 

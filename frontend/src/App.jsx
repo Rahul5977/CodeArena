@@ -1,7 +1,11 @@
+import { useEffect } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
+import { useAuth } from "./store/auth.js";
 import AppShell from "./components/AppShell.jsx";
+import ProtectedRoute from "./components/ProtectedRoute.jsx";
 import Landing from "./pages/Landing.jsx";
 import Login from "./pages/auth/Login.jsx";
+import Register from "./pages/auth/Register.jsx";
 import Dashboard from "./pages/Dashboard.jsx";
 import Problems from "./pages/Problems.jsx";
 import ProblemEditor from "./pages/ProblemEditor.jsx";
@@ -16,15 +20,26 @@ import Support from "./pages/Support.jsx";
 import Admin from "./pages/Admin.jsx";
 
 export default function App() {
+  const hydrate = useAuth((s) => s.hydrate);
+  useEffect(() => {
+    hydrate();
+  }, [hydrate]);
+
   return (
     <Routes>
       {/* Public, shell-less */}
       <Route path="/" element={<Landing />} />
       <Route path="/login" element={<Login />} />
-      <Route path="/register" element={<Login />} />
+      <Route path="/register" element={<Register />} />
 
-      {/* In-app, inside the AppShell (sidebar + top bar) */}
-      <Route element={<AppShell />}>
+      {/* In-app — requires a session; rendered inside the AppShell */}
+      <Route
+        element={
+          <ProtectedRoute>
+            <AppShell />
+          </ProtectedRoute>
+        }
+      >
         <Route path="/app" element={<Dashboard />} />
         <Route path="/problems" element={<Problems />} />
         <Route path="/problems/:slug" element={<ProblemEditor />} />
@@ -39,7 +54,14 @@ export default function App() {
         <Route path="/u/:username" element={<Profile />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/support" element={<Support />} />
-        <Route path="/admin" element={<Admin />} />
+        <Route
+          path="/admin"
+          element={
+            <ProtectedRoute adminOnly>
+              <Admin />
+            </ProtectedRoute>
+          }
+        />
       </Route>
 
       <Route path="*" element={<Navigate to="/app" replace />} />
