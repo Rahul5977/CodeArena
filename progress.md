@@ -75,9 +75,9 @@ Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
 
 **v0.1 build track** (target: a genuinely usable, deployable product):
 - [x] ① Phase 1 done — running backend + real DB + seeded problems.
-- [ ] ② Codebox executor (`executor.lib.js` swap + self-host).
-- [ ] ③ Auth wired FE↔BE (email/password; OAuth later).
-- [ ] ④ Core frontend pages on real API (Problems, ProblemEditor, Auth, Dashboard, Submissions).
+- [~] ② Codebox executor — `executor.lib.js` swapped (X-Auth-Token, ≤20 chunking), committed. Codebox builds/runs locally + accepts submissions, but its docker-executor is incompatible with local Docker 29 (`ReadonlyRootfs` + `putArchive`) and has **no LICENSE**. Decision: keep Codebox; **execution validates on the VPS (`EXECUTOR_TYPE=isolate`)** at deploy. Judge0 stays break-glass.
+- [x] ③ Auth wired FE↔BE — real login/register/logout + session hydrate (`/auth/me`), protected routes, shell logout; **verified through the Vite proxy** (login + problems + hydrate).
+- [~] ④ Core frontend on real API — Problems list wired (renders the 6 seeded problems, filter + search). Next: ProblemEditor (Monaco + Run/Submit), Dashboard + Submissions real data.
 - [ ] ⑤ Light hardening (helmet + rate-limit on auth/execute).
 - [ ] ⑥ Prod deploy artifacts (compose, Caddy, .env, runbook) + provisioning.
 

@@ -1,20 +1,54 @@
 import { create } from "zustand";
+import { api } from "../lib/api.js";
 
-// Auth store. Currently seeded with a demo user so the shell renders fully
-// during the frontend rebuild. Phase 4 wires this to the real /auth endpoints
-// (email+password + GitHub/Google OAuth) and hydrates from the session cookie.
+// Shapes the backend user into what the UI needs (initials, isAdmin, display role).
+const shape = (u) =>
+  u && {
+    ...u,
+    isAdmin: u.role === "ADMIN",
+    role: u.role === "ADMIN" ? "Administrator" : "Member",
+    streak: u.streak ?? 0,
+    initials: (u.name || u.email || "?")
+      .split(" ")
+      .map((s) => s[0])
+      .slice(0, 2)
+      .join("")
+      .toUpperCase(),
+  };
+
 export const useAuth = create((set) => ({
-  user: {
-    name: "Alex Rivera",
-    username: "alex",
-    role: "Administrator",
-    isAdmin: true, // toggles the Admin nav item + /admin routes
-    streak: 12,
-    initials: "AR",
+  user: null,
+  status: "loading", // loading | authenticated | anonymous
+
+  // Called once on app load — restores the session from the httpOnly cookie.
+  hydrate: async () => {
+    try {
+      const { data } = await api.get("/auth/me");
+      const u = shape(data?.data?.user);
+      set({ user: u, status: u ? "authenticated" : "anonymous" });
+    } catch {
+      set({ user: null, status: "anonymous" });
+    }
   },
-  isAuthenticated: true,
-  setUser: (user) => set({ user, isAuthenticated: !!user }),
-  logout: () => set({ user: null, isAuthenticated: false }),
+
+  login: async (email, password) => {
+    const { data } = await api.post("/auth/login", { email, password });
+    set({ user: shape(data?.data?.user), status: "authenticated" });
+  },
+
+  register: async (name, email, password) => {
+    const { data } = await api.post("/auth/register", { name, email, password });
+    set({ user: shape(data?.data?.user), status: "authenticated" });
+  },
+
+  logout: async () => {
+    try {
+      await api.post("/auth/logout");
+    } catch {
+      /* ignore */
+    }
+    set({ user: null, status: "anonymous" });
+  },
 }));
 
 export default useAuth;
