@@ -288,7 +288,10 @@ export const verifyEmail = async (req, res) => {
 };
 
 // ── helpers ──────────────────────────────────────────────────────────────
-const cookieBase = () => ({ httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV !== "development" });
+// sameSite 'lax' (not 'strict'): still CSRF-safe for a token-cookie SPA, but it
+// also lets the session cookie ride the OAuth provider → /app top-level redirect
+// so social login lands authenticated without a refresh. path '/' so set/clear match.
+const cookieBase = () => ({ httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV !== "development", path: "/" });
 
 function setAuthCookies(res, accessToken, refreshToken, refreshMs = 7 * 24 * 60 * 60 * 1000) {
   res.cookie("accessToken", accessToken, { ...cookieBase(), maxAge: 15 * 60 * 1000 });
