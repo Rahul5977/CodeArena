@@ -17,11 +17,18 @@ export const getSheetById = async (req, res) => {
     const sheet = await db.sheet.findUnique({ where: { id: req.params.sheetId } });
     if (!sheet) return res.status(404).json({ success: false, message: "Sheet not found" });
 
-    const progress = await db.sheetProgress.findMany({
-      where: { sheetId: sheet.id, userId: req.user.id },
-      select: { problemId: true, completed: true, completedAt: true, attempts: true },
-    });
-    return res.status(200).json({ success: true, sheet, progress });
+    // Resolve the sheet's problemIds → ordered, answer-free problem cards.
+    const ids = sheet.problemIds || [];
+    const [rows, progress, solved] = await Promise.all([
+      ids.length ? db.problem.findMany({ where: { id: { in: ids }, published: true }, select: { id: true, slug: true, title: true, difficulty: true, tags: true } }) : [],
+      db.sheetProgress.findMany({ where: { sheetId: sheet.id, userId: req.user.id }, select: { problemId: true, completed: true, completedAt: true, attempts: true } }),
+      db.problemSolved.findMany({ where: { userId: req.user.id, problemId: { in: ids } }, select: { problemId: true } }),
+    ]);
+    const byId = new Map(rows.map((p) => [p.id, p]));
+    const solvedSet = new Set(solved.map((s) => s.problemId));
+    const problems = ids.map((id) => byId.get(id)).filter(Boolean).map((p) => ({ ...p, solved: solvedSet.has(p.id) }));
+
+    return res.status(200).json({ success: true, sheet, problems, progress });
   } catch (error) {
     console.error("Error fetching sheet:", error);
     return res.status(500).json({ success: false, message: "Error fetching sheet" });

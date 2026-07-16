@@ -167,10 +167,21 @@ export const getAllProblem = async (req, res) => {
       db.problem.count({ where }),
     ]);
 
+    // Personalize with solved status when a user is present (optionalAuth).
+    let list = problems;
+    if (req.user && problems.length) {
+      const solved = await db.problemSolved.findMany({
+        where: { userId: req.user.id, problemId: { in: problems.map((p) => p.id) } },
+        select: { problemId: true },
+      });
+      const solvedSet = new Set(solved.map((s) => s.problemId));
+      list = problems.map((p) => ({ ...p, solved: solvedSet.has(p.id) }));
+    }
+
     return res.status(200).json({
       success: true,
       message: "Problems fetched successfully",
-      problems,
+      problems: list,
       pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     });
   } catch (error) {

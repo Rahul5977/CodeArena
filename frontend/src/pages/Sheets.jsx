@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Library, Clock, ArrowLeft } from "lucide-react";
+import { Library, Clock, ArrowLeft, CheckCircle2, Circle } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
 
@@ -77,25 +77,48 @@ function SheetDetail({ id }) {
   if (!data?.sheet) return <div style={{ color: muted() }}>Sheet not found. <Link to="/sheets">All sheets</Link></div>;
 
   const s = data.sheet;
-  const done = (data.progress || []).filter((p) => p.completed).length;
-  const total = (s.problemIds || []).length;
+  const problems = data.problems || [];
+  const done = problems.filter((p) => p.solved).length;
+  const total = problems.length || (s.problemIds || []).length;
 
   return (
     <div style={{ maxWidth: 760 }}>
       <Link to="/sheets" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
         <ArrowLeft size={15} strokeWidth={2.75} /> All sheets
       </Link>
-      <div style={{ ...surface, padding: "26px 28px" }}>
+      <div style={{ ...surface, padding: "26px 28px", marginBottom: 16 }}>
         <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 28, margin: "0 0 8px" }}>{s.title}</h1>
-        <p style={{ color: muted(70), margin: "0 0 16px" }}>{s.description}</p>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6 }}>
+        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 13, marginBottom: 6, marginTop: 12 }}>
           <span style={{ color: muted(60) }}>{s.topic}</span>
-          <span style={{ color: muted(55) }}>{done} / {total} done</span>
+          <span style={{ color: muted(55) }}>{done} / {total} solved</span>
         </div>
         <div style={{ height: 8, borderRadius: 999, background: "var(--color-neutral-200)", overflow: "hidden" }}>
           <div style={{ width: `${total ? (done / total) * 100 : 0}%`, height: "100%", background: "var(--color-accent)", borderRadius: 999 }} />
         </div>
       </div>
+
+      {problems.length === 0 ? (
+        <div style={{ ...surface, padding: "28px 30px", textAlign: "center", color: muted(60) }}>No problems in this sheet yet.</div>
+      ) : (
+        <div style={{ ...surface, overflow: "hidden" }}>
+          {problems.map((p, i) => {
+            const d = DIFF[p.difficulty] || DIFF.MEDIUM;
+            return (
+              <Link
+                key={p.id}
+                to={`/sheets/${id}/${p.id}`}
+                className="hover-row"
+                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", textDecoration: "none", color: "inherit", borderBottom: i < problems.length - 1 ? "1px solid color-mix(in srgb, var(--color-text) 7%, transparent)" : "none" }}
+              >
+                <span style={{ width: 24, color: muted(45), fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{i + 1}</span>
+                {p.solved ? <CheckCircle2 size={18} strokeWidth={2.5} color="var(--color-accent-2-600)" /> : <Circle size={18} strokeWidth={2} color={muted(28)} />}
+                <span style={{ flex: 1, fontSize: 14.5, fontWeight: 500 }}>{p.title}</span>
+                <span style={{ fontSize: 11, padding: "2px 11px", borderRadius: 999, background: d.bg, color: d.fg, fontWeight: 600 }}>{d.label}</span>
+              </Link>
+            );
+          })}
+        </div>
+      )}
     </div>
   );
 }

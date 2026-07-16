@@ -49,7 +49,10 @@ const repStat = (json, kind) => {
 };
 
 export default function ProblemEditor() {
-  const { slug } = useParams();
+  // Reachable as /problems/:slug OR /sheets/:sheetId/:problemId — both resolve
+  // via /problems/get-all-problems/:id (accepts a slug or a UUID).
+  const { slug, sheetId, problemId } = useParams();
+  const problemKey = problemId || slug;
   const [problem, setProblem] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -72,7 +75,7 @@ export default function ProblemEditor() {
     setLeftTab("description");
     setSubs(null);
     api
-      .get(`/problems/get-all-problems/${slug}`)
+      .get(`/problems/get-all-problems/${problemKey}`)
       .then(({ data }) => {
         if (!active) return;
         const p = data.problem;
@@ -88,7 +91,7 @@ export default function ProblemEditor() {
     return () => {
       active = false;
     };
-  }, [slug]);
+  }, [problemKey]);
 
   const loadSubs = useCallback(async () => {
     if (!problem) return;
@@ -143,6 +146,10 @@ export default function ProblemEditor() {
     try {
       const { data } = await api.post("/execute-code", { source_code: code, language_id: LANG_ID[lang], problemId: problem.id });
       setVerdict(data);
+      // When solved inside a sheet, record sheet progress (best-effort).
+      if (data.status === "Accepted" && sheetId) {
+        api.post(`/sheets/${sheetId}/problems/${problem.id}/complete`).catch(() => {});
+      }
       // Show THIS user's submissions for THIS problem (newest — the one just made — on top).
       await loadSubs();
       setLeftTab("submissions");
@@ -170,8 +177,8 @@ export default function ProblemEditor() {
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "20px 24px" }}>
           {leftTab === "description" ? (
             <>
-              <Link to="/problems" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
-                <ArrowLeft size={15} strokeWidth={2.75} /> All problems
+              <Link to={sheetId ? `/sheets/${sheetId}` : "/problems"} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
+                <ArrowLeft size={15} strokeWidth={2.75} /> {sheetId ? "Back to sheet" : "All problems"}
               </Link>
               <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 26, margin: "0 0 10px" }}>{problem.title}</h1>
               <div style={{ display: "flex", gap: 7, marginBottom: 16, flexWrap: "wrap" }}>
