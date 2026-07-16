@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, Navigate } from "react-router-dom";
 import { useAuth } from "../../store/auth.js";
 import { AuthShell } from "./Login.jsx";
 import OAuthButtons from "../../components/OAuthButtons.jsx";
@@ -7,11 +7,15 @@ import OAuthButtons from "../../components/OAuthButtons.jsx";
 export default function Register() {
   const navigate = useNavigate();
   const register = useAuth((s) => s.register);
+  const user = useAuth((s) => s.user);
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+
+  // Already signed in? Skip the form.
+  if (user) return <Navigate to="/app" replace />;
 
   const submit = async (e) => {
     e.preventDefault();

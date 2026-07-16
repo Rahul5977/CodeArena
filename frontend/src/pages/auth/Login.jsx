@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Link, useNavigate, useLocation } from "react-router-dom";
+import { Link, useNavigate, useLocation, Navigate } from "react-router-dom";
 import { Code2 } from "lucide-react";
 import { useAuth } from "../../store/auth.js";
 import OAuthButtons from "../../components/OAuthButtons.jsx";
@@ -8,12 +8,16 @@ export default function Login() {
   const navigate = useNavigate();
   const location = useLocation();
   const login = useAuth((s) => s.login);
+  const user = useAuth((s) => s.user);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
   const dest = location.state?.from || "/app";
+
+  // Already signed in? Don't show the login form — bounce to the app.
+  if (user) return <Navigate to={dest} replace />;
 
   const submit = async (e) => {
     e.preventDefault();
