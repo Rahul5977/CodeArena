@@ -23,6 +23,7 @@ import communityRoutes from "./routes/community.routes.js";
 import adminContentRoutes from "./routes/adminContent.routes.js";
 import healthRoutes from "./routes/health.routes.js";
 import { donationWebhook } from "./controllers/donationWebhook.controllers.js";
+import { startReconciler } from "./libs/reconcile.js";
 
 import { httpLogger } from "./libs/logger.js";
 import { initializeSocket } from "./libs/socket.js";
@@ -116,6 +117,7 @@ app.use((err, req, res, next) => {
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
+  startReconciler(); // periodic payment reconciliation (no-op if Razorpay isn't configured)
 });
 
 export default app;

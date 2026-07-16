@@ -16,19 +16,48 @@ const client = () => {
   return _razorpay;
 };
 
-export const createRazorpayOrder = async (amount, currency = "INR") => {
-  try {
-    return await client().orders.create({
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
+
+// Bounded external call: per-call timeout + limited retries + a lightweight circuit
+// breaker, so a Razorpay slowdown/outage fails FAST instead of piling up in-flight
+// requests until the process runs out of resources. Callers translate PAYMENTS_UNAVAILABLE
+// into a friendly 503.
+const breaker = { failures: 0, openUntil: 0 };
+async function withGuard(label, fn, { timeoutMs = 8000, retries = 2 } = {}) {
+  if (Date.now() < breaker.openUntil) throw new Error("PAYMENTS_UNAVAILABLE");
+  let lastErr;
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const result = await Promise.race([
+        fn(),
+        new Promise((_, rej) => setTimeout(() => rej(new Error("timeout")), timeoutMs)),
+      ]);
+      breaker.failures = 0;
+      return result;
+    } catch (e) {
+      lastErr = e;
+      if (attempt < retries) await sleep(200 * (attempt + 1) + Math.floor(Math.random() * 150));
+    }
+  }
+  breaker.failures += 1;
+  if (breaker.failures >= 5) breaker.openUntil = Date.now() + 30_000; // trip open for 30s
+  console.error(`[payments] ${label} failed:`, lastErr?.message);
+  throw lastErr;
+}
+
+export const createRazorpayOrder = (amount, currency = "INR") =>
+  withGuard("orders.create", () =>
+    client().orders.create({
       amount: Math.round(amount * 100), // paise
       currency,
       receipt: `receipt_${Date.now()}`,
       payment_capture: 1,
-    });
-  } catch (error) {
-    console.error("Error creating Razorpay order:", error);
-    throw new Error("Failed to create payment order");
-  }
-};
+    })
+  );
+
+// Reconciliation reads — used by the cron to self-heal donations whose webhook was missed.
+export const fetchOrder = (orderId) => withGuard("orders.fetch", () => client().orders.fetch(orderId));
+export const fetchOrderPayments = (orderId) => withGuard("orders.fetchPayments", () => client().orders.fetchPayments(orderId));
 
 export const verifyRazorpayPayment = (razorpayOrderId, razorpayPaymentId, razorpaySignature) => {
   try {
@@ -36,18 +65,15 @@ export const verifyRazorpayPayment = (razorpayOrderId, razorpayPaymentId, razorp
       .createHmac("sha256", process.env.RAZORPAY_KEY_SECRET || "")
       .update(`${razorpayOrderId}|${razorpayPaymentId}`)
       .digest("hex");
-    return expectedSignature === razorpaySignature;
+    // constant-time compare
+    const a = Buffer.from(expectedSignature, "utf8");
+    const b = Buffer.from(razorpaySignature || "", "utf8");
+    return a.length === b.length && crypto.timingSafeEqual(a, b);
   } catch (error) {
     console.error("Error verifying payment:", error);
     return false;
   }
 };
 
-export const refundPayment = async (paymentId, amount) => {
-  try {
-    return await client().payments.refund(paymentId, { amount: Math.round(amount * 100) });
-  } catch (error) {
-    console.error("Error processing refund:", error);
-    throw new Error("Failed to process refund");
-  }
-};
+export const refundPayment = (paymentId, amount) =>
+  withGuard("payments.refund", () => client().payments.refund(paymentId, { amount: Math.round(amount * 100) }));

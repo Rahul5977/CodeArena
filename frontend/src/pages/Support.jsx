@@ -65,12 +65,14 @@ export default function Support() {
 
     let order, keyId;
     try {
+      // Idempotency-Key dedupes retries/double-submits into a single order server-side.
+      const idem = (typeof crypto !== "undefined" && crypto.randomUUID) ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`;
       const { data } = await api.post("/support/order", {
         amount: value,
         name: name.trim() || undefined,
         message: message.trim() || undefined,
         showOnWall,
-      });
+      }, { headers: { "Idempotency-Key": idem } });
       order = data.order;
       keyId = data.keyId;
       if (!order?.id || !keyId) throw new Error("missing order");

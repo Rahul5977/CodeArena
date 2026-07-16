@@ -81,8 +81,8 @@ model User {
   comments    Comment[]
   votes       Vote[]
   reports     Report[]
-  following   Follow[] @relation("follower")
-  followers   Follow[] @relation("followee")
+  following   Follow[]     @relation("follower")
+  followers   Follow[]     @relation("followee")
 
   // Support
   donations Donation[]
@@ -126,10 +126,10 @@ model Problem {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  author            User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  submission        Submission[]
-  solvedBy          ProblemSolved[]
-  problemsPlaylists ProblemInPlaylist[]
+  author             User                @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  submission         Submission[]
+  solvedBy           ProblemSolved[]
+  problemsPlaylists  ProblemInPlaylist[]
   contestSubmissions ContestSubmission[]
   sheetProgress      SheetProgress[]
   solutions          Solution[]
@@ -428,9 +428,10 @@ model Donation {
   userId           String? // null = anonymous donor
   amount           Float
   currency         String   @default("INR")
+  idempotencyKey   String?  @unique // dedupe double-clicked "create order"
   gatewayOrderId   String   @unique
-  gatewayPaymentId String?
-  status           String   @default("created") // created | paid | failed
+  gatewayPaymentId String?  @unique // a payment settles at most one donation
+  status           String   @default("created") // created | attempted | paid | failed | refunded
   name             String? // optional display name for the supporters wall
   message          String?
   showOnWall       Boolean  @default(false)
@@ -438,6 +439,21 @@ model Donation {
   updatedAt        DateTime @updatedAt
 
   user User? @relation(fields: [userId], references: [id], onDelete: SetNull)
+
+  @@index([status, createdAt])
+}
+
+// Every Razorpay webhook delivery, stored once (dedup by the provider event id).
+// Lets duplicate/retried deliveries be no-ops and gives an audit trail.
+model WebhookEvent {
+  id          String    @id @default(uuid())
+  eventId     String    @unique // Razorpay x-razorpay-event-id
+  type        String // payment.captured | payment.failed | order.paid | refund.processed
+  payload     Json
+  status      String    @default("pending") // pending | processed | dead
+  attempts    Int       @default(0)
+  createdAt   DateTime  @default(now())
+  processedAt DateTime?
 
   @@index([status, createdAt])
 }
