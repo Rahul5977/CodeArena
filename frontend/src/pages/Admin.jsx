@@ -1,29 +1,36 @@
 import { useEffect, useMemo, useState } from "react";
+import { Link } from "react-router-dom";
 import {
   Users,
   Activity,
   Send,
   IndianRupee,
-  ListChecks,
-  Flag,
+  AlertTriangle,
+  FileText,
+  Plus,
   Search,
+  Pencil,
   Trash2,
 } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
+
+/* Rebuilt to match the Admin design (CodeArena Admin.html → 13a overview, 13b problem
+   management). The design's premium metrics (Pro subscribers, MRR, Free/Pro plans) are
+   swapped for this product's real, free-forever data — layout and styling kept faithful. */
+
+const muted = (p = 60) => `color-mix(in srgb, var(--color-text) ${p}%, transparent)`;
 
 const DIFF = {
   EASY: { bg: "var(--color-accent-2-100)", fg: "var(--color-accent-2-800)", label: "Easy" },
   MEDIUM: { bg: "var(--color-accent-100)", fg: "var(--color-accent-800)", label: "Medium" },
   HARD: { bg: "var(--color-accent-200)", fg: "var(--color-accent-900)", label: "Hard" },
 };
-const muted = (p = 60) => `color-mix(in srgb, var(--color-text) ${p}%, transparent)`;
-const surface = { background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)" };
 
 function Pill({ difficulty }) {
   const d = DIFF[difficulty] || DIFF.MEDIUM;
   return (
-    <span style={{ fontSize: 11, padding: "3px 11px", borderRadius: 999, background: d.bg, color: d.fg, fontWeight: 600 }}>
+    <span style={{ fontSize: 11, padding: "2px 10px", borderRadius: 999, background: d.bg, color: d.fg, fontWeight: 600 }}>
       {d.label}
     </span>
   );
@@ -33,7 +40,7 @@ export default function Admin() {
   const [tab, setTab] = useState("overview");
 
   return (
-    <div style={{ maxWidth: 1080 }}>
+    <div style={{ maxWidth: 1120 }}>
       <div style={{ marginBottom: 20 }}>
         <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 32, lineHeight: 1.05, margin: "0 0 6px" }}>Admin</h1>
         <p style={{ margin: 0, fontSize: 15, color: muted(66) }}>Platform health and content management.</p>
@@ -42,7 +49,7 @@ export default function Admin() {
       <div className="seg" style={{ background: "var(--color-surface)", marginBottom: 18, width: "fit-content" }}>
         {[
           ["overview", "Overview"],
-          ["problems", "Problems"],
+          ["problems", "Manage Problems"],
         ].map(([v, label]) => (
           <label key={v} className="seg-opt">
             <input type="radio" name="admin-tab" checked={tab === v} onChange={() => setTab(v)} />
@@ -51,14 +58,60 @@ export default function Admin() {
         ))}
       </div>
 
-      {tab === "overview" ? <Overview /> : <Problems />}
+      {tab === "overview" ? <Overview onManageProblems={() => setTab("problems")} /> : <Problems />}
     </div>
   );
 }
 
-/* ---------------------------------------------------------------- Overview */
+/* ---------------------------------------------------------------- Overview (13a) */
 
-function Overview() {
+function KpiCard(props) {
+  const { label, value, sub, subTone, chipBg, chipFg } = props;
+  const Icon = props.Icon; // local const → covered by varsIgnorePattern (^[A-Z_])
+  return (
+    <div style={{ background: "var(--color-surface)", borderRadius: 20, boxShadow: "var(--shadow-sm)", padding: "18px 20px" }}>
+      <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
+        <span style={{ fontSize: 12, color: muted(60) }}>{label}</span>
+        <span style={{ width: 30, height: 30, borderRadius: 9, background: chipBg, color: chipFg, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+          <Icon size={15} strokeWidth={2.5} />
+        </span>
+      </div>
+      <div style={{ fontFamily: "var(--font-heading)", fontSize: 28, lineHeight: 1 }}>{value}</div>
+      {sub != null && (
+        <div style={{ fontSize: 11, marginTop: 6, fontWeight: 600, color: subTone || "var(--color-accent-2-700)" }}>{sub}</div>
+      )}
+    </div>
+  );
+}
+
+function ModRow(props) {
+  const { iconFg, highlight, title, subtitle, action, to, onClick } = props;
+  const Icon = props.Icon; // local const → covered by varsIgnorePattern (^[A-Z_])
+  const ActionEl = to ? Link : "button";
+  return (
+    <div style={{ display: "flex", alignItems: "center", gap: 11, padding: "11px 13px", borderRadius: 14, background: highlight ? "var(--color-accent-100)" : "var(--color-neutral-100)" }}>
+      <span style={{ width: 32, height: 32, borderRadius: 10, background: "var(--color-surface)", color: iconFg, display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+        <Icon size={16} strokeWidth={2.5} />
+      </span>
+      <div style={{ flex: 1, minWidth: 0 }}>
+        <div style={{ fontSize: 13, fontWeight: 600 }}>{title}</div>
+        <div style={{ fontSize: 11, color: muted(55) }}>{subtitle}</div>
+      </div>
+      {action && (
+        <ActionEl
+          to={to}
+          onClick={onClick}
+          className={to ? undefined : "btn btn-ghost"}
+          style={{ fontSize: 12, color: "var(--color-accent-800)", textDecoration: "none", fontWeight: 700, background: "transparent", padding: to ? 0 : "2px 6px" }}
+        >
+          {action}
+        </ActionEl>
+      )}
+    </div>
+  );
+}
+
+function Overview({ onManageProblems }) {
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -88,77 +141,97 @@ function Overview() {
   const days = data?.submissionDays || [];
   const signups = data?.recentSignups || [];
   const max = Math.max(1, ...series);
+  const totalSubs = series.reduce((a, b) => a + (b || 0), 0);
+  const totalUsers = k.totalUsers ?? 0;
+  const activeToday = k.activeToday ?? 0;
+  const subsToday = k.submissionsToday ?? 0;
+  const subsDelta = series.length >= 2 ? subsToday - (series[series.length - 2] || 0) : null;
+  const openReports = k.openReports ?? 0;
+  const activePct = totalUsers ? Math.round((activeToday / totalUsers) * 100) : 0;
 
-  const cards = [
-    { label: "Total users", value: k.totalUsers ?? 0, icon: Users, color: "var(--color-accent)" },
-    { label: "Active today", value: k.activeToday ?? 0, icon: Activity, color: "var(--color-accent-2-700)" },
-    { label: "Submissions today", value: k.submissionsToday ?? 0, icon: Send },
-    { label: "Donations this month", value: `₹${Math.round(k.donationsThisMonth ?? 0).toLocaleString("en-IN")}`, icon: IndianRupee, color: "var(--color-accent-2-700)" },
-    { label: "Problems", value: k.problemCount ?? 0, icon: ListChecks },
-    { label: "Open reports", value: k.openReports ?? 0, icon: Flag, color: (k.openReports ?? 0) > 0 ? "var(--color-accent-800)" : undefined },
-  ];
+  const fmtDay = (d) => (d ? new Date(d).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "");
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
-        {cards.map((c) => {
-          const Icon = c.icon;
-          return (
-            <div key={c.label} style={{ ...surface, borderRadius: 20, padding: "18px 20px" }}>
-              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 10 }}>
-                <span style={{ fontSize: 12, color: muted(60) }}>{c.label}</span>
-                <Icon size={16} strokeWidth={2.2} style={{ color: muted(45) }} />
-              </div>
-              <div style={{ fontFamily: "var(--font-heading)", fontSize: 30, lineHeight: 1, color: c.color || "var(--color-text)" }}>
-                {c.value}
-              </div>
-            </div>
-          );
-        })}
+      {/* KPI row — 4 cards, matching the design (real metrics substituted for premium) */}
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(190px, 1fr))", gap: 14 }}>
+        <KpiCard
+          label="Total users" value={totalUsers.toLocaleString("en-IN")} Icon={Users}
+          chipBg="var(--color-accent-100)" chipFg="var(--color-accent-700)"
+          sub={`${activeToday.toLocaleString("en-IN")} active today`} subTone={activeToday > 0 ? "var(--color-accent-2-700)" : muted(50)}
+        />
+        <KpiCard
+          label="Active today" value={activeToday.toLocaleString("en-IN")} Icon={Activity}
+          chipBg="var(--color-accent-2-100)" chipFg="var(--color-accent-2-700)"
+          sub={`${activePct}% of all users`}
+        />
+        <KpiCard
+          label="Submissions today" value={subsToday.toLocaleString("en-IN")} Icon={Send}
+          chipBg="var(--color-accent-100)" chipFg="var(--color-accent-700)"
+          sub={subsDelta == null ? "today" : `${subsDelta >= 0 ? "+" : ""}${subsDelta} vs yesterday`}
+          subTone={subsDelta > 0 ? "var(--color-accent-2-700)" : muted(50)}
+        />
+        <KpiCard
+          label="Donations this month" value={`₹${Math.round(k.donationsThisMonth ?? 0).toLocaleString("en-IN")}`} Icon={IndianRupee}
+          chipBg="var(--color-accent-2-100)" chipFg="var(--color-accent-2-700)"
+          sub="this month" subTone={muted(50)}
+        />
       </div>
 
-      {/* 14-day submissions bar chart */}
-      <div style={{ ...surface, padding: "20px 22px" }}>
-        <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 18, margin: "0 0 4px" }}>Submissions</h3>
-        <p style={{ margin: "0 0 16px", fontSize: 13, color: muted(55) }}>Last 14 days</p>
-        <div style={{ display: "flex", alignItems: "flex-end", gap: 6, height: 140 }}>
-          {series.map((count, i) => {
-            const label = days[i] ? new Date(days[i]).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : "";
-            return (
-              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", alignItems: "center", gap: 6, height: "100%", justifyContent: "flex-end" }} title={`${label}: ${count} submissions`}>
-                <span style={{ fontSize: 11, color: muted(50), fontWeight: 600 }}>{count > 0 ? count : ""}</span>
-                <div
-                  style={{
-                    width: "100%",
-                    height: `${Math.max(count > 0 ? 6 : 2, (count / max) * 100)}%`,
-                    minHeight: 3,
-                    borderRadius: 6,
-                    background: count > 0 ? "var(--color-accent)" : "var(--color-neutral-200)",
-                    transition: "height .2s",
-                  }}
-                />
+      {/* Row 2 — submissions chart + moderation queue */}
+      <div style={{ display: "grid", gridTemplateColumns: "1.6fr 1fr", gap: 18 }}>
+        <div style={{ background: "var(--color-surface)", borderRadius: 24, boxShadow: "var(--shadow-sm)", padding: "22px 24px" }}>
+          <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 18 }}>
+            <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 18, margin: 0 }}>Submissions per day</h3>
+            <span style={{ fontSize: 12, color: muted(55) }}>Last {series.length || 14} days · {totalSubs.toLocaleString("en-IN")} total</span>
+          </div>
+          <div style={{ display: "flex", alignItems: "flex-end", gap: 9, height: 170 }}>
+            {series.map((count, i) => (
+              <div key={i} style={{ flex: 1, display: "flex", flexDirection: "column", justifyContent: "flex-end", height: "100%" }} title={`${fmtDay(days[i])}: ${count} submissions`}>
+                <div style={{ height: `${Math.max(count > 0 ? 4 : 1.5, (count / max) * 100)}%`, background: i >= series.length - 2 ? "var(--color-accent)" : "var(--color-accent-2-400)", borderRadius: "7px 7px 3px 3px", transition: "height .2s" }} />
               </div>
-            );
-          })}
+            ))}
+          </div>
+          <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: muted(45), marginTop: 10 }}>
+            <span>{fmtDay(days[0])}</span>
+            <span>{fmtDay(days[Math.floor(days.length / 2)])}</span>
+            <span>{fmtDay(days[days.length - 1])}</span>
+          </div>
         </div>
-        <div style={{ display: "flex", justifyContent: "space-between", marginTop: 8, fontSize: 11, color: muted(45) }}>
-          <span>{days[0] ? new Date(days[0]).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
-          <span>{days.length ? new Date(days[days.length - 1]).toLocaleDateString("en-US", { month: "short", day: "numeric" }) : ""}</span>
+
+        <div style={{ background: "var(--color-surface)", borderRadius: 24, boxShadow: "var(--shadow-sm)", padding: "22px 24px" }}>
+          <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 18, margin: "0 0 16px" }}>Moderation queue</h3>
+          <div style={{ display: "flex", flexDirection: "column", gap: 11 }}>
+            <ModRow
+              Icon={AlertTriangle} iconFg="var(--color-accent-700)" highlight={openReports > 0}
+              title={`${openReports} open report${openReports === 1 ? "" : "s"}`}
+              subtitle={openReports > 0 ? "Awaiting review" : "Nothing flagged"}
+            />
+            <ModRow
+              Icon={FileText} iconFg="var(--color-accent-2-700)"
+              title={`${(k.problemCount ?? 0).toLocaleString("en-IN")} problems`}
+              subtitle="Publish & manage" action="Open" onClick={onManageProblems}
+            />
+            <ModRow
+              Icon={IndianRupee} iconFg="var(--color-accent-700)"
+              title="Support & donations" subtitle="Pay-what-you-want" action="View" to="/support"
+            />
+          </div>
         </div>
       </div>
 
       {/* Recent signups */}
-      <div style={{ ...surface, overflow: "hidden" }}>
-        <div style={{ padding: "18px 22px 4px" }}>
+      <div style={{ background: "var(--color-surface)", borderRadius: 24, boxShadow: "var(--shadow-sm)", padding: "22px 24px" }}>
+        <div style={{ display: "flex", alignItems: "baseline", justifyContent: "space-between", marginBottom: 12 }}>
           <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 18, margin: 0 }}>Recent signups</h3>
         </div>
         {signups.length === 0 ? (
-          <div style={{ padding: 28, textAlign: "center", color: muted(55) }}>No signups yet.</div>
+          <div style={{ padding: "18px 0", textAlign: "center", color: muted(55) }}>No signups yet.</div>
         ) : (
           <table className="table">
             <thead>
               <tr>
-                <th>Name</th>
+                <th>User</th>
                 <th>Email</th>
                 <th>Role</th>
                 <th style={{ textAlign: "right" }}>Joined</th>
@@ -168,20 +241,9 @@ function Overview() {
               {signups.map((u) => (
                 <tr key={u.id}>
                   <td style={{ fontWeight: 600 }}>{u.name || "—"}</td>
-                  <td style={{ color: muted(62) }}>{u.email}</td>
+                  <td style={{ color: muted(60) }}>{u.email}</td>
                   <td>
-                    <span
-                      style={{
-                        fontSize: 11,
-                        padding: "3px 10px",
-                        borderRadius: 999,
-                        fontWeight: 600,
-                        background: u.role === "ADMIN" ? "var(--color-accent-100)" : "var(--color-neutral-200)",
-                        color: u.role === "ADMIN" ? "var(--color-accent-800)" : muted(70),
-                      }}
-                    >
-                      {u.role}
-                    </span>
+                    <span className={u.role === "ADMIN" ? "tag tag-accent" : "tag tag-accent-2"}>{u.role === "ADMIN" ? "Admin" : "Member"}</span>
                   </td>
                   <td style={{ textAlign: "right", color: muted(55), fontSize: 13 }}>
                     {new Date(u.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" })}
@@ -196,7 +258,22 @@ function Overview() {
   );
 }
 
-/* ---------------------------------------------------------------- Problems */
+/* ---------------------------------------------------------------- Manage Problems (13b) */
+
+function StatusIndicator({ published, busy, onClick }) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      disabled={busy}
+      title={published ? "Published — click to unpublish" : "Draft — click to publish"}
+      style={{ display: "inline-flex", alignItems: "center", gap: 5, background: "transparent", border: "none", cursor: busy ? "default" : "pointer", opacity: busy ? 0.5 : 1, fontSize: 11, fontWeight: 600, color: published ? "var(--color-accent-2-700)" : muted(50) }}
+    >
+      <span style={{ width: 7, height: 7, borderRadius: "50%", background: published ? "var(--color-accent-2-500)" : "var(--color-neutral-400)" }} />
+      {published ? "Published" : "Draft"}
+    </button>
+  );
+}
 
 function Problems() {
   const [problems, setProblems] = useState([]);
@@ -205,6 +282,7 @@ function Problems() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [busyId, setBusyId] = useState(null);
+  const [showNewNote, setShowNewNote] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -249,19 +327,15 @@ function Problems() {
   };
 
   const count = useMemo(() => problems.length, [problems]);
+  const publishedCount = useMemo(() => problems.filter((p) => p.published).length, [problems]);
 
   return (
     <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      {/* Toolbar: search · filter · New problem */}
       <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
-        <div style={{ position: "relative", flex: 1, minWidth: 220, maxWidth: 360 }}>
+        <div style={{ position: "relative", flex: 1, minWidth: 220, maxWidth: 340 }}>
           <Search size={16} strokeWidth={2.5} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: muted(50) }} />
-          <input
-            className="input"
-            placeholder="Search problems…"
-            value={q}
-            onChange={(e) => setQ(e.target.value)}
-            style={{ paddingLeft: 40, background: "var(--color-surface)" }}
-          />
+          <input className="input" placeholder="Search problems…" value={q} onChange={(e) => setQ(e.target.value)} style={{ paddingLeft: 40, background: "var(--color-surface)" }} />
         </div>
         <div className="seg" style={{ background: "var(--color-surface)" }}>
           {[
@@ -275,106 +349,76 @@ function Problems() {
             </label>
           ))}
         </div>
-        <span style={{ marginLeft: "auto", fontSize: 13, color: muted(55) }}>{count} problems</span>
+        <button className="btn btn-primary" style={{ marginLeft: "auto", gap: 7 }} onClick={() => setShowNewNote((s) => !s)}>
+          <Plus size={16} strokeWidth={2.75} /> New problem
+        </button>
       </div>
+
+      {showNewNote && (
+        <div style={{ background: "var(--color-accent-2-100)", color: "var(--color-accent-2-800)", padding: "10px 14px", borderRadius: 14, fontSize: 13 }}>
+          Problem authoring UI isn't built yet — add problems via <code>backend/prisma/seed.js</code> or the <code>POST /api/v1/problems/create-problem</code> API for now.
+        </div>
+      )}
 
       {error && (
         <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", padding: "10px 14px", borderRadius: 14 }}>{error}</div>
       )}
 
-      <div style={{ ...surface, overflow: "hidden", position: "relative" }}>
+      <div style={{ background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
         {loading ? (
           <div style={{ padding: 40 }}>
             <Spinner label="Loading problems…" />
           </div>
         ) : (
-          <table className="table">
-            <thead>
-              <tr>
-                <th style={{ width: 44 }}>#</th>
-                <th>Title</th>
-                <th>Difficulty</th>
-                <th style={{ textAlign: "center" }}>Published</th>
-                <th style={{ width: 60 }} />
-              </tr>
-            </thead>
-            <tbody>
-              {problems.map((p, i) => (
-                <tr key={p.id}>
-                  <td style={{ color: muted(45), fontVariantNumeric: "tabular-nums" }}>{i + 1}</td>
-                  <td style={{ fontWeight: 600 }}>
-                    {p.title}
-                    <span style={{ display: "block", fontSize: 11, color: muted(45), fontWeight: 400, marginTop: 2 }}>
-                      {p.submissionCount} submission{p.submissionCount === 1 ? "" : "s"}
-                      {(p.tags || []).length ? ` · ${p.tags.join(" · ")}` : ""}
-                    </span>
-                  </td>
-                  <td>
-                    <Pill difficulty={p.difficulty} />
-                  </td>
-                  <td style={{ textAlign: "center" }}>
-                    <Toggle on={p.published} disabled={busyId === p.id} onClick={() => togglePublish(p)} />
-                  </td>
-                  <td style={{ textAlign: "right" }}>
-                    <button
-                      className="btn btn-ghost"
-                      title="Delete problem"
-                      disabled={busyId === p.id}
-                      onClick={() => remove(p)}
-                      style={{ padding: 8, color: "var(--color-accent-800)" }}
-                    >
-                      <Trash2 size={16} strokeWidth={2.2} />
-                    </button>
-                  </td>
+          <>
+            <table className="table">
+              <thead>
+                <tr>
+                  <th style={{ width: 44 }}>#</th>
+                  <th>Title</th>
+                  <th>Difficulty</th>
+                  <th>Topic</th>
+                  <th style={{ textAlign: "right" }}>Submissions</th>
+                  <th style={{ textAlign: "center" }}>Status</th>
+                  <th style={{ textAlign: "right", width: 90 }}>Actions</th>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        )}
-        {!loading && problems.length === 0 && (
-          <div style={{ padding: 32, textAlign: "center", color: muted(55) }}>No problems match your filters.</div>
+              </thead>
+              <tbody>
+                {problems.map((p, i) => (
+                  <tr key={p.id}>
+                    <td style={{ color: muted(50), fontVariantNumeric: "tabular-nums" }}>{i + 1}</td>
+                    <td style={{ fontWeight: 600 }}>{p.title}</td>
+                    <td><Pill difficulty={p.difficulty} /></td>
+                    <td style={{ color: muted(62) }}>{(p.tags || [])[0] || "—"}</td>
+                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: muted(62) }}>{p.submissionCount ?? 0}</td>
+                    <td style={{ textAlign: "center" }}>
+                      <StatusIndicator published={p.published} busy={busyId === p.id} onClick={() => togglePublish(p)} />
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                        <button className="btn btn-ghost btn-icon" style={{ width: 30, height: 30, opacity: 0.4 }} disabled title="Editing UI coming soon" aria-label="Edit">
+                          <Pencil size={15} strokeWidth={2.5} />
+                        </button>
+                        <button className="btn btn-ghost btn-icon" style={{ width: 30, height: 30, color: "var(--color-accent-800)" }} disabled={busyId === p.id} onClick={() => remove(p)} title="Delete problem" aria-label="Delete">
+                          <Trash2 size={15} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+            {problems.length === 0 ? (
+              <div style={{ padding: 32, textAlign: "center", color: muted(55) }}>No problems match your filters.</div>
+            ) : (
+              <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", padding: "14px 20px", borderTop: "1px solid var(--color-divider)" }}>
+                <span style={{ fontSize: 12, color: muted(55) }}>{count} problems · {publishedCount} published</span>
+                <span style={{ width: 30, height: 30, borderRadius: 9, background: "var(--color-accent)", color: "var(--color-bg)", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 13, fontWeight: 700 }}>1</span>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>
-  );
-}
-
-function Toggle({ on, disabled, onClick }) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={on}
-      disabled={disabled}
-      onClick={onClick}
-      title={on ? "Published — click to unpublish" : "Draft — click to publish"}
-      style={{
-        width: 42,
-        height: 24,
-        borderRadius: 999,
-        border: "none",
-        padding: 0,
-        cursor: disabled ? "default" : "pointer",
-        opacity: disabled ? 0.5 : 1,
-        background: on ? "var(--color-accent-2-500)" : "var(--color-neutral-300)",
-        position: "relative",
-        transition: "background .15s",
-        verticalAlign: "middle",
-      }}
-    >
-      <span
-        style={{
-          position: "absolute",
-          top: 3,
-          left: on ? 21 : 3,
-          width: 18,
-          height: 18,
-          borderRadius: "50%",
-          background: "#fff",
-          boxShadow: "0 1px 2px rgba(0,0,0,.2)",
-          transition: "left .15s",
-        }}
-      />
-    </button>
   );
 }
