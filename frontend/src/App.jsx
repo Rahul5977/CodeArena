@@ -56,6 +56,7 @@ export default function App() {
         <Route path="/problems/:slug/solutions" element={<ProblemSolutions />} />
         <Route path="/sheets" element={<Sheets />} />
         <Route path="/sheets/:id" element={<Sheets />} />
+        <Route path="/sheets/:sheetId/:problemId" element={<ProblemEditor />} />
         <Route path="/playlists" element={<Playlists />} />
         <Route path="/contests" element={<Contests />} />
         <Route path="/contests/:id" element={<Contests />} />
