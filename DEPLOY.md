@@ -77,24 +77,57 @@ RAZORPAY_KEY_SECRET=
 
 Generate strong secrets with `openssl rand -hex 32`.
 
-## 4. Deploy the code executor (Codebox)
+## 4. Deploy the code executor (Codebox) — **use the `isolate` executor**
+
+> ⚠️ **The `docker` executor does NOT work on Docker ≥ 29** (it errors with *"container rootfs is marked read-only"* / status *Internal Error* because Docker 29 rejects `putArchive` into a `ReadonlyRootfs` container). `get.docker.com` installs Docker 29+, so on a fresh VPS **always use `isolate`** — Codebox's documented production sandbox. It needs cgroup v2 (Ubuntu 22.04+ has it) and a `privileged` worker.
 
 ```bash
 git clone https://github.com/hiteshchoudhary/Codebox.git codebox && cd codebox
-# Build the language runner images (Python, Node, GCC, Java, …)
-bash scripts/build-images.sh
 ```
 
-Edit Codebox's `docker-compose.yml` so it:
-- binds the API to localhost only: `ports: ["127.0.0.1:3000:3000"]`
-- uses a strong token: `AUTH_TOKEN=<same as CODEBOX_AUTH_TOKEN>`
-- (recommended on a KVM host) sets the worker to `EXECUTOR_TYPE=isolate` with `privileged: true` — the mature sandbox. The default `docker` executor also works on standard Linux Docker; if it errors with *"rootfs is marked read-only"* on a very new Docker, switch to `isolate`.
+**Fix the isolate build** — the worker Dockerfile clones `isolate` at HEAD, which now needs `libseccomp-dev` (else `isolate.c: seccomp.h: No such file`):
 
 ```bash
-docker compose up -d --build
-curl -s -H "X-Auth-Token: <token>" http://127.0.0.1:3000/health   # → healthy
+sed -i 's/libcap-dev libsystemd-dev/libcap-dev libsystemd-dev libseccomp-dev/' docker/worker/Dockerfile
+```
+
+**Auth token** (must equal the app's `CODEBOX_AUTH_TOKEN`):
+
+```bash
+grep '^CODEBOX_AUTH_TOKEN=' ~/CodeArena/.env | sed 's/^CODEBOX_AUTH_TOKEN=/AUTH_TOKEN=/' > .env
+echo "WORKER_CONCURRENCY=1" >> .env      # 1–2 for a 2 GB box; raise on bigger hosts
+```
+
+**Minimal isolate stack** (redis + api + privileged isolate worker — no Caddy/Prometheus/Grafana). The API binds to the **docker-gateway IP `172.17.0.1`**, not `127.0.0.1`: the backend container reaches the executor via `host.docker.internal` → `172.17.0.1`, so a `127.0.0.1` bind gives `ECONNREFUSED`. `172.17.0.1` is container-reachable but **not** on the public interface (and the AWS SG + `ufw` also block 3000):
+
+```bash
+cat > docker-compose.server.yml <<'YML'
+services:
+  redis:
+    image: redis:7-alpine
+    command: redis-server --appendonly yes
+    restart: unless-stopped
+  api:
+    build: { context: ., dockerfile: docker/api/Dockerfile }
+    environment: [ NODE_ENV=production, REDIS_URL=redis://redis:6379, AUTH_TOKEN=${AUTH_TOKEN}, PORT=3000 ]
+    ports: [ "172.17.0.1:3000:3000" ]
+    depends_on: [redis]
+    restart: unless-stopped
+  worker:
+    build: { context: ., dockerfile: docker/worker/Dockerfile }
+    command: node src/queue/worker.js
+    privileged: true
+    environment: [ NODE_ENV=production, REDIS_URL=redis://redis:6379, EXECUTOR_TYPE=isolate, WORKER_CONCURRENCY=${WORKER_CONCURRENCY:-1} ]
+    depends_on: [redis]
+    restart: unless-stopped
+YML
+
+docker compose -f docker-compose.server.yml up -d --build      # worker build is ~10-15 min (compiles isolate + bundles gcc/g++/JDK/Python/Node)
+curl -s -H "X-Auth-Token: $(grep '^AUTH_TOKEN=' .env | cut -d= -f2)" http://172.17.0.1:3000/health   # → healthy
 cd ..
 ```
+
+The worker log should print `Cgroup v2 setup complete for isolate` + `worker_started`. Keep the app's `CODEBOX_API_URL=http://host.docker.internal:3000` (the backend already has `extra_hosts: host.docker.internal:host-gateway`).
 
 > Codebox is **never exposed publicly** — only the backend (on the host) talks to it.
 
