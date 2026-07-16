@@ -15,6 +15,7 @@ import {
   updateProfile,
   healthCheck,
   verifyEmail,
+  resendVerification,
 } from "../controllers/auth.controllers.js";
 import { githubAuth, githubCallback, googleAuth, googleCallback } from "../controllers/oauth.controllers.js";
 
@@ -44,6 +45,7 @@ authRoutes.post("/logout", logout);
 authRoutes.post("/logout-all", logoutAll);
 authRoutes.get("/check", check);
 authRoutes.get("/me", check); // frontend expects /me
+authRoutes.post("/resend-verification", resendVerification);
 authRoutes.post("/legacy-logout", legacyLogout);
 
 export default authRoutes;

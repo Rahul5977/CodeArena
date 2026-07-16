@@ -43,7 +43,7 @@ export const register = async (req, res) => {
       new ApiResponse(
         201,
         {
-          user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role, image: newUser.image },
+          user: { id: newUser.id, email: newUser.email, name: newUser.name, role: newUser.role, image: newUser.image, emailVerified: newUser.emailVerified },
           accessToken,
         },
         "User created successfully"
@@ -78,7 +78,7 @@ export const login = async (req, res) => {
       new ApiResponse(
         200,
         {
-          user: { id: user.id, email: user.email, name: user.name, username: user.username, role: user.role, image: user.image, lastLoginAt: new Date() },
+          user: { id: user.id, email: user.email, name: user.name, username: user.username, role: user.role, image: user.image, emailVerified: user.emailVerified, lastLoginAt: new Date() },
           accessToken,
         },
         "User logged in successfully"
@@ -284,6 +284,24 @@ export const verifyEmail = async (req, res) => {
   } catch (error) {
     console.error("Verify email error:", error);
     return res.redirect(`${origin}/login?verified=error`);
+  }
+};
+
+// Re-send the verification email to the logged-in user (the "Resend" button in
+// the verify banner). No-op success if already verified.
+export const resendVerification = async (req, res) => {
+  try {
+    const user = await db.user.findUnique({ where: { id: req.user.id }, select: { id: true, email: true, emailVerified: true } });
+    if (!user) throw new ApiError(404, "User not found");
+    if (user.emailVerified) {
+      return res.status(200).json(new ApiResponse(200, { alreadyVerified: true }, "Your email is already verified"));
+    }
+    const token = generateResetToken();
+    await db.user.update({ where: { id: user.id }, data: { emailVerificationToken: token } });
+    await sendVerificationEmail(user.email, token);
+    return res.status(200).json(new ApiResponse(200, { sent: true }, "Verification email sent — check your inbox"));
+  } catch (error) {
+    return handleError(res, error, "Error resending verification email");
   }
 };
 
