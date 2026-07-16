@@ -52,3 +52,6 @@ export const initializeSocket = (server) => {
   });
   return io;
 };
+
+// Lazy accessor for the module-scoped io instance (undefined before init).
+export const getIO = () => io;
