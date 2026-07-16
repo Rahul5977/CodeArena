@@ -78,6 +78,7 @@ function SheetDetail({ id }) {
 
   const s = data.sheet;
   const problems = data.problems || [];
+  const days = data.days;
   const done = problems.filter((p) => p.solved).length;
   const total = problems.length || (s.problemIds || []).length;
 
@@ -97,28 +98,48 @@ function SheetDetail({ id }) {
         </div>
       </div>
 
-      {problems.length === 0 ? (
-        <div style={{ ...surface, padding: "28px 30px", textAlign: "center", color: muted(60) }}>No problems in this sheet yet.</div>
-      ) : (
-        <div style={{ ...surface, overflow: "hidden" }}>
-          {problems.map((p, i) => {
-            const d = DIFF[p.difficulty] || DIFF.MEDIUM;
+      {days && days.length ? (
+        // Day-by-day plan (Ascent order), clubbed by day.
+        <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+          {days.map((blk, bi) => {
+            const dn = blk.problems.filter((p) => p.solved).length;
             return (
-              <Link
-                key={p.id}
-                to={`/sheets/${id}/${p.id}`}
-                className="hover-row"
-                style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", textDecoration: "none", color: "inherit", borderBottom: i < problems.length - 1 ? "1px solid color-mix(in srgb, var(--color-text) 7%, transparent)" : "none" }}
-              >
-                <span style={{ width: 24, color: muted(45), fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{i + 1}</span>
-                {p.solved ? <CheckCircle2 size={18} strokeWidth={2.5} color="var(--color-accent-2-600)" /> : <Circle size={18} strokeWidth={2} color={muted(28)} />}
-                <span style={{ flex: 1, fontSize: 14.5, fontWeight: 500 }}>{p.title}</span>
-                <span style={{ fontSize: 11, padding: "2px 11px", borderRadius: 999, background: d.bg, color: d.fg, fontWeight: 600 }}>{d.label}</span>
-              </Link>
+              <div key={`${blk.phaseIdx}-${blk.day}-${bi}`}>
+                <div style={{ display: "flex", alignItems: "baseline", gap: 9, margin: "0 4px 8px", flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: "var(--font-heading)", fontSize: 16 }}>{blk.phase ? `${blk.phase} · ` : ""}Day {blk.day}</span>
+                  <span style={{ fontSize: 13, color: muted(60) }}>{blk.focus}</span>
+                  <span style={{ marginLeft: "auto", fontSize: 12, color: muted(50) }}>{dn}/{blk.problems.length}</span>
+                </div>
+                <div style={{ ...surface, overflow: "hidden" }}>
+                  {blk.problems.map((p, i) => <ProblemRow key={p.id} p={p} index={i} sheetId={id} last={i === blk.problems.length - 1} />)}
+                </div>
+              </div>
             );
           })}
         </div>
+      ) : problems.length === 0 ? (
+        <div style={{ ...surface, padding: "28px 30px", textAlign: "center", color: muted(60) }}>No problems in this sheet yet.</div>
+      ) : (
+        <div style={{ ...surface, overflow: "hidden" }}>
+          {problems.map((p, i) => <ProblemRow key={p.id} p={p} index={i} sheetId={id} last={i === problems.length - 1} />)}
+        </div>
       )}
     </div>
+  );
+}
+
+function ProblemRow({ p, index, sheetId, last }) {
+  const d = DIFF[p.difficulty] || DIFF.MEDIUM;
+  return (
+    <Link
+      to={`/sheets/${sheetId}/${p.id}`}
+      className="hover-row"
+      style={{ display: "flex", alignItems: "center", gap: 12, padding: "12px 18px", textDecoration: "none", color: "inherit", borderBottom: last ? "none" : "1px solid color-mix(in srgb, var(--color-text) 7%, transparent)" }}
+    >
+      <span style={{ width: 24, color: muted(45), fontSize: 13, fontVariantNumeric: "tabular-nums" }}>{index + 1}</span>
+      {p.solved ? <CheckCircle2 size={18} strokeWidth={2.5} color="var(--color-accent-2-600)" /> : <Circle size={18} strokeWidth={2} color={muted(28)} />}
+      <span style={{ flex: 1, fontSize: 14.5, fontWeight: 500 }}>{p.title}</span>
+      <span style={{ fontSize: 11, padding: "2px 11px", borderRadius: 999, background: d.bg, color: d.fg, fontWeight: 600 }}>{d.label}</span>
+    </Link>
   );
 }
