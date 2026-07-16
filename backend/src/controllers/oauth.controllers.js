@@ -11,7 +11,7 @@ const callbackUrl = (provider) => `${FRONTEND()}/api/v1/auth/oauth/${provider}/c
 const roleFor = (email) =>
   process.env.ADMIN_EMAIL && email.toLowerCase() === process.env.ADMIN_EMAIL.toLowerCase() ? "ADMIN" : "USER";
 
-const cookieBase = () => ({ httpOnly: true, sameSite: "strict", secure: process.env.NODE_ENV !== "development" });
+const cookieBase = () => ({ httpOnly: true, sameSite: "lax", secure: process.env.NODE_ENV !== "development", path: "/" });
 const generateTokens = (userId) => ({
   accessToken: jwt.sign({ id: userId, type: "access" }, process.env.SECRET, { expiresIn: "15m" }),
   refreshToken: jwt.sign({ id: userId, type: "refresh" }, process.env.REFRESH_SECRET || process.env.SECRET, { expiresIn: "7d" }),
