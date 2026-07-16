@@ -293,6 +293,7 @@ model Sheet {
   topic          String
   difficulty     Difficulty
   problemIds     String[]
+  structure      Json? // day-by-day plan: [{ phaseIdx, phase, day, focus, problemIds[] }] in solve order
   estimatedHours Int?
   prerequisites  String[]
   isActive       Boolean    @default(true)
