@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import {
   Code2, BookOpen, Trophy, LineChart, Sparkles, Flame, Play, Star, Github, ArrowRight,
 } from "lucide-react";
+import { useAuth } from "../store/auth.js";
 
 /* Rebuilt from the Landing.dc.html design. Fabricated marketing figures (invented user
    counts, a named testimonial, and Premium/Pricing tiers) are replaced with honest copy —
@@ -33,6 +34,8 @@ const STATS = [
 ];
 
 export default function Landing() {
+  const user = useAuth((s) => s.user);
+  const startHref = user ? "/app" : "/register";
   return (
     <div style={{ width: "100%", height: "100%", overflowY: "auto", overflowX: "hidden", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "var(--font-body)" }}>
       <style>{`
@@ -54,8 +57,14 @@ export default function Landing() {
             <Link className="lp-navlink" to="/support">Support</Link>
           </nav>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
-            <Link to="/login" className="lp-navlink">Sign in</Link>
-            <Link to="/register" className="btn btn-primary" style={{ textDecoration: "none", padding: "9px 18px" }}>Get started free</Link>
+            {user ? (
+              <Link to="/app" className="btn btn-primary" style={{ textDecoration: "none", padding: "9px 18px" }}>Go to app</Link>
+            ) : (
+              <>
+                <Link to="/login" className="lp-navlink">Sign in</Link>
+                <Link to="/register" className="btn btn-primary" style={{ textDecoration: "none", padding: "9px 18px" }}>Get started free</Link>
+              </>
+            )}
           </div>
         </div>
       </header>
@@ -72,7 +81,7 @@ export default function Landing() {
             <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 56, lineHeight: 1.03, letterSpacing: "-0.015em", margin: "0 0 20px", textWrap: "balance" }}>The warm place to get seriously good at DSA.</h1>
             <p style={{ fontSize: 18, lineHeight: 1.6, color: muted(70), margin: "0 0 30px", maxWidth: 480 }}>Hand-picked problems, structured study sheets and a code editor that stays out of your way. Build the streak that lands the offer.</p>
             <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 30, flexWrap: "wrap" }}>
-              <Link to="/register" className="btn btn-primary" style={{ textDecoration: "none", padding: "13px 26px", fontSize: 15 }}>Start solving — it's free</Link>
+              <Link to={startHref} className="btn btn-primary" style={{ textDecoration: "none", padding: "13px 26px", fontSize: 15 }}>{user ? "Continue solving" : "Start solving — it's free"}</Link>
               <Link to="/sheets" className="btn btn-secondary" style={{ textDecoration: "none", padding: "13px 22px", fontSize: 15, gap: 8 }}><Play size={17} strokeWidth={2.5} />See the sheets</Link>
             </div>
             <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
@@ -232,7 +241,7 @@ export default function Landing() {
               <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 44, lineHeight: 1.06, margin: "0 auto 16px", maxWidth: 620, textWrap: "balance" }}>Your next offer starts with one problem.</h2>
               <p style={{ fontSize: 18, color: muted(66), margin: "0 auto 30px", maxWidth: 480 }}>Free forever to start. No credit card, no catch — just you and the problems.</p>
               <div style={{ display: "flex", gap: 12, justifyContent: "center", flexWrap: "wrap" }}>
-                <Link to="/register" className="btn btn-primary" style={{ textDecoration: "none", padding: "14px 30px", fontSize: 16 }}>Create free account</Link>
+                <Link to={startHref} className="btn btn-primary" style={{ textDecoration: "none", padding: "14px 30px", fontSize: 16 }}>{user ? "Go to your dashboard" : "Create free account"}</Link>
                 <Link to="/problems" className="btn btn-secondary" style={{ textDecoration: "none", padding: "14px 26px", fontSize: 16 }}>Browse problems</Link>
               </div>
             </div>
