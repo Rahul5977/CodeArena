@@ -4,6 +4,7 @@ import {
   FileCheck2, MessagesSquare, User, Settings, ShieldCheck, Heart, Flame, Bell, Search, LogOut,
 } from "lucide-react";
 import { useAuth } from "../store/auth.js";
+import VerifyBanner from "./VerifyBanner.jsx";
 
 // Sidebar model — mirrors AppShell.dc.html. `title` drives the top-bar heading;
 // `search:false` hides the header search on that route.
@@ -104,6 +105,7 @@ export default function AppShell() {
 
       {/* ── Main column ── */}
       <div style={{ flex: 1, minWidth: 0, height: "100%", display: "flex", flexDirection: "column" }}>
+        <VerifyBanner />
         <header style={{ height: 68, flex: "none", display: "flex", alignItems: "center", gap: 16, padding: "0 28px", background: "var(--color-bg)", borderBottom: "1px solid var(--color-divider)" }}>
           <div style={{ marginRight: "auto", minWidth: 0 }}>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: 23, lineHeight: 1.1, letterSpacing: "-0.01em" }}>{active.title}</div>

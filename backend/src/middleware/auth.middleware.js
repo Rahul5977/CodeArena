@@ -71,6 +71,18 @@ export const optionalAuth = async (req, res, next) => {
   }
 };
 
+// Gate write/participation actions on a verified email. OAuth sign-ups are
+// auto-verified (the provider vouched for the address); email/password users
+// must click the verification link first. Reads stay open.
+export const requireVerified = (req, res, next) => {
+  if (req.user?.emailVerified) return next();
+  return res.status(403).json({
+    success: false,
+    code: "EMAIL_NOT_VERIFIED",
+    message: "Please verify your email to do this — check your inbox, or resend the link from the banner.",
+  });
+};
+
 export const checkRole = (requiredRoles) => {
   return (req, res, next) => {
     if (!requiredRoles.includes(req.user?.role)) {

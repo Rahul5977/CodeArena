@@ -7,6 +7,7 @@ const shape = (u) =>
     ...u,
     isAdmin: u.role === "ADMIN",
     role: u.role === "ADMIN" ? "Administrator" : "Member",
+    emailVerified: u.emailVerified ?? false,
     streak: u.streak ?? 0,
     initials: (u.name || u.email || "?")
       .split(" ")
