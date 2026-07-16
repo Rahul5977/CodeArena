@@ -5,7 +5,7 @@
 >
 > **Legend:** `[ ]` todo · `[~]` in progress · `[x]` done · `[!]` blocked · `[-]` dropped/deferred
 >
-> _Last updated: 2026-07-15 — status: **Deployed to AWS Lightsail (13.203.127.204) — app stack up + seeded + verified; DNS + executor pending.**_
+> _Last updated: 2026-07-16 — status: **FULLY LIVE + working end-to-end at https://codearena.kodexa.in** (AWS Lightsail 13.203.127.204). DNS + Let's Encrypt TLS + app + DB + **code execution** all verified: submit correct→Accepted (4/4), wrong→Wrong Answer (1/4), all 5 languages run under Codebox `isolate`._**
 
 ---
 
@@ -15,7 +15,7 @@
 |---|---|---|
 | 0 | Foundation, cleanup, port Organic design system | `[~]` |
 | 1 | DB & backend reshape (single-admin, schema) | `[x]` migrated + seeded + verified end-to-end on Postgres |
-| 2 | Executor → Codebox (+ pilot gate) | `[~]` lib swapped + wired; execution validates on VPS |
+| 2 | Executor → Codebox (`isolate`) | `[x]` **live on server via isolate** — Python/JS/C/C++/Java all Accepted; end-to-end submit verified (correct→Accepted 4/4, wrong→Wrong Answer 1/4) |
 | 3 | Backend build-out & hardening | `[~]` helmet/rate-limit/404/CORS/answer-free/secure-judge done; zod + Redis cache + more endpoints pending |
 | 4 | Auth: OAuth + real email + Redis sessions | `[~]` OAuth (GitHub+Google) + real email (nodemailer: verify + reset) built — add keys to `.env`; Redis sessions pending |
 | 5 | Frontend build (AppShell → pages) | `[x]` all core pages wired to the API; polish (react-query/responsive) + public profiles (Phase 6) remain |
@@ -23,7 +23,7 @@
 | 7 | Support page (Razorpay pay-what-you-want) | `[x]` live checkout + signature-verified webhook (needs Razorpay keys) |
 | 8 | Admin dashboard | `[x]` overview KPIs + problem management (endpoints + UI); tested |
 | 9 | DSA content pipeline & seeding | `[~]` 14 validated seed problems (114/114); full OneDay authoring pipeline still pending |
-| 10 | Deploy + scale to 10k | `[~]` **app live on AWS Lightsail** (13.203.127.204): stack up, migrated, seeded, /health db:true; DNS + Codebox executor pending |
+| 10 | Deploy + scale to 10k | `[x]` **deployed & working: https://codearena.kodexa.in** (Lightsail 13.203.127.204) — stack up, migrated, seeded, DNS, TLS, /health 200, **execution end-to-end verified**. Scale-out (PgBouncer/PM2/Cloudflare) = future when needed |
 | 11 | Launch hardening & observability | `[x]` pino logging + `/health` + SEO/robots/sitemap; uptime/error-tracking optional |
 
 Backend/DB/executor/auth (0–4) run alongside the frontend build (5).
@@ -205,5 +205,10 @@ includes them · dashboard · sheets · supporters wall · admin guards (200 adm
 | 2026-07-15 | Hosting = **Oracle Cloud Always Free** | 4 vCPU / 24 GB ARM, free forever; runs full stack incl. executor. Runbook to be tailored for ARM. |
 | 2026-07-15 | Hosting → **Google Cloud $300 trial** | Oracle blocked; Hostinger monthly price too high (~₹1.5k). GCP 90-day $300 trial runs an 8 GB e2-standard-2 free for the trial. Standard Linux Docker → Codebox works. |
 | 2026-07-15 | Hosting → **AWS Lightsail** | GCP too complex; owner already has AWS. Lightsail 2 GB (~$10/mo, first 3 months free) + swap; simplest AWS compute. prod compose now passes OAuth/SMTP/webhook envs. |
+| 2026-07-16 | **LIVE at https://codearena.kodexa.in** | Hostinger DNS A `codearena`→13.203.127.204; Caddy Let's Encrypt cert issued after LE negative-cache (600s) cleared; `/api/v1/health`→200. |
+| 2026-07-16 | Executor → **Codebox `isolate`** (not docker) | Docker executor fails on Docker 29 (`ReadonlyRootfs`+`putArchive`) on both local + server. `isolate` = documented prod sandbox, no security tradeoff; cgroup v2 + entrypoint handle setup. Minimal stack: redis+api+privileged isolate worker, `WORKER_CONCURRENCY=1`. |
+| 2026-07-16 | isolate build fix: **`libseccomp-dev`** | Codebox worker Dockerfile clones isolate@HEAD which now needs `seccomp.h`; added `libseccomp-dev` to apt deps so `make isolate` compiles. |
+| 2026-07-16 | Codebox API bind → **`172.17.0.1:3000`** (docker gateway) | Backend reaches executor via `host.docker.internal`→172.17.0.1; `127.0.0.1` bind gave ECONNREFUSED. Gateway bind is container-reachable but NOT on the public interface (AWS SG + ufw also block 3000). Token still gates it. |
+| 2026-07-16 | **Executor working end-to-end** | Live submit: correct Python→Accepted 4/4; wrong→Wrong Answer 1/4; all 5 langs Accepted. Codebox stack `restart: unless-stopped` (survives reboot). |
 | 2026-07-15 | Build OAuth + SMTP + Razorpay now | Owner adds real keys to `.env` (never in chat); flows built to read env. |
 | 2026-07-15 | Next priority = **finish frontend pages (Phase 5)** | Submissions → Settings → Profile → Sheets → Contests → Leaderboard → Onboarding. |
