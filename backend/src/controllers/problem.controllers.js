@@ -101,9 +101,12 @@ export const createProblem = async (req, res) => {
   try {
     // Validate ALL reference solutions before writing anything (fix: previously
     // the create + return happened inside the loop, so only the first language
-    // was validated).
-    const failure = await validateReferenceSolutions(referenceSolutions, testcases);
-    if (failure) return res.status(failure.status).json(failure.body);
+    // was validated). Only validate when publishing — drafts can be saved
+    // without a running executor.
+    if (published && referenceSolutions && testcases) {
+      const failure = await validateReferenceSolutions(referenceSolutions, testcases);
+      if (failure) return res.status(failure.status).json(failure.body);
+    }
 
     const newProblem = await db.problem.create({
       data: {
@@ -237,7 +240,10 @@ export const updateProblem = async (req, res) => {
   } = req.body;
 
   try {
-    if (referenceSolutions && testcases) {
+    // Only validate reference solutions when the problem is (being) published,
+    // so admins can save drafts without a running executor.
+    const effectivePublished = published ?? existingProblem.published;
+    if (effectivePublished && referenceSolutions && testcases) {
       const failure = await validateReferenceSolutions(referenceSolutions, testcases);
       if (failure) return res.status(failure.status).json(failure.body);
     }

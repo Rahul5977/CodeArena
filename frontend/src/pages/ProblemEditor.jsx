@@ -50,8 +50,10 @@ const repStat = (json, kind) => {
 
 export default function ProblemEditor() {
   // Reachable as /problems/:slug OR /sheets/:sheetId/:problemId — both resolve
-  // via /problems/get-all-problems/:id (accepts a slug or a UUID).
-  const { slug, sheetId, problemId } = useParams();
+  // via /problems/get-all-problems/:id (accepts a slug or a UUID). In CONTEST
+  // mode (/contests/:contestId/problems/:problemId) the problem + submit route
+  // are contest-scoped instead.
+  const { slug, sheetId, problemId, contestId } = useParams();
   const problemKey = problemId || slug;
   const [problem, setProblem] = useState(null);
   const [loading, setLoading] = useState(true);
@@ -75,7 +77,7 @@ export default function ProblemEditor() {
     setLeftTab("description");
     setSubs(null);
     api
-      .get(`/problems/get-all-problems/${problemKey}`)
+      .get(contestId ? `/contests/${contestId}/problems/${problemId}` : `/problems/get-all-problems/${problemKey}`)
       .then(({ data }) => {
         if (!active) return;
         const p = data.problem;
@@ -91,7 +93,7 @@ export default function ProblemEditor() {
     return () => {
       active = false;
     };
-  }, [problemKey]);
+  }, [problemKey, contestId, problemId]);
 
   const loadSubs = useCallback(async () => {
     if (!problem) return;
@@ -144,6 +146,13 @@ export default function ProblemEditor() {
     setVerdict(null);
     setOutput(null);
     try {
+      // Contest mode: submit against the contest-scoped route (no sheet progress,
+      // no inline submissions history) — just show the returned verdict.
+      if (contestId) {
+        const { data } = await api.post(`/contests/${contestId}/problems/${problemId}/submit`, { source_code: code, language_id: LANG_ID[lang] });
+        setVerdict(data);
+        return;
+      }
       const { data } = await api.post("/execute-code", { source_code: code, language_id: LANG_ID[lang], problemId: problem.id });
       setVerdict(data);
       // When solved inside a sheet, record sheet progress (best-effort).
@@ -171,14 +180,14 @@ export default function ProblemEditor() {
       <div style={{ ...surface, display: "flex", flexDirection: "column", overflow: "hidden" }}>
         <div style={{ display: "flex", alignItems: "center", gap: 4, padding: "10px 14px 0", borderBottom: "1px solid var(--color-divider)" }}>
           <TabButton active={leftTab === "description"} onClick={() => setLeftTab("description")} Icon={FileText} label="Description" />
-          <TabButton active={leftTab === "submissions"} onClick={openSubmissions} Icon={History} label="Submissions" count={subs?.length} />
+          {!contestId && <TabButton active={leftTab === "submissions"} onClick={openSubmissions} Icon={History} label="Submissions" count={subs?.length} />}
         </div>
 
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "20px 24px" }}>
           {leftTab === "description" ? (
             <>
-              <Link to={sheetId ? `/sheets/${sheetId}` : "/problems"} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
-                <ArrowLeft size={15} strokeWidth={2.75} /> {sheetId ? "Back to sheet" : "All problems"}
+              <Link to={contestId ? `/contests/${contestId}` : sheetId ? `/sheets/${sheetId}` : "/problems"} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
+                <ArrowLeft size={15} strokeWidth={2.75} /> {contestId ? "Back to contest" : sheetId ? "Back to sheet" : "All problems"}
               </Link>
               <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 26, margin: "0 0 10px" }}>{problem.title}</h1>
               <div style={{ display: "flex", gap: 7, marginBottom: 16, flexWrap: "wrap" }}>

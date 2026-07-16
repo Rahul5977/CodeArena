@@ -60,6 +60,7 @@ export default function App() {
         <Route path="/playlists" element={<Playlists />} />
         <Route path="/contests" element={<Contests />} />
         <Route path="/contests/:id" element={<Contests />} />
+        <Route path="/contests/:contestId/problems/:problemId" element={<ProblemEditor />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/submissions" element={<Submissions />} />
         <Route path="/discuss" element={<Discuss />} />

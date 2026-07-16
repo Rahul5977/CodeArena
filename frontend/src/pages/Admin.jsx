@@ -11,9 +11,13 @@ import {
   Search,
   Pencil,
   Trash2,
+  Trophy,
+  Ban,
 } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
+import ProblemFormModal from "../components/ProblemFormModal.jsx";
+import ContestFormModal from "../components/ContestFormModal.jsx";
 
 /* Rebuilt to match the Admin design (CodeArena Admin.html → 13a overview, 13b problem
    management). The design's premium metrics (Pro subscribers, MRR, Free/Pro plans) are
@@ -26,6 +30,16 @@ const DIFF = {
   MEDIUM: { bg: "var(--color-accent-100)", fg: "var(--color-accent-800)", label: "Medium" },
   HARD: { bg: "var(--color-accent-200)", fg: "var(--color-accent-900)", label: "Hard" },
 };
+
+/* Contest status badge palette — matches the Contests page. */
+const STATUS = {
+  LIVE: { bg: "var(--color-accent-100)", fg: "var(--color-accent-800)", label: "Live" },
+  UPCOMING: { bg: "var(--color-accent-2-100)", fg: "var(--color-accent-2-800)", label: "Upcoming" },
+  COMPLETED: { bg: "var(--color-neutral-200)", fg: "var(--color-neutral-800)", label: "Completed" },
+  CANCELLED: { bg: "var(--color-neutral-200)", fg: "var(--color-neutral-700)", label: "Cancelled" },
+};
+
+const fmtWindow = (iso) => (iso ? new Date(iso).toLocaleString(undefined, { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" }) : "");
 
 function Pill({ difficulty }) {
   const d = DIFF[difficulty] || DIFF.MEDIUM;
@@ -50,6 +64,7 @@ export default function Admin() {
         {[
           ["overview", "Overview"],
           ["problems", "Manage Problems"],
+          ["contests", "Manage Contests"],
         ].map(([v, label]) => (
           <label key={v} className="seg-opt">
             <input type="radio" name="admin-tab" checked={tab === v} onChange={() => setTab(v)} />
@@ -58,7 +73,9 @@ export default function Admin() {
         ))}
       </div>
 
-      {tab === "overview" ? <Overview onManageProblems={() => setTab("problems")} /> : <Problems />}
+      {tab === "overview" && <Overview onManageProblems={() => setTab("problems")} />}
+      {tab === "problems" && <Problems />}
+      {tab === "contests" && <Contests />}
     </div>
   );
 }
@@ -282,7 +299,8 @@ function Problems() {
   const [q, setQ] = useState("");
   const [status, setStatus] = useState("all");
   const [busyId, setBusyId] = useState(null);
-  const [showNewNote, setShowNewNote] = useState(false);
+  const [modal, setModal] = useState(null); // { mode:"create" } | { mode:"edit", problem }
+  const [reloadKey, setReloadKey] = useState(0);
 
   useEffect(() => {
     let active = true;
@@ -298,7 +316,25 @@ function Problems() {
       active = false;
       clearTimeout(t);
     };
-  }, [q, status]);
+  }, [q, status, reloadKey]);
+
+  const openEdit = async (p) => {
+    setBusyId(p.id);
+    setError("");
+    try {
+      const { data } = await api.get(`/problems/get-all-problems/${p.id}`);
+      setModal({ mode: "edit", problem: data.problem });
+    } catch (e) {
+      setError(e.response?.data?.message || "Failed to load problem");
+    } finally {
+      setBusyId(null);
+    }
+  };
+
+  const onSaved = () => {
+    setModal(null);
+    setReloadKey((k) => k + 1);
+  };
 
   const togglePublish = async (p) => {
     setBusyId(p.id);
@@ -349,16 +385,10 @@ function Problems() {
             </label>
           ))}
         </div>
-        <button className="btn btn-primary" style={{ marginLeft: "auto", gap: 7 }} onClick={() => setShowNewNote((s) => !s)}>
+        <button className="btn btn-primary" style={{ marginLeft: "auto", gap: 7 }} onClick={() => setModal({ mode: "create" })}>
           <Plus size={16} strokeWidth={2.75} /> New problem
         </button>
       </div>
-
-      {showNewNote && (
-        <div style={{ background: "var(--color-accent-2-100)", color: "var(--color-accent-2-800)", padding: "10px 14px", borderRadius: 14, fontSize: 13 }}>
-          Problem authoring UI isn't built yet — add problems via <code>backend/prisma/seed.js</code> or the <code>POST /api/v1/problems/create-problem</code> API for now.
-        </div>
-      )}
 
       {error && (
         <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", padding: "10px 14px", borderRadius: 14 }}>{error}</div>
@@ -396,7 +426,7 @@ function Problems() {
                     </td>
                     <td>
                       <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
-                        <button className="btn btn-ghost btn-icon" style={{ width: 30, height: 30, opacity: 0.4 }} disabled title="Editing UI coming soon" aria-label="Edit">
+                        <button className="btn btn-ghost btn-icon" style={{ width: 30, height: 30 }} disabled={busyId === p.id} onClick={() => openEdit(p)} title="Edit problem" aria-label="Edit">
                           <Pencil size={15} strokeWidth={2.5} />
                         </button>
                         <button className="btn btn-ghost btn-icon" style={{ width: 30, height: 30, color: "var(--color-accent-800)" }} disabled={busyId === p.id} onClick={() => remove(p)} title="Delete problem" aria-label="Delete">
@@ -419,6 +449,136 @@ function Problems() {
           </>
         )}
       </div>
+
+      {modal && (
+        <ProblemFormModal
+          mode={modal.mode}
+          problem={modal.problem}
+          onClose={() => setModal(null)}
+          onSaved={onSaved}
+        />
+      )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Manage Contests */
+
+function Contests() {
+  const [contests, setContests] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busyId, setBusyId] = useState(null);
+  const [showNew, setShowNew] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api
+      .get("/contests", { params: { status: "all", limit: 100 } })
+      .then(({ data }) => active && (setContests(data.contests || []), setError("")))
+      .catch((e) => active && setError(e.response?.data?.message || "Failed to load contests"))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
+  const refresh = () => setReloadKey((k) => k + 1);
+
+  const cancel = async (c) => {
+    if (!window.confirm(`Cancel "${c.title}"? Participants will no longer be able to compete.`)) return;
+    setBusyId(c.id);
+    try {
+      await api.patch(`/contests/${c.id}/status`, { status: "CANCELLED" });
+      refresh();
+    } catch (e) {
+      setError(e.response?.data?.message || "Failed to cancel contest");
+      setBusyId(null);
+    }
+  };
+
+  const remove = async (c) => {
+    if (!window.confirm(`Delete "${c.title}"? This removes the contest and all its submissions. This cannot be undone.`)) return;
+    setBusyId(c.id);
+    try {
+      await api.delete(`/contests/${c.id}`);
+      refresh();
+    } catch (e) {
+      setError(e.response?.data?.message || "Failed to delete contest");
+      setBusyId(null);
+    }
+  };
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 9 }}>
+          <span style={{ width: 34, height: 34, borderRadius: 10, background: "var(--color-accent-100)", color: "var(--color-accent-700)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+            <Trophy size={17} strokeWidth={2.5} />
+          </span>
+          <span style={{ fontSize: 13, color: muted(60) }}>Timed challenges with a live leaderboard.</span>
+        </div>
+        <button className="btn btn-primary" style={{ marginLeft: "auto", gap: 7 }} onClick={() => setShowNew(true)}>
+          <Plus size={16} strokeWidth={2.75} /> New contest
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", padding: "10px 14px", borderRadius: 14 }}>{error}</div>
+      )}
+
+      <div style={{ background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
+        {loading ? (
+          <div style={{ padding: 40 }}>
+            <Spinner label="Loading contests…" />
+          </div>
+        ) : contests.length === 0 ? (
+          <div style={{ padding: 40, textAlign: "center", color: muted(55) }}>No contests yet. Create one to get started.</div>
+        ) : (
+          <table className="table">
+            <thead>
+              <tr>
+                <th>Title</th>
+                <th>Window</th>
+                <th style={{ textAlign: "right" }}>Problems</th>
+                <th style={{ textAlign: "right" }}>Participants</th>
+                <th style={{ textAlign: "center" }}>Status</th>
+                <th style={{ textAlign: "right", width: 90 }}>Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              {contests.map((c) => {
+                const st = STATUS[c.status] || STATUS.UPCOMING;
+                return (
+                  <tr key={c.id}>
+                    <td style={{ fontWeight: 600 }}>{c.title}</td>
+                    <td style={{ color: muted(60), fontSize: 13 }}>{fmtWindow(c.startTime)} – {fmtWindow(c.endTime)}</td>
+                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: muted(62) }}>{(c.problemIds || []).length}</td>
+                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: muted(62) }}>{c._count?.participants ?? 0}</td>
+                    <td style={{ textAlign: "center" }}>
+                      <span style={{ fontSize: 11, padding: "3px 11px", borderRadius: 999, background: st.bg, color: st.fg, fontWeight: 700 }}>{st.label}</span>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: 4, justifyContent: "flex-end" }}>
+                        <button className="btn btn-ghost btn-icon" style={{ width: 30, height: 30 }} disabled={busyId === c.id || c.status === "CANCELLED"} onClick={() => cancel(c)} title="Cancel contest" aria-label="Cancel">
+                          <Ban size={15} strokeWidth={2.5} />
+                        </button>
+                        <button className="btn btn-ghost btn-icon" style={{ width: 30, height: 30, color: "var(--color-accent-800)" }} disabled={busyId === c.id} onClick={() => remove(c)} title="Delete contest" aria-label="Delete">
+                          <Trash2 size={15} strokeWidth={2.5} />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        )}
+      </div>
+
+      {showNew && <ContestFormModal onClose={() => setShowNew(false)} onSaved={() => (setShowNew(false), refresh())} />}
     </div>
   );
 }
