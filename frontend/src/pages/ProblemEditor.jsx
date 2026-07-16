@@ -9,6 +9,18 @@ import Spinner from "../components/Spinner.jsx";
 const LANG_ID = { PYTHON: 71, JAVASCRIPT: 63, JAVA: 62, CPP: 54, C: 50 };
 const MONACO_LANG = { PYTHON: "python", JAVASCRIPT: "javascript", JAVA: "java", CPP: "cpp", C: "c" };
 const LANG_LABEL = { PYTHON: "Python", JAVASCRIPT: "JavaScript", JAVA: "Java", CPP: "C++", C: "C" };
+// Every language the executor supports is always offered — even when a problem
+// ships starter snippets for only some. Missing ones fall back to a stdin/stdout stub.
+const ALL_LANGS = ["PYTHON", "JAVASCRIPT", "JAVA", "CPP", "C"];
+const STARTER = {
+  PYTHON: `import sys\n\ndef main():\n    data = sys.stdin.read().split()\n    # TODO: read input and solve\n\nmain()\n`,
+  JAVASCRIPT: `const input = require("fs").readFileSync(0, "utf8").trim().split(/\\s+/);\n// TODO: read input and solve\n`,
+  JAVA: `import java.util.*;\n\npublic class Main {\n    public static void main(String[] args) {\n        Scanner sc = new Scanner(System.in);\n        // TODO: read input and solve\n    }\n}\n`,
+  CPP: `#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    // TODO: read input and solve\n    return 0;\n}\n`,
+  C: `#include <stdio.h>\n\nint main() {\n    // TODO: read input and solve\n    return 0;\n}\n`,
+};
+// Problem's own snippet wins; otherwise the generic per-language stub.
+const starterFor = (problem, l) => problem?.codeSnippets?.[l] || STARTER[l] || "";
 const DIFF = {
   EASY: { bg: "var(--color-accent-2-100)", fg: "var(--color-accent-2-800)", label: "Easy" },
   MEDIUM: { bg: "var(--color-accent-100)", fg: "var(--color-accent-800)", label: "Medium" },
@@ -42,7 +54,7 @@ export default function ProblemEditor() {
         const langs = Object.keys(p.codeSnippets || {});
         const first = langs[0] || "PYTHON";
         setLang(first);
-        setCode(p.codeSnippets?.[first] || "");
+        setCode(starterFor(p, first));
         setCustomInput(p.examples?.[0]?.input || "");
       })
       .catch((e) => active && setError(e.response?.data?.error || "Failed to load problem"))
@@ -54,7 +66,7 @@ export default function ProblemEditor() {
 
   const changeLang = (l) => {
     setLang(l);
-    setCode(problem.codeSnippets?.[l] || "");
+    setCode(starterFor(problem, l));
   };
 
   const run = async () => {
@@ -89,7 +101,6 @@ export default function ProblemEditor() {
   if (error || !problem) return <div style={{ color: muted() }}>{error || "Problem not found."}</div>;
 
   const d = DIFF[problem.difficulty] || DIFF.MEDIUM;
-  const langs = Object.keys(problem.codeSnippets || {});
 
   return (
     <Split className="ca-split" sizes={[42, 58]} minSize={320} gutterSize={10} style={{ display: "flex", height: "calc(100vh - 150px)", minHeight: 460 }}>
@@ -131,7 +142,7 @@ export default function ProblemEditor() {
         <div style={{ ...surface, flex: 1, display: "flex", flexDirection: "column", overflow: "hidden", minHeight: 240 }}>
           <div style={{ display: "flex", alignItems: "center", gap: 10, padding: "10px 14px", borderBottom: "1px solid var(--color-divider)" }}>
             <select className="input" value={lang} onChange={(e) => changeLang(e.target.value)} style={{ width: "auto", minHeight: 34, padding: "4px 12px", background: "var(--color-bg)" }}>
-              {langs.map((l) => (
+              {ALL_LANGS.map((l) => (
                 <option key={l} value={l}>{LANG_LABEL[l] || l}</option>
               ))}
             </select>
