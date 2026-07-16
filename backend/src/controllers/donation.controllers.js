@@ -1,31 +1,55 @@
 import { db } from "../libs/db.js";
 import { createRazorpayOrder, verifyRazorpayPayment } from "../libs/payments.lib.js";
+import { settlePayment } from "../libs/donations.lib.js";
 
 // Pay-what-you-want support. A donation grants nothing extra — everything on
 // CodeArena is free; this is a thank-you, not a purchase.
 
+const orderPayload = (d) => ({ id: d.gatewayOrderId, amount: Math.round(d.amount * 100), currency: d.currency });
+
 export const createDonationOrder = async (req, res) => {
   try {
     const { amount, name, message, showOnWall = false } = req.body;
+    // Idempotency-Key (header or body) dedupes double-clicks / retries into one order.
+    const idempotencyKey = req.get("Idempotency-Key") || req.body.idempotencyKey || null;
     const value = Number(amount);
     if (!value || value < 1) return res.status(400).json({ success: false, message: "Please enter a valid amount" });
 
+    // Already have an order for this key? Return it instead of creating a duplicate.
+    if (idempotencyKey) {
+      const existing = await db.donation.findUnique({ where: { idempotencyKey } });
+      if (existing) return res.status(200).json({ success: true, order: orderPayload(existing), keyId: process.env.RAZORPAY_KEY_ID });
+    }
+
     const order = await createRazorpayOrder(value, "INR");
-    await db.donation.create({
-      data: {
-        userId: req.user?.id || null,
-        amount: value,
-        currency: "INR",
-        gatewayOrderId: order.id,
-        status: "created",
-        name: name || null,
-        message: message || null,
-        showOnWall: !!showOnWall,
-      },
-    });
+    try {
+      await db.donation.create({
+        data: {
+          userId: req.user?.id || null,
+          amount: value,
+          currency: "INR",
+          idempotencyKey,
+          gatewayOrderId: order.id,
+          status: "created",
+          name: name || null,
+          message: message || null,
+          showOnWall: !!showOnWall,
+        },
+      });
+    } catch (e) {
+      // Raced with a concurrent create using the same key → return the winner's order.
+      if (e.code === "P2002" && idempotencyKey) {
+        const existing = await db.donation.findUnique({ where: { idempotencyKey } });
+        if (existing) return res.status(200).json({ success: true, order: orderPayload(existing), keyId: process.env.RAZORPAY_KEY_ID });
+      }
+      throw e;
+    }
 
     return res.status(201).json({ success: true, order, keyId: process.env.RAZORPAY_KEY_ID });
   } catch (error) {
+    if (error.message === "PAYMENTS_UNAVAILABLE") {
+      return res.status(503).json({ success: false, message: "Payments are briefly unavailable — please try again in a moment." });
+    }
     console.error("Error creating donation order:", error);
     return res.status(500).json({ success: false, message: "Could not start the donation" });
   }
@@ -36,15 +60,16 @@ export const verifyDonation = async (req, res) => {
     const { razorpayOrderId, razorpayPaymentId, razorpaySignature } = req.body;
     const valid = verifyRazorpayPayment(razorpayOrderId, razorpayPaymentId, razorpaySignature);
 
-    const donation = await db.donation.update({
-      where: { gatewayOrderId: razorpayOrderId },
-      data: { status: valid ? "paid" : "failed", gatewayPaymentId: razorpayPaymentId || null },
-    });
+    if (!valid) {
+      await db.donation.updateMany({ where: { gatewayOrderId: razorpayOrderId, status: "created" }, data: { status: "failed" } });
+      return res.status(400).json({ success: false, message: "Payment verification failed" });
+    }
 
-    if (!valid) return res.status(400).json({ success: false, message: "Payment verification failed" });
-    return res.status(200).json({ success: true, message: "Thank you for supporting CodeArena!", amount: donation.amount });
+    // Idempotent, guarded settlement — safe even if the webhook already settled it.
+    await settlePayment(razorpayOrderId, razorpayPaymentId);
+    const donation = await db.donation.findUnique({ where: { gatewayOrderId: razorpayOrderId }, select: { amount: true } });
+    return res.status(200).json({ success: true, message: "Thank you for supporting CodeArena!", amount: donation?.amount });
   } catch (error) {
-    if (error.code === "P2025") return res.status(404).json({ success: false, message: "Donation order not found" });
     console.error("Error verifying donation:", error);
     return res.status(500).json({ success: false, message: "Error verifying donation" });
   }
