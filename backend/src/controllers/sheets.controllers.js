@@ -5,7 +5,33 @@ import { db } from "../libs/db.js";
 export const getAllSheets = async (req, res) => {
   try {
     const sheets = await db.sheet.findMany({ where: { isActive: true }, orderBy: { createdAt: "desc" } });
-    return res.status(200).json({ success: true, sheets });
+
+    // Each sheet's real problem set = declared problemIds ∪ any ids nested in the
+    // day-by-day structure. (Structured sheets often keep problemIds empty and put
+    // everything in `structure`, which made the old card show "0 problems".)
+    const perSheetIds = sheets.map((s) => {
+      const set = new Set(s.problemIds || []);
+      if (Array.isArray(s.structure)) for (const b of s.structure) for (const id of b.problemIds || []) set.add(id);
+      return [...set];
+    });
+    const allIds = [...new Set(perSheetIds.flat())];
+
+    // One query for the user's solved status across every referenced problem.
+    let solvedSet = new Set();
+    if (req.user?.id && allIds.length) {
+      const solved = await db.problemSolved.findMany({
+        where: { userId: req.user.id, problemId: { in: allIds } },
+        select: { problemId: true },
+      });
+      solvedSet = new Set(solved.map((r) => r.problemId));
+    }
+
+    const withProgress = sheets.map((s, i) => {
+      const ids = perSheetIds[i];
+      return { ...s, problemCount: ids.length, solvedCount: ids.reduce((n, id) => n + (solvedSet.has(id) ? 1 : 0), 0) };
+    });
+
+    return res.status(200).json({ success: true, sheets: withProgress });
   } catch (error) {
     console.error("Error fetching sheets:", error);
     return res.status(500).json({ success: false, message: "Error fetching sheets" });
