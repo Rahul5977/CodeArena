@@ -61,7 +61,10 @@ export const getAllListDetails = async (req, res) => {
 export const getPlaylistDetail = async (req, res) => {
   try {
     const { playlistId } = req.params;
-    const playlist = db.playlist.findUnique({
+    // findFirst (not findUnique): we filter by id AND userId, and userId isn't a
+    // unique field. `await` was missing before — the 404 guard never fired and an
+    // unresolved promise was serialized as the "playlist".
+    const playlist = await db.playlist.findFirst({
       where: {
         userId: req.user.id,
         id: playlistId,
@@ -96,12 +99,22 @@ export const addProblemToPlaylist = async (req, res) => {
         error: "Invalid or missing problemId",
       });
     }
-    // Create records for each problem in the playlist
+    // Ownership check: verify the playlist exists AND belongs to the requester
+    // before mutating it (prevents modifying another user's playlist — IDOR).
+    const owned = await db.playlist.findFirst({
+      where: { id: playlistId, userId: req.user.id },
+      select: { id: true },
+    });
+    if (!owned) return res.status(404).json({ error: "Playlist not found" });
+
+    // Create records for each problem in the playlist. skipDuplicates so
+    // re-adding an existing problem is a no-op instead of a P2002 crash.
     const problemsInPlaylist = await db.problemInPlaylist.createMany({
       data: problemIds.map((problemId) => ({
         playListId: playlistId,
         problemId,
       })),
+      skipDuplicates: true,
     });
     res.status(201).json({
       success: true,
@@ -116,15 +129,20 @@ export const addProblemToPlaylist = async (req, res) => {
 export const deletePlaylist = async (req, res) => {
   const { playlistId } = req.params;
   try {
-    const deletedPlaylist = await db.playlist.delete({
+    // Scope the delete to the owner (deleteMany with userId) so one user can't
+    // delete another user's playlist by guessing its id — IDOR fix.
+    const { count } = await db.playlist.deleteMany({
       where: {
         id: playlistId,
+        userId: req.user.id,
       },
     });
+    if (count === 0) {
+      return res.status(404).json({ error: "Playlist not found" });
+    }
     res.status(200).json({
       success: true,
       message: "Playlist deleted successfully",
-      deletedPlaylist,
     });
   } catch (error) {
     console.error("Error deleting playlist:", error.message);
@@ -138,11 +156,18 @@ export const removeProblemFromPlaylist = async (req, res) => {
     if (!Array.isArray(problemIds) || problemIds.length === 0) {
       return res.status(400).json({ error: "Invalid or missing problemIds" });
     }
-    // Only delete given problemIds not all
+    // Ownership check before mutating the join table (IDOR fix).
+    const owned = await db.playlist.findFirst({
+      where: { id: playlistId, userId: req.user.id },
+      select: { id: true },
+    });
+    if (!owned) return res.status(404).json({ error: "Playlist not found" });
 
+    // Only delete given problemIds not all. Field is `playListId` (capital L)
+    // per the Prisma schema — the previous `playlistId` threw on every call.
     const deletedProblem = await db.problemInPlaylist.deleteMany({
       where: {
-        playlistId,
+        playListId: playlistId,
         problemId: {
           in: problemIds,
         },

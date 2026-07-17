@@ -13,7 +13,7 @@ export const executeCode = async (req, res) => {
       return res.status(400).json({ success: false, message: "source_code, language_id and problemId are required" });
     }
 
-    const problem = await db.problem.findUnique({ where: { id: problemId }, select: { id: true, testcases: true } });
+    const problem = await db.problem.findUnique({ where: { id: problemId }, select: { id: true, testcases: true, difficulty: true } });
     if (!problem) return res.status(404).json({ success: false, message: "Problem not found" });
 
     const testcases = Array.isArray(problem.testcases) ? problem.testcases : [];
@@ -77,11 +77,22 @@ export const executeCode = async (req, res) => {
     });
 
     if (allPassed) {
-      await db.problemSolved.upsert({
+      // Award global leaderboard points ONCE, on the first-ever accepted solve
+      // of this problem. upsert can't tell "created" from "already there", so we
+      // check first, then create + increment points atomically-enough for our
+      // needs (unique [userId, problemId] still guards against double-award races).
+      const already = await db.problemSolved.findUnique({
         where: { userId_problemId: { userId, problemId } },
-        update: {},
-        create: { userId, problemId },
+        select: { id: true },
       });
+      if (!already) {
+        const POINTS = { EASY: 10, MEDIUM: 20, HARD: 30 };
+        await db.problemSolved.create({ data: { userId, problemId } });
+        await db.user.update({
+          where: { id: userId },
+          data: { points: { increment: POINTS[problem.difficulty] ?? 10 } },
+        });
+      }
     }
 
     return res.status(200).json({
