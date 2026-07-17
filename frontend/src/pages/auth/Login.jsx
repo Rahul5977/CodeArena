@@ -14,7 +14,10 @@ export default function Login() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
 
-  const dest = location.state?.from || "/app";
+  // Restore the page the user was trying to reach before the login bounce,
+  // ignoring a /login self-reference so we can never ping-pong back here.
+  const from = location.state?.from;
+  const dest = from && !from.startsWith("/login") ? from : "/app";
 
   // Already signed in? Don't show the login form — bounce to the app.
   if (user) return <Navigate to={dest} replace />;

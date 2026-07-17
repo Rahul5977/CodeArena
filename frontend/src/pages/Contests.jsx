@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Trophy, Clock, ArrowLeft, Users, ListChecks, CheckCircle2 } from "lucide-react";
+import { Trophy, Clock, Users, ListChecks, CheckCircle2 } from "lucide-react";
+import BackLink from "../components/BackLink.jsx";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
 
@@ -124,7 +125,7 @@ function ContestDetail({ id }) {
   if (error || !contest) {
     return (
       <div style={{ maxWidth: 820 }}>
-        <BackLink />
+        <BackLink fallback="/contests" label="All contests" />
         <div style={{ ...surface, padding: "40px 44px", textAlign: "center", color: muted(60) }}>{error || "Contest not found."}</div>
       </div>
     );
@@ -135,7 +136,7 @@ function ContestDetail({ id }) {
 
   return (
     <div style={{ maxWidth: 900 }}>
-      <BackLink />
+      <BackLink fallback="/contests" label="All contests" />
 
       <div style={{ ...surface, padding: "26px 28px", marginBottom: 16 }}>
         <div style={{ display: "flex", alignItems: "flex-start", gap: 14 }}>
@@ -182,14 +183,6 @@ function ContestDetail({ id }) {
         <ContestLeaderboard id={id} live={contest.status === "LIVE"} />
       )}
     </div>
-  );
-}
-
-function BackLink() {
-  return (
-    <Link to="/contests" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
-      <ArrowLeft size={15} strokeWidth={2.75} /> All contests
-    </Link>
   );
 }
 

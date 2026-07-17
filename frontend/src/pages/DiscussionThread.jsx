@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ArrowBigUp, ArrowBigDown, MessageSquare } from "lucide-react";
+import { ArrowBigUp, ArrowBigDown, MessageSquare } from "lucide-react";
+import BackLink from "../components/BackLink.jsx";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
 import Markdown from "../components/Markdown.jsx";
@@ -92,8 +93,8 @@ export default function DiscussionThread() {
   if (notFound || !disc) {
     return (
       <div style={{ maxWidth: 720 }}>
-        <BackLink />
-        <div style={{ ...surface, padding: "40px 44px", textAlign: "center", color: muted(60) }}>Discussion not found. <Link to="/discuss" style={{ color: "var(--color-accent-700)", fontWeight: 600 }}>All discussions →</Link></div>
+        <BackLink fallback="/discuss" label="All discussions" />
+        <div style={{ ...surface, padding: "40px 44px", textAlign: "center", color: muted(60) }}>Discussion not found.</div>
       </div>
     );
   }
@@ -103,7 +104,7 @@ export default function DiscussionThread() {
 
   return (
     <div style={{ maxWidth: 720 }}>
-      <BackLink />
+      <BackLink fallback="/discuss" label="All discussions" />
 
       {/* the post */}
       <div style={{ ...surface, padding: "24px 26px", display: "flex", gap: 18 }}>
@@ -163,14 +164,6 @@ export default function DiscussionThread() {
         </div>
       </form>
     </div>
-  );
-}
-
-function BackLink() {
-  return (
-    <Link to="/discuss" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
-      <ArrowLeft size={15} strokeWidth={2.75} /> All discussions
-    </Link>
   );
 }
 

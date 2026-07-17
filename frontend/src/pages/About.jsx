@@ -4,6 +4,7 @@ import {
   ArrowRight, ExternalLink, Braces, Users, BookOpen, MessageSquare,
 } from "lucide-react";
 import { useAuth } from "../store/auth.js";
+import BackLink from "../components/BackLink.jsx";
 
 const muted = (p) => `color-mix(in srgb, var(--color-text) ${p}%, transparent)`;
 
@@ -46,6 +47,7 @@ export default function About() {
             <div style={{ width: 34, height: 34, borderRadius: 10, background: "var(--color-accent)", color: "var(--color-bg)", display: "flex", alignItems: "center", justifyContent: "center" }}><Code2 size={19} strokeWidth={2.75} /></div>
             <span style={{ fontFamily: "var(--font-heading)", fontSize: 20 }}>CodeArena</span>
           </Link>
+          <BackLink fallback={user ? "/app" : "/"} label="Back" style={{ marginBottom: 0 }} />
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
             {user ? (
               <Link to="/app" className="btn btn-primary" style={{ textDecoration: "none", padding: "9px 18px" }}>Go to app</Link>

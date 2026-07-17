@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { ArrowLeft, ArrowBigUp, ArrowBigDown, Code2, Plus, X } from "lucide-react";
+import { ArrowBigUp, ArrowBigDown, Code2, Plus, X } from "lucide-react";
+import BackLink from "../components/BackLink.jsx";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
 import Markdown from "../components/Markdown.jsx";
@@ -106,9 +107,7 @@ export default function ProblemSolutions() {
   if (error || !problem) {
     return (
       <div style={{ maxWidth: 820 }}>
-        <Link to="/problems" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
-          <ArrowLeft size={15} strokeWidth={2.75} /> All problems
-        </Link>
+        <BackLink fallback="/problems" label="All problems" />
         <div style={{ ...surface, padding: "40px 44px", textAlign: "center", color: muted(60) }}>{error || "Problem not found."}</div>
       </div>
     );
@@ -119,9 +118,7 @@ export default function ProblemSolutions() {
 
   return (
     <div style={{ maxWidth: 820 }}>
-      <Link to={`/problems/${slug}`} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
-        <ArrowLeft size={15} strokeWidth={2.75} /> Back to editor
-      </Link>
+      <BackLink fallback={`/problems/${slug}`} label="Back to editor" />
 
       <div style={{ display: "flex", alignItems: "flex-start", gap: 12, marginBottom: 18 }}>
         <div style={{ minWidth: 0 }}>

@@ -1,8 +1,9 @@
 import { useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
-import { Library, Clock, ArrowLeft, CheckCircle2, Circle, ChevronRight, ListChecks, Play, Check, Sparkles } from "lucide-react";
+import { Library, Clock, CheckCircle2, Circle, ChevronRight, ListChecks, Play, Check, Sparkles } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
+import BackLink from "../components/BackLink.jsx";
 
 const muted = (p = 60) => `color-mix(in srgb, var(--color-text) ${p}%, transparent)`;
 const surface = { background: "var(--color-surface)", borderRadius: 24, boxShadow: "var(--shadow-sm)" };
@@ -163,9 +164,7 @@ function SheetDetail({ id }) {
 
   return (
     <div style={{ maxWidth: 820 }}>
-      <Link to="/sheets" style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
-        <ArrowLeft size={15} strokeWidth={2.75} /> All sheets
-      </Link>
+      <BackLink fallback="/sheets" label="All sheets" />
 
       {/* Hero */}
       <div style={{ ...surface, padding: "28px 30px", marginBottom: 20, display: "flex", gap: 26, alignItems: "center", flexWrap: "wrap" }}>
