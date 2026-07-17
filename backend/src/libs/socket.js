@@ -7,7 +7,9 @@ let io;
 export const initializeSocket = (server) => {
   io = new Server(server, {
     cors: {
-      origin: "http://localhost:3000",
+      // Match the Express CORS origin so sockets aren't rejected in prod
+      // (browser Origin must equal the configured frontend origin).
+      origin: process.env.FRONTEND_ORIGIN || "http://localhost:3000",
       methods: ["GET", "POST"],
       credentials: true,
     },
