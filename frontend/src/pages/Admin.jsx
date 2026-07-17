@@ -13,6 +13,8 @@ import {
   Trash2,
   Trophy,
   Ban,
+  Library,
+  X,
 } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
@@ -65,6 +67,7 @@ export default function Admin() {
           ["overview", "Overview"],
           ["problems", "Manage Problems"],
           ["contests", "Manage Contests"],
+          ["sheets", "Manage Sheets"],
         ].map(([v, label]) => (
           <label key={v} className="seg-opt">
             <input type="radio" name="admin-tab" checked={tab === v} onChange={() => setTab(v)} />
@@ -76,6 +79,7 @@ export default function Admin() {
       {tab === "overview" && <Overview onManageProblems={() => setTab("problems")} />}
       {tab === "problems" && <Problems />}
       {tab === "contests" && <Contests />}
+      {tab === "sheets" && <SheetsManager />}
     </div>
   );
 }
@@ -579,6 +583,153 @@ function Contests() {
       </div>
 
       {showNew && <ContestFormModal onClose={() => setShowNew(false)} onSaved={() => (setShowNew(false), refresh())} />}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Manage Sheets */
+
+// Union of a sheet's flat problemIds and any ids nested in its day structure.
+function sheetProblemIds(sheet) {
+  const set = new Set(sheet.problemIds || []);
+  if (Array.isArray(sheet.structure)) for (const b of sheet.structure) for (const id of b.problemIds || []) set.add(id);
+  return set;
+}
+
+function SheetsManager() {
+  const [sheets, setSheets] = useState([]);
+  const [problems, setProblems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [selId, setSelId] = useState("");
+  const [addChoice, setAddChoice] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    Promise.all([api.get("/sheets"), api.get("/problems/get-all-problems", { params: { limit: 200 } })])
+      .then(([s, p]) => {
+        if (!active) return;
+        const list = s.data.sheets || [];
+        setSheets(list);
+        setProblems(p.data.problems || []);
+        setError("");
+        setSelId((cur) => cur || (list[0]?.id ?? ""));
+      })
+      .catch((e) => active && setError(e.response?.data?.message || "Failed to load sheets"))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [reloadKey]);
+
+  const refresh = () => setReloadKey((k) => k + 1);
+  const byId = useMemo(() => new Map(problems.map((p) => [p.id, p])), [problems]);
+  const selected = sheets.find((s) => s.id === selId) || null;
+
+  const added = selected ? (selected.problemIds || []).map((id) => byId.get(id)).filter(Boolean) : [];
+  const inSheet = selected ? sheetProblemIds(selected) : new Set();
+  const available = problems.filter((p) => !inSheet.has(p.id));
+
+  const addProblem = async () => {
+    if (!selId || !addChoice) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.post(`/sheets/${selId}/problems`, { problemIds: [addChoice] });
+      setAddChoice("");
+      refresh();
+    } catch (e) {
+      setError(e.response?.data?.message || "Failed to add problem");
+      setBusy(false);
+    }
+  };
+
+  const removeProblem = async (pid) => {
+    if (!selId) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.delete(`/sheets/${selId}/problems/${pid}`);
+      refresh();
+    } catch (e) {
+      setError(e.response?.data?.message || "Failed to remove problem");
+      setBusy(false);
+    }
+  };
+
+  if (loading) return <Spinner label="Loading sheets…" full />;
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 16 }}>
+      <div style={{ display: "flex", alignItems: "center", gap: 9, flexWrap: "wrap" }}>
+        <span style={{ width: 34, height: 34, borderRadius: 10, background: "var(--color-accent-100)", color: "var(--color-accent-700)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+          <Library size={17} strokeWidth={2.5} />
+        </span>
+        <span style={{ fontSize: 13, color: muted(60) }}>Add or remove problems on any DSA sheet.</span>
+      </div>
+
+      {error && <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", padding: "10px 14px", borderRadius: 14 }}>{error}</div>}
+
+      {sheets.length === 0 ? (
+        <div style={{ background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)", padding: 40, textAlign: "center", color: muted(55) }}>
+          No sheets yet.
+        </div>
+      ) : (
+        <div style={{ background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
+          {/* Sheet picker */}
+          <div style={{ display: "flex", gap: 10, alignItems: "center", flexWrap: "wrap" }}>
+            <label style={{ fontSize: 13, fontWeight: 600, color: muted(70) }}>Sheet</label>
+            <select className="input" value={selId} onChange={(e) => { setSelId(e.target.value); setAddChoice(""); }} style={{ flex: 1, minWidth: 240, maxWidth: 460 }}>
+              {sheets.map((s) => (
+                <option key={s.id} value={s.id}>{s.title}</option>
+              ))}
+            </select>
+            {selected && (
+              <span className="tag tag-neutral">{sheetProblemIds(selected).size} problems total</span>
+            )}
+          </div>
+
+          {/* Add a problem */}
+          <div style={{ display: "flex", gap: 8, alignItems: "center", flexWrap: "wrap" }}>
+            <select className="input" value={addChoice} onChange={(e) => setAddChoice(e.target.value)} style={{ flex: 1, minWidth: 240, maxWidth: 460 }}>
+              <option value="">{available.length ? "Add a problem to this sheet…" : "Every problem is already in this sheet"}</option>
+              {available.map((p) => (
+                <option key={p.id} value={p.id}>{p.title} · {(DIFF[p.difficulty] || DIFF.MEDIUM).label}</option>
+              ))}
+            </select>
+            <button className="btn btn-primary" style={{ gap: 7 }} onClick={addProblem} disabled={busy || !addChoice}>
+              <Plus size={16} strokeWidth={2.75} /> Add
+            </button>
+          </div>
+
+          {/* Problems added to this sheet (flat list — removable) */}
+          <div>
+            <div style={{ fontSize: 12, fontWeight: 600, color: muted(58), margin: "2px 2px 8px" }}>
+              Added directly to this sheet ({added.length})
+            </div>
+            {added.length === 0 ? (
+              <div style={{ padding: "16px 0", textAlign: "center", color: muted(55), fontSize: 13.5 }}>
+                No problems added directly yet. Structured (day-by-day) problems are managed via the seed.
+              </div>
+            ) : (
+              <div style={{ border: "1px solid var(--color-divider)", borderRadius: 14, overflow: "hidden" }}>
+                {added.map((p, i) => (
+                  <div key={p.id} style={{ display: "flex", alignItems: "center", gap: 12, padding: "11px 14px", borderBottom: i === added.length - 1 ? "none" : "1px solid var(--color-divider)" }}>
+                    <span style={{ flex: 1, minWidth: 0, fontSize: 14, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{p.title}</span>
+                    <Pill difficulty={p.difficulty} />
+                    <button className="btn btn-ghost btn-icon" style={{ width: 30, height: 30, color: "var(--color-accent-800)" }} disabled={busy} onClick={() => removeProblem(p.id)} title="Remove from sheet" aria-label="Remove">
+                      <X size={15} strokeWidth={2.5} />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

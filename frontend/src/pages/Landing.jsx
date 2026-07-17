@@ -54,6 +54,7 @@ export default function Landing() {
             <a className="lp-navlink" href="#features">Features</a>
             <Link className="lp-navlink" to="/sheets">Sheets</Link>
             <Link className="lp-navlink" to="/contests">Contests</Link>
+            <Link className="lp-navlink" to="/about">About</Link>
             <Link className="lp-navlink" to="/support">Support</Link>
           </nav>
           <div style={{ marginLeft: "auto", display: "flex", alignItems: "center", gap: 12 }}>
@@ -266,7 +267,7 @@ export default function Landing() {
               <div style={{ fontWeight: 700, fontSize: 14, marginBottom: 14 }}>Project</div>
               <div style={{ display: "flex", flexDirection: "column", gap: 10 }}>
                 <a className="lp-navlink" href={REPO_URL} target="_blank" rel="noreferrer">GitHub</a>
-                <a className="lp-navlink" href="#features">About</a>
+                <Link className="lp-navlink" to="/about">About</Link>
                 <Link className="lp-navlink" to="/support">Donate</Link>
               </div>
             </div>
