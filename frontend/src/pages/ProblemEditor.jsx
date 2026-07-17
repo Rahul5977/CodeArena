@@ -2,10 +2,11 @@ import { useCallback, useEffect, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
-import { Play, Send, CheckCircle2, XCircle, ArrowLeft, FileText, History, ChevronDown, CornerUpLeft } from "lucide-react";
+import { Play, Send, CheckCircle2, XCircle, FileText, History, ChevronDown, CornerUpLeft } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
 import Markdown from "../components/Markdown.jsx";
+import BackLink from "../components/BackLink.jsx";
 
 const LANG_ID = { PYTHON: 71, JAVASCRIPT: 63, JAVA: 62, CPP: 54, C: 50 };
 const LANG_BY_ID = { 71: "PYTHON", 63: "JAVASCRIPT", 62: "JAVA", 54: "CPP", 50: "C" };
@@ -187,9 +188,10 @@ export default function ProblemEditor() {
         <div style={{ flex: 1, minHeight: 0, overflowY: "auto", padding: "20px 24px" }}>
           {leftTab === "description" ? (
             <>
-              <Link to={contestId ? `/contests/${contestId}` : sheetId ? `/sheets/${sheetId}` : "/problems"} style={{ display: "inline-flex", alignItems: "center", gap: 5, fontSize: 13, color: "var(--color-accent-700)", textDecoration: "none", fontWeight: 600, marginBottom: 14 }}>
-                <ArrowLeft size={15} strokeWidth={2.75} /> {contestId ? "Back to contest" : sheetId ? "Back to sheet" : "All problems"}
-              </Link>
+              <BackLink
+                fallback={contestId ? `/contests/${contestId}` : sheetId ? `/sheets/${sheetId}` : "/problems"}
+                label={contestId ? "Back to contest" : sheetId ? "Back to sheet" : "All problems"}
+              />
               <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 26, margin: "0 0 10px" }}>{problem.title}</h1>
               <div style={{ display: "flex", gap: 7, marginBottom: 16, flexWrap: "wrap" }}>
                 <span style={{ fontSize: 11, padding: "3px 11px", borderRadius: 999, background: d.bg, color: d.fg, fontWeight: 600 }}>{d.label}</span>

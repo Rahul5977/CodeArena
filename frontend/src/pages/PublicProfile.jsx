@@ -4,6 +4,7 @@ import { Github, Globe, UserPlus, UserCheck, UserX, Users } from "lucide-react";
 import { api } from "../lib/api.js";
 import { useAuth } from "../store/auth.js";
 import Spinner from "../components/Spinner.jsx";
+import BackLink from "../components/BackLink.jsx";
 
 const muted = (p = 60) => `color-mix(in srgb, var(--color-text) ${p}%, transparent)`;
 const surface = { background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)" };
@@ -122,6 +123,7 @@ export default function PublicProfile() {
 
   return (
     <div style={{ maxWidth: 900, display: "grid", gridTemplateColumns: "1fr 1.5fr", gap: 18, alignItems: "start" }}>
+      <div style={{ gridColumn: "1 / -1" }}><BackLink fallback="/leaderboard" label="Back" /></div>
       {/* identity card */}
       <div style={{ ...surface, padding: "28px 26px" }}>
         <div style={{ width: 72, height: 72, borderRadius: "50%", background: "var(--color-accent-2-300)", color: "var(--color-accent-2-800)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontSize: 26, marginBottom: 14 }}>

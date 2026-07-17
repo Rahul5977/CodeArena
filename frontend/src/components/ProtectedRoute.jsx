@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "../store/auth.js";
 import Spinner from "./Spinner.jsx";
 
@@ -7,6 +7,7 @@ import Spinner from "./Spinner.jsx";
 // `adminOnly`.
 export default function ProtectedRoute({ children, adminOnly = false }) {
   const { status, user } = useAuth();
+  const location = useLocation();
 
   if (status === "loading") {
     return (
@@ -15,7 +16,8 @@ export default function ProtectedRoute({ children, adminOnly = false }) {
       </div>
     );
   }
-  if (status !== "authenticated") return <Navigate to="/login" replace />;
+  if (status !== "authenticated")
+    return <Navigate to="/login" replace state={{ from: location.pathname + location.search }} />;
   if (adminOnly && !user?.isAdmin) return <Navigate to="/app" replace />;
   return children;
 }
