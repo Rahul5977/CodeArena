@@ -13,6 +13,16 @@ const DIFF = {
 };
 const pct = (done, total) => (total > 0 ? Math.round((done / total) * 100) : 0);
 
+// A sheet's `description` sometimes carries the whole markdown outline (an H1
+// title, then "## Phase" / "**Day**" / "- [E] problem" lines). The day-by-day
+// cards already render that, so the hero should show only the intro: drop a
+// leading "# Title" line and keep the text up to the first section heading.
+function sheetIntro(desc) {
+  if (!desc) return "";
+  const withoutTitle = desc.replace(/^\s*#\s+[^\n]*\n?/, "");
+  return withoutTitle.split(/\n#{1,6}\s/)[0].trim();
+}
+
 // Circular progress ring — turns olive-green once complete.
 function ProgressRing({ value = 0, size = 84, stroke = 9, children }) {
   const r = (size - stroke) / 2;
@@ -102,7 +112,7 @@ function SheetList() {
 
               <div>
                 <div style={{ fontFamily: "var(--font-heading)", fontSize: 19, lineHeight: 1.15, marginBottom: 5 }}>{s.title}</div>
-                <div style={{ fontSize: 13.5, color: muted(66), lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{s.description}</div>
+                <div style={{ fontSize: 13.5, color: muted(66), lineHeight: 1.5, display: "-webkit-box", WebkitLineClamp: 2, WebkitBoxOrient: "vertical", overflow: "hidden" }}>{sheetIntro(s.description)}</div>
               </div>
 
               {total > 0 && <ProgressBar done={done} total={total} />}
@@ -135,14 +145,21 @@ function SheetDetail({ id }) {
 
   const s = data.sheet;
   const days = data.days;
-  // Fix: derive the real problem set from whatever is actually shown — the flat
-  // list OR the day-by-day structure — so progress is never "0 / 0" on a
-  // structured sheet whose top-level problemIds is empty.
-  const allProblems = days && days.length ? days.flatMap((b) => b.problems) : (data.problems || []);
+  const hasDays = !!(days && days.length);
+  // Derive the real problem set from whatever is actually shown — the flat list
+  // OR the day-by-day structure — so progress is never "0 / 0" on a structured
+  // sheet whose top-level problemIds is empty.
+  const dayProblems = hasDays ? days.flatMap((b) => b.problems) : [];
+  const dayIds = new Set(dayProblems.map((p) => p.id));
+  // Flat problemIds that aren't already in a day block (e.g. admin-added extras)
+  // show under an "Additional problems" section on structured sheets.
+  const extraProblems = hasDays ? (data.problems || []).filter((p) => !dayIds.has(p.id)) : [];
+  const allProblems = hasDays ? [...dayProblems, ...extraProblems] : (data.problems || []);
   const done = allProblems.filter((p) => p.solved).length;
   const total = allProblems.length;
   const nextProblem = allProblems.find((p) => !p.solved);
   const complete = total > 0 && done >= total;
+  const extraDone = extraProblems.filter((p) => p.solved).length;
 
   return (
     <div style={{ maxWidth: 820 }}>
@@ -154,7 +171,7 @@ function SheetDetail({ id }) {
       <div style={{ ...surface, padding: "28px 30px", marginBottom: 20, display: "flex", gap: 26, alignItems: "center", flexWrap: "wrap" }}>
         <div style={{ flex: 1, minWidth: 240 }}>
           <h1 style={{ fontFamily: "var(--font-heading)", fontSize: 30, margin: "0 0 10px", lineHeight: 1.08 }}>{s.title}</h1>
-          {s.description && <p style={{ fontSize: 14.5, color: muted(72), lineHeight: 1.55, margin: "0 0 14px" }}>{s.description}</p>}
+          {sheetIntro(s.description) && <p style={{ fontSize: 14.5, color: muted(72), lineHeight: 1.55, margin: "0 0 14px", whiteSpace: "pre-line" }}>{sheetIntro(s.description)}</p>}
           <div style={{ display: "flex", gap: 8, flexWrap: "wrap", alignItems: "center" }}>
             {s.topic ? <span style={{ fontSize: 12, padding: "4px 12px", borderRadius: 999, background: "var(--color-accent-100)", color: "var(--color-accent-800)", fontWeight: 600 }}>{s.topic}</span> : null}
             {s.difficulty ? <span style={{ fontSize: 12, padding: "4px 12px", borderRadius: 999, background: (DIFF[s.difficulty] || DIFF.MEDIUM).bg, color: (DIFF[s.difficulty] || DIFF.MEDIUM).fg, fontWeight: 600 }}>{(DIFF[s.difficulty] || DIFF.MEDIUM).label}</span> : null}
@@ -182,9 +199,23 @@ function SheetDetail({ id }) {
         </ProgressRing>
       </div>
 
-      {days && days.length ? (
+      {hasDays ? (
         <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
           {days.map((blk, bi) => <DaySection key={`${blk.phaseIdx}-${blk.day}-${bi}`} blk={blk} sheetId={id} />)}
+          {extraProblems.length > 0 && (
+            <div>
+              <div style={{ display: "flex", alignItems: "center", gap: 10, margin: "0 4px 9px", flexWrap: "wrap" }}>
+                <span style={{ width: 26, height: 26, borderRadius: 9, flex: "none", display: "flex", alignItems: "center", justifyContent: "center", background: "var(--color-accent-100)", color: "var(--color-accent-700)" }}>
+                  <Sparkles size={14} strokeWidth={2.75} />
+                </span>
+                <span style={{ fontFamily: "var(--font-heading)", fontSize: 17 }}>Additional problems</span>
+                <span style={{ marginLeft: "auto", fontSize: 12, fontWeight: 700, color: muted(52), fontVariantNumeric: "tabular-nums" }}>{extraDone}/{extraProblems.length}</span>
+              </div>
+              <div style={{ ...surface, overflow: "hidden" }}>
+                {extraProblems.map((p, i) => <ProblemRow key={p.id} p={p} index={i} sheetId={id} last={i === extraProblems.length - 1} />)}
+              </div>
+            </div>
+          )}
         </div>
       ) : allProblems.length === 0 ? (
         <div style={{ ...surface, padding: "30px 32px", textAlign: "center", color: muted(60) }}>No problems in this sheet yet.</div>

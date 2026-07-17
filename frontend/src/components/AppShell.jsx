@@ -1,7 +1,7 @@
 import { NavLink, Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import {
   Code2, LayoutDashboard, Library, ListChecks, Trophy, BarChart3,
-  FileCheck2, MessagesSquare, User, Settings, ShieldCheck, Heart, Flame, Bell, Search, LogOut,
+  FileCheck2, MessagesSquare, User, Settings, ShieldCheck, Heart, Flame, Bell, Search, LogOut, Info,
 } from "lucide-react";
 import { useAuth } from "../store/auth.js";
 import VerifyBanner from "./VerifyBanner.jsx";
@@ -21,6 +21,7 @@ const NAV = [
   ]},
   { group: "Account", items: [
     { key: "profile", label: "Profile", to: "/profile", title: "Profile", Icon: User },
+    { key: "about", label: "About", to: "/about", title: "About", search: false, Icon: Info },
     { key: "settings", label: "Settings", to: "/settings", title: "Settings", search: false, Icon: Settings },
     { key: "admin", label: "Admin", to: "/admin", title: "Admin", search: false, adminOnly: true, Icon: ShieldCheck },
   ]},

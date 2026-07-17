@@ -89,6 +89,57 @@ export const createSheet = async (req, res) => {
   }
 };
 
+// Admin: add one or more problems to a sheet's flat problem list. They surface
+// in the sheet detail view (under "Additional problems" when the sheet also has
+// a day-by-day structure). Dedups against everything already in the sheet and
+// ignores ids that don't reference a real problem.
+export const addProblemsToSheet = async (req, res) => {
+  try {
+    const { sheetId } = req.params;
+    const { problemIds } = req.body;
+    if (!Array.isArray(problemIds) || problemIds.length === 0) {
+      return res.status(400).json({ success: false, message: "problemIds (a non-empty array) is required" });
+    }
+
+    const sheet = await db.sheet.findUnique({ where: { id: sheetId }, select: { id: true, problemIds: true, structure: true } });
+    if (!sheet) return res.status(404).json({ success: false, message: "Sheet not found" });
+
+    const valid = await db.problem.findMany({ where: { id: { in: problemIds } }, select: { id: true } });
+    const validIds = valid.map((p) => p.id);
+    if (validIds.length === 0) {
+      return res.status(400).json({ success: false, message: "None of the given ids reference a real problem" });
+    }
+
+    const merged = [...new Set([...(sheet.problemIds || []), ...validIds])];
+    const updated = await db.sheet.update({ where: { id: sheetId }, data: { problemIds: merged } });
+    return res.status(200).json({ success: true, message: "Problems added to sheet", sheet: updated });
+  } catch (error) {
+    console.error("Error adding problems to sheet:", error);
+    return res.status(500).json({ success: false, message: "Error adding problems to sheet" });
+  }
+};
+
+// Admin: remove a problem from a sheet — from the flat list and from any day
+// block in the structure that references it.
+export const removeProblemFromSheet = async (req, res) => {
+  try {
+    const { sheetId, problemId } = req.params;
+    const sheet = await db.sheet.findUnique({ where: { id: sheetId }, select: { id: true, problemIds: true, structure: true } });
+    if (!sheet) return res.status(404).json({ success: false, message: "Sheet not found" });
+
+    const nextIds = (sheet.problemIds || []).filter((id) => id !== problemId);
+    const nextStructure = Array.isArray(sheet.structure)
+      ? sheet.structure.map((b) => ({ ...b, problemIds: (b.problemIds || []).filter((id) => id !== problemId) }))
+      : sheet.structure;
+
+    const updated = await db.sheet.update({ where: { id: sheetId }, data: { problemIds: nextIds, structure: nextStructure } });
+    return res.status(200).json({ success: true, message: "Problem removed from sheet", sheet: updated });
+  } catch (error) {
+    console.error("Error removing problem from sheet:", error);
+    return res.status(500).json({ success: false, message: "Error removing problem from sheet" });
+  }
+};
+
 // Mark a problem in a sheet as completed for the current user.
 export const updateProgress = async (req, res) => {
   try {
