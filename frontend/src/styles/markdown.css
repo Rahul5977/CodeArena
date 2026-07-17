@@ -1,0 +1,64 @@
+/* Rendered-markdown scope (problem statements, constraints, etc.), themed to
+   the Organic design system. Applied by the <Markdown> component's `.md` wrapper. */
+.md {
+  font-size: 14.5px;
+  line-height: 1.65;
+  color: color-mix(in srgb, var(--color-text) 88%, transparent);
+  word-wrap: break-word;
+}
+.md > *:first-child { margin-top: 0; }
+.md > *:last-child { margin-bottom: 0; }
+
+.md h1, .md h2, .md h3, .md h4, .md h5, .md h6 {
+  font-family: var(--font-heading);
+  line-height: 1.25;
+  color: var(--color-text);
+  margin: 20px 0 10px;
+}
+.md h1 { font-size: 22px; }
+.md h2 { font-size: 19px; }
+.md h3 { font-size: 16.5px; }
+.md h4, .md h5, .md h6 { font-size: 15px; }
+
+.md p { margin: 10px 0; }
+
+.md ul, .md ol { margin: 10px 0; padding-left: 22px; }
+.md li { margin: 4px 0; }
+.md li::marker { color: color-mix(in srgb, var(--color-text) 45%, transparent); }
+
+.md a { color: var(--color-accent-700); text-decoration: none; font-weight: 600; }
+.md a:hover { text-decoration: underline; }
+
+.md strong { font-weight: 700; color: var(--color-text); }
+.md em { font-style: italic; }
+
+.md code {
+  font-family: ui-monospace, Menlo, Monaco, monospace;
+  font-size: 0.88em;
+  background: color-mix(in srgb, var(--color-text) 8%, transparent);
+  padding: 1.5px 6px;
+  border-radius: 6px;
+}
+.md pre {
+  background: var(--color-bg);
+  border: 1px solid var(--color-divider);
+  border-radius: 12px;
+  padding: 14px 16px;
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.md pre code { background: none; padding: 0; font-size: 13px; line-height: 1.55; }
+
+.md blockquote {
+  margin: 12px 0;
+  padding: 4px 14px;
+  border-left: 3px solid var(--color-accent-300);
+  color: color-mix(in srgb, var(--color-text) 70%, transparent);
+}
+
+.md table { border-collapse: collapse; margin: 12px 0; font-size: 13.5px; display: block; overflow-x: auto; }
+.md th, .md td { border: 1px solid var(--color-divider); padding: 7px 12px; text-align: left; }
+.md th { background: color-mix(in srgb, var(--color-text) 5%, transparent); font-weight: 700; }
+
+.md hr { border: none; border-top: 1px solid var(--color-divider); margin: 18px 0; }
+.md img { max-width: 100%; border-radius: 8px; }

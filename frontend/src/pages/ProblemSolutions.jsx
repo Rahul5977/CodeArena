@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ArrowBigUp, ArrowBigDown, Code2, Plus, X } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
+import Markdown from "../components/Markdown.jsx";
 
 const muted = (p = 60) => `color-mix(in srgb, var(--color-text) ${p}%, transparent)`;
 const surface = { background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)" };
@@ -194,7 +195,7 @@ export default function ProblemSolutions() {
                     <span>·</span>
                     <span>{timeAgo(s.createdAt)}</span>
                   </div>
-                  {s.body && <p style={{ fontSize: 14.5, lineHeight: 1.6, whiteSpace: "pre-wrap", color: muted(85), margin: "0 0 12px" }}>{s.body}</p>}
+                  {s.body && <div style={{ margin: "0 0 12px" }}><Markdown>{s.body}</Markdown></div>}
                   {s.code && (
                     <pre style={{ margin: 0, background: "var(--color-bg)", borderRadius: 14, padding: "14px 16px", overflowX: "auto", fontFamily: "ui-monospace, Menlo, monospace", fontSize: 13, lineHeight: 1.55, color: "var(--color-text)" }}>
                       <code>{s.code}</code>
