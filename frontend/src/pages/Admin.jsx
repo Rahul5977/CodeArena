@@ -605,6 +605,10 @@ function SheetsManager() {
   const [addChoice, setAddChoice] = useState("");
   const [busy, setBusy] = useState(false);
   const [reloadKey, setReloadKey] = useState(0);
+  const [showCreate, setShowCreate] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const emptyForm = { title: "", topic: "", difficulty: "EASY", description: "", estimatedHours: "", prerequisites: "" };
+  const [form, setForm] = useState(emptyForm);
 
   useEffect(() => {
     let active = true;
@@ -632,6 +636,35 @@ function SheetsManager() {
   const added = selected ? (selected.problemIds || []).map((id) => byId.get(id)).filter(Boolean) : [];
   const inSheet = selected ? sheetProblemIds(selected) : new Set();
   const available = problems.filter((p) => !inSheet.has(p.id));
+
+  const createSheet = async (e) => {
+    e.preventDefault();
+    if (!form.title.trim() || !form.topic.trim() || !form.description.trim()) {
+      setError("Title, topic and description are required");
+      return;
+    }
+    setCreating(true);
+    setError("");
+    try {
+      const body = {
+        title: form.title.trim(),
+        description: form.description.trim(),
+        topic: form.topic.trim(),
+        difficulty: form.difficulty,
+        prerequisites: form.prerequisites ? form.prerequisites.split(",").map((s) => s.trim()).filter(Boolean) : [],
+      };
+      if (form.estimatedHours) body.estimatedHours = Number(form.estimatedHours);
+      const { data } = await api.post("/sheets/create", body);
+      setForm(emptyForm);
+      setShowCreate(false);
+      if (data.sheet?.id) setSelId(data.sheet.id);
+      refresh();
+    } catch (err) {
+      setError(err.response?.data?.message || "Failed to create sheet");
+    } finally {
+      setCreating(false);
+    }
+  };
 
   const addProblem = async () => {
     if (!selId || !addChoice) return;
@@ -668,14 +701,43 @@ function SheetsManager() {
         <span style={{ width: 34, height: 34, borderRadius: 10, background: "var(--color-accent-100)", color: "var(--color-accent-700)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
           <Library size={17} strokeWidth={2.5} />
         </span>
-        <span style={{ fontSize: 13, color: muted(60) }}>Add or remove problems on any DSA sheet.</span>
+        <span style={{ fontSize: 13, color: muted(60) }}>Create sheets, and add or remove problems on any DSA sheet.</span>
+        <button className="btn btn-primary" style={{ marginLeft: "auto", gap: 7 }} onClick={() => setShowCreate((v) => !v)}>
+          <Plus size={16} strokeWidth={2.75} /> New sheet
+        </button>
       </div>
 
       {error && <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", padding: "10px 14px", borderRadius: 14 }}>{error}</div>}
 
+      {showCreate && (
+        <form onSubmit={createSheet} style={{ background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 12 }}>
+          <div style={{ fontFamily: "var(--font-heading)", fontSize: 17 }}>New DSA sheet</div>
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+            <input className="input" placeholder="Title" value={form.title} onChange={(e) => setForm({ ...form, title: e.target.value })} style={{ flex: 2, minWidth: 220 }} />
+            <input className="input" placeholder="Topic (e.g. Arrays & Hashing)" value={form.topic} onChange={(e) => setForm({ ...form, topic: e.target.value })} style={{ flex: 1, minWidth: 170 }} />
+            <select className="input" value={form.difficulty} onChange={(e) => setForm({ ...form, difficulty: e.target.value })} style={{ minWidth: 130 }}>
+              <option value="EASY">Easy</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="HARD">Hard</option>
+            </select>
+          </div>
+          <textarea className="input" placeholder="Short intro — one or two lines (the day-by-day breakdown is managed separately, so keep this brief)" value={form.description} onChange={(e) => setForm({ ...form, description: e.target.value })} rows={2} style={{ resize: "vertical", minHeight: 58, fontFamily: "inherit", lineHeight: 1.5 }} />
+          <div style={{ display: "flex", gap: 10, flexWrap: "wrap", alignItems: "center" }}>
+            <input className="input" type="number" min="0" placeholder="Est. hours (optional)" value={form.estimatedHours} onChange={(e) => setForm({ ...form, estimatedHours: e.target.value })} style={{ width: 190 }} />
+            <input className="input" placeholder="Prerequisites, comma-separated (optional)" value={form.prerequisites} onChange={(e) => setForm({ ...form, prerequisites: e.target.value })} style={{ flex: 1, minWidth: 220 }} />
+          </div>
+          <div style={{ display: "flex", gap: 10, justifyContent: "flex-end" }}>
+            <button type="button" className="btn btn-secondary" onClick={() => { setShowCreate(false); setForm(emptyForm); }} disabled={creating}>Cancel</button>
+            <button type="submit" className="btn btn-primary" disabled={creating || !form.title.trim() || !form.topic.trim() || !form.description.trim()}>
+              {creating ? "Creating…" : "Create sheet"}
+            </button>
+          </div>
+        </form>
+      )}
+
       {sheets.length === 0 ? (
         <div style={{ background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)", padding: 40, textAlign: "center", color: muted(55) }}>
-          No sheets yet.
+          No sheets yet — click <strong>New sheet</strong> to create your first one.
         </div>
       ) : (
         <div style={{ background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)", padding: "20px 22px", display: "flex", flexDirection: "column", gap: 16 }}>
