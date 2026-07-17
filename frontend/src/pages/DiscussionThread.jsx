@@ -3,6 +3,7 @@ import { useParams, Link } from "react-router-dom";
 import { ArrowLeft, ArrowBigUp, ArrowBigDown, MessageSquare } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
+import Markdown from "../components/Markdown.jsx";
 
 const muted = (p = 60) => `color-mix(in srgb, var(--color-text) ${p}%, transparent)`;
 const surface = { background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)" };
@@ -119,7 +120,7 @@ export default function DiscussionThread() {
             <span>·</span>
             <span>{timeAgo(disc.createdAt)}</span>
           </div>
-          {disc.body && <p style={{ fontSize: 15, lineHeight: 1.65, whiteSpace: "pre-wrap", color: muted(88), margin: 0 }}>{disc.body}</p>}
+          {disc.body && <Markdown>{disc.body}</Markdown>}
         </div>
       </div>
 
@@ -145,7 +146,7 @@ export default function DiscussionThread() {
                   <span>·</span>
                   <span>{timeAgo(c.createdAt)}</span>
                 </div>
-                <div style={{ fontSize: 14.5, lineHeight: 1.6, whiteSpace: "pre-wrap", color: muted(90) }}>{c.body}</div>
+                <Markdown>{c.body}</Markdown>
               </div>
             </div>
           );

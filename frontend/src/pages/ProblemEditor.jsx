@@ -5,6 +5,7 @@ import Split from "react-split";
 import { Play, Send, CheckCircle2, XCircle, ArrowLeft, FileText, History, ChevronDown, CornerUpLeft } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
+import Markdown from "../components/Markdown.jsx";
 
 const LANG_ID = { PYTHON: 71, JAVASCRIPT: 63, JAVA: 62, CPP: 54, C: 50 };
 const LANG_BY_ID = { 71: "PYTHON", 63: "JAVASCRIPT", 62: "JAVA", 54: "CPP", 50: "C" };
@@ -196,7 +197,7 @@ export default function ProblemEditor() {
                   <span key={t} style={{ fontSize: 11, padding: "3px 11px", borderRadius: 999, background: "var(--color-neutral-200)", color: "var(--color-neutral-800)" }}>{t}</span>
                 ))}
               </div>
-              <p style={{ fontSize: 14.5, lineHeight: 1.6, whiteSpace: "pre-wrap", color: muted(88) }}>{problem.description}</p>
+              <Markdown>{problem.description}</Markdown>
 
               {(problem.examples || []).map((ex, i) => (
                 <div key={i} style={{ marginTop: 16 }}>
@@ -212,7 +213,7 @@ export default function ProblemEditor() {
               {problem.constraints && (
                 <div style={{ marginTop: 16 }}>
                   <div style={{ fontSize: 12, fontWeight: 700, color: muted(70), marginBottom: 6 }}>Constraints</div>
-                  <div style={{ fontSize: 13, fontFamily: "ui-monospace, Menlo, monospace", color: muted(75) }}>{problem.constraints}</div>
+                  <Markdown>{problem.constraints}</Markdown>
                 </div>
               )}
             </>
