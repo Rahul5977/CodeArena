@@ -59,7 +59,7 @@ async function finalize(res, provider, providerId, email, name, image) {
   }
 
   const { accessToken, refreshToken } = generateTokens(user.id);
-  await db.user.update({ where: { id: user.id }, data: { refreshToken, lastLoginAt: new Date() } });
+  await db.user.update({ where: { id: user.id }, data: { refreshToken, lastLoginAt: new Date(), lastSeenAt: new Date() } });
   setAuthCookies(res, accessToken, refreshToken);
   res.clearCookie("oauth_state", { ...cookieBase(), sameSite: "lax" });
   return res.redirect(`${FRONTEND()}/app`);

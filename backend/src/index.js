@@ -23,6 +23,8 @@ import communityRoutes from "./routes/community.routes.js";
 import adminContentRoutes from "./routes/adminContent.routes.js";
 import healthRoutes from "./routes/health.routes.js";
 import { donationWebhook } from "./controllers/donationWebhook.controllers.js";
+import { heartbeat } from "./controllers/auth.controllers.js";
+import { authMiddleware } from "./middleware/auth.middleware.js";
 import { startReconciler } from "./libs/reconcile.js";
 
 import { httpLogger } from "./libs/logger.js";
@@ -82,6 +84,11 @@ app.get("/", (req, res) => {
     features: ["Problems", "Contests", "DSA Sheets", "Community", "Support"],
   });
 });
+
+// Liveness ping (drives the admin "live now" list) — registered before the auth
+// router so the strict auth rate-limiter doesn't count 45s heartbeats (which
+// would otherwise exhaust the window and block real login/refresh calls).
+app.post("/api/v1/auth/heartbeat", authMiddleware, heartbeat);
 
 app.use("/api/v1/auth", authLimiter, authRoutes);
 app.use("/api/v1/problems", problemRoutes);

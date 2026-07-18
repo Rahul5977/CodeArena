@@ -2,47 +2,124 @@ import { db } from "../libs/db.js";
 
 // Single-admin user management. Roles are USER | ADMIN and the one admin is set
 // via ADMIN_EMAIL at registration, so there is no promote/demote here — the
-// admin can list, view, ban/activate, and delete users.
+// admin can list, view, ban/activate, and delete users, plus see who's live now.
+
+// A user counts as "live now" if their heartbeat (lastSeenAt) landed within this
+// window. The SPA pings /auth/heartbeat every 45s, so ~2.5 min tolerates one or
+// two missed pings before a user drops off the live list. Kept in sync with the
+// frontend via the onlineWindowMs field returned on both list endpoints.
+const ONLINE_WINDOW_MS = 150 * 1000;
+
+// Never expose secrets (password, refreshToken, reset/verification tokens) — the
+// selects below are explicit allow-lists, so those columns can't leak.
+const LIST_SELECT = {
+  id: true, name: true, username: true, email: true, image: true, role: true,
+  points: true, isActive: true, emailVerified: true, createdAt: true, lastLoginAt: true, lastSeenAt: true,
+};
 
 export const getAllUsers = async (req, res) => {
   try {
     const page = Math.max(1, parseInt(req.query.page) || 1);
     const limit = Math.min(100, Math.max(1, parseInt(req.query.limit) || 20));
-    const { search } = req.query;
+    const { search, sort } = req.query;
     const where = search
-      ? { OR: [{ name: { contains: search, mode: "insensitive" } }, { email: { contains: search, mode: "insensitive" } }] }
+      ? { OR: [
+          { name: { contains: search, mode: "insensitive" } },
+          { email: { contains: search, mode: "insensitive" } },
+          { username: { contains: search, mode: "insensitive" } },
+        ] }
       : {};
+
+    // "recent" → most-recently-logged-in first (never-logged-in users sort last).
+    const orderBy =
+      sort === "recent" ? [{ lastLoginAt: { sort: "desc", nulls: "last" } }] : [{ createdAt: "desc" }];
 
     const [users, total] = await Promise.all([
       db.user.findMany({
         where,
-        select: { id: true, name: true, username: true, email: true, role: true, isActive: true, emailVerified: true, createdAt: true, lastLoginAt: true },
-        orderBy: { createdAt: "desc" },
+        select: LIST_SELECT,
+        orderBy,
         skip: (page - 1) * limit,
         take: limit,
       }),
       db.user.count({ where }),
     ]);
 
-    return res.status(200).json({ success: true, users, pagination: { page, limit, total, pages: Math.ceil(total / limit) } });
+    return res.status(200).json({
+      success: true,
+      users,
+      onlineWindowMs: ONLINE_WINDOW_MS,
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
+    });
   } catch (error) {
     console.error("Error listing users:", error);
     return res.status(500).json({ success: false, message: "Error listing users" });
   }
 };
 
+// Users with the app open right now (recent heartbeat), most-recently-seen first.
+export const getOnlineUsers = async (req, res) => {
+  try {
+    const since = new Date(Date.now() - ONLINE_WINDOW_MS);
+    const users = await db.user.findMany({
+      where: { lastSeenAt: { gte: since } },
+      select: LIST_SELECT,
+      orderBy: { lastSeenAt: "desc" },
+    });
+    return res.status(200).json({ success: true, count: users.length, onlineWindowMs: ONLINE_WINDOW_MS, users });
+  } catch (error) {
+    console.error("Error listing online users:", error);
+    return res.status(500).json({ success: false, message: "Error listing online users" });
+  }
+};
+
+// Full user detail for the admin drawer — every non-secret column, all relation
+// counts, OAuth links, lifetime donations and the latest activity. Secrets
+// (password, refreshToken, reset/verification tokens) are deliberately omitted.
 export const getUserById = async (req, res) => {
   try {
+    const { userId } = req.params;
     const user = await db.user.findUnique({
-      where: { id: req.params.userId },
+      where: { id: userId },
       select: {
         id: true, name: true, username: true, email: true, image: true, bio: true,
-        role: true, points: true, isActive: true, emailVerified: true, createdAt: true, lastLoginAt: true,
-        _count: { select: { submissions: true, problemSolved: true, solutions: true } },
+        githubUrl: true, websiteUrl: true, role: true, points: true,
+        isActive: true, emailVerified: true, createdAt: true, updatedAt: true,
+        lastLoginAt: true, lastSeenAt: true,
+        oauthAccounts: { select: { provider: true, providerId: true, createdAt: true } },
+        _count: {
+          select: {
+            submissions: true, problemSolved: true, problems: true, playlists: true,
+            solutions: true, discussions: true, comments: true, votes: true,
+            contestParticipants: true, donations: true, followers: true, following: true,
+          },
+        },
       },
     });
     if (!user) return res.status(404).json({ success: false, message: "User not found" });
-    return res.status(200).json({ success: true, user });
+
+    const [recentSubmissions, donations] = await Promise.all([
+      db.submission.findMany({
+        where: { userId },
+        select: { id: true, status: true, language: true, createdAt: true, problem: { select: { title: true, slug: true, difficulty: true } } },
+        orderBy: { createdAt: "desc" },
+        take: 10,
+      }),
+      db.donation.aggregate({ _sum: { amount: true }, _count: true, where: { userId, status: "paid" } }),
+    ]);
+
+    const online = !!user.lastSeenAt && Date.now() - new Date(user.lastSeenAt).getTime() <= ONLINE_WINDOW_MS;
+
+    return res.status(200).json({
+      success: true,
+      user: {
+        ...user,
+        online,
+        recentSubmissions,
+        totalDonated: donations._sum.amount || 0,
+        donationCount: donations._count || 0,
+      },
+    });
   } catch (error) {
     console.error("Error fetching user:", error);
     return res.status(500).json({ success: false, message: "Error fetching user" });
