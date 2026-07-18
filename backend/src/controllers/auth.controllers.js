@@ -71,7 +71,7 @@ export const login = async (req, res) => {
     const { accessToken, refreshToken } = generateTokens(user.id);
     const refreshTokenMs = rememberMe ? 30 * 24 * 60 * 60 * 1000 : 7 * 24 * 60 * 60 * 1000;
 
-    await db.user.update({ where: { id: user.id }, data: { refreshToken, lastLoginAt: new Date() } });
+    await db.user.update({ where: { id: user.id }, data: { refreshToken, lastLoginAt: new Date(), lastSeenAt: new Date() } });
     setAuthCookies(res, accessToken, refreshToken, refreshTokenMs);
 
     return res.status(200).json(
@@ -268,6 +268,18 @@ export const check = async (req, res) => {
     return res.status(200).json(new ApiResponse(200, { user }, "User authenticated successfully"));
   } catch (error) {
     return handleError(res, error, "Error in check route");
+  }
+};
+
+// Liveness ping — the SPA calls this on an interval while it's open so the admin
+// "live now" list reflects who currently has the app open. One indexed column
+// write; presence = a recent lastSeenAt (see getOnlineUsers).
+export const heartbeat = async (req, res) => {
+  try {
+    await db.user.update({ where: { id: req.user.id }, data: { lastSeenAt: new Date() } });
+    return res.status(200).json(new ApiResponse(200, {}, "ok"));
+  } catch (error) {
+    return handleError(res, error, "Error recording heartbeat");
   }
 };
 

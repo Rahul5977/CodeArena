@@ -15,6 +15,12 @@ import {
   Ban,
   Library,
   X,
+  Clock,
+  Mail,
+  Github,
+  Globe,
+  RefreshCw,
+  CheckCircle2,
 } from "lucide-react";
 import { api } from "../lib/api.js";
 import Spinner from "../components/Spinner.jsx";
@@ -65,6 +71,7 @@ export default function Admin() {
       <div className="seg" style={{ background: "var(--color-surface)", marginBottom: 18, width: "fit-content" }}>
         {[
           ["overview", "Overview"],
+          ["users", "Manage Users"],
           ["problems", "Manage Problems"],
           ["contests", "Manage Contests"],
           ["sheets", "Manage Sheets"],
@@ -77,6 +84,7 @@ export default function Admin() {
       </div>
 
       {tab === "overview" && <Overview onManageProblems={() => setTab("problems")} />}
+      {tab === "users" && <UsersManager />}
       {tab === "problems" && <Problems />}
       {tab === "contests" && <Contests />}
       {tab === "sheets" && <SheetsManager />}
@@ -792,6 +800,435 @@ function SheetsManager() {
           </div>
         </div>
       )}
+    </div>
+  );
+}
+
+/* ---------------------------------------------------------------- Manage Users */
+
+const initialsOf = (u) =>
+  (u?.name || u?.email || "?").split(" ").map((s) => s[0]).slice(0, 2).join("").toUpperCase();
+
+// Relative time for "last seen / last login" — compact, degrades to a date past 30d.
+const fmtRel = (iso) => {
+  if (!iso) return "never";
+  const s = Math.floor((Date.now() - new Date(iso).getTime()) / 1000);
+  if (s < 45) return "just now";
+  const m = Math.floor(s / 60);
+  if (m < 60) return `${m || 1}m ago`;
+  const h = Math.floor(m / 60);
+  if (h < 24) return `${h}h ago`;
+  const d = Math.floor(h / 24);
+  if (d < 30) return `${d}d ago`;
+  return new Date(iso).toLocaleDateString("en-US", { month: "short", day: "numeric", year: "numeric" });
+};
+
+const fmtDateTime = (iso) =>
+  iso ? new Date(iso).toLocaleString(undefined, { dateStyle: "medium", timeStyle: "short" }) : "—";
+
+function Avatar({ user, size = 34 }) {
+  if (user?.image) {
+    return <img src={user.image} alt="" width={size} height={size} style={{ borderRadius: "50%", objectFit: "cover", flex: "none" }} />;
+  }
+  return (
+    <div style={{ width: size, height: size, borderRadius: "50%", background: "var(--color-accent-2-300)", color: "var(--color-accent-2-800)", display: "flex", alignItems: "center", justifyContent: "center", fontWeight: 700, fontSize: Math.round(size * 0.38), flex: "none" }}>
+      {initialsOf(user)}
+    </div>
+  );
+}
+
+function LiveDot({ on }) {
+  return (
+    <span
+      title={on ? "Live now" : "Offline"}
+      style={{ width: 8, height: 8, borderRadius: "50%", flex: "none", background: on ? "var(--color-accent-2-500)" : "var(--color-neutral-400)", boxShadow: on ? "0 0 0 3px color-mix(in srgb, var(--color-accent-2-500) 22%, transparent)" : "none" }}
+    />
+  );
+}
+
+function RoleTag({ role }) {
+  return <span className={role === "ADMIN" ? "tag tag-accent" : "tag tag-accent-2"}>{role === "ADMIN" ? "Admin" : "Member"}</span>;
+}
+
+function UsersManager() {
+  const [online, setOnline] = useState([]);
+  const [windowMs, setWindowMs] = useState(150000);
+  const [recent, setRecent] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [q, setQ] = useState("");
+  const [detailId, setDetailId] = useState(null);
+  const [reloadKey, setReloadKey] = useState(0);
+
+  // Live now — poll every 15s so the list tracks connects/disconnects.
+  useEffect(() => {
+    let active = true;
+    const load = () =>
+      api
+        .get("/admin/users/online")
+        .then(({ data }) => {
+          if (!active) return;
+          setOnline(data.users || []);
+          if (data.onlineWindowMs) setWindowMs(data.onlineWindowMs);
+        })
+        .catch(() => {});
+    load();
+    const id = setInterval(load, 15000);
+    return () => {
+      active = false;
+      clearInterval(id);
+    };
+  }, [reloadKey]);
+
+  // Recently logged in — debounced search, ordered by last login.
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    const t = setTimeout(() => {
+      api
+        .get("/admin/users", { params: { sort: "recent", limit: 100, search: q || undefined } })
+        .then(({ data }) => {
+          if (!active) return;
+          setRecent(data.users || []);
+          if (data.onlineWindowMs) setWindowMs(data.onlineWindowMs);
+          setError("");
+        })
+        .catch((e) => active && setError(e.response?.data?.message || "Failed to load users"))
+        .finally(() => active && setLoading(false));
+    }, 250);
+    return () => {
+      active = false;
+      clearTimeout(t);
+    };
+  }, [q, reloadKey]);
+
+  const onlineIds = useMemo(() => new Set(online.map((u) => u.id)), [online]);
+  const isLive = (u) => onlineIds.has(u.id) || (u.lastSeenAt && Date.now() - new Date(u.lastSeenAt).getTime() <= windowMs);
+  const refresh = () => setReloadKey((k) => k + 1);
+
+  return (
+    <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+      {/* Live now */}
+      <div style={{ background: "var(--color-surface)", borderRadius: 24, boxShadow: "var(--shadow-sm)", padding: "22px 24px" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 10, marginBottom: 16 }}>
+          <span style={{ width: 34, height: 34, borderRadius: 10, background: "var(--color-accent-2-100)", color: "var(--color-accent-2-700)", display: "flex", alignItems: "center", justifyContent: "center", flex: "none" }}>
+            <Activity size={17} strokeWidth={2.5} />
+          </span>
+          <div style={{ marginRight: "auto" }}>
+            <h3 style={{ fontFamily: "var(--font-heading)", fontSize: 18, margin: 0 }}>Live now</h3>
+            <div style={{ fontSize: 12, color: muted(55) }}>
+              {online.length} online · active in the last {Math.round(windowMs / 60000)} min
+            </div>
+          </div>
+          <button className="btn btn-ghost btn-icon" style={{ width: 32, height: 32 }} onClick={refresh} title="Refresh" aria-label="Refresh">
+            <RefreshCw size={15} strokeWidth={2.5} />
+          </button>
+        </div>
+        {online.length === 0 ? (
+          <div style={{ padding: "18px 0", textAlign: "center", color: muted(55) }}>No one is online right now.</div>
+        ) : (
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fill, minmax(240px, 1fr))", gap: 10 }}>
+            {online.map((u) => (
+              <button
+                key={u.id}
+                onClick={() => setDetailId(u.id)}
+                style={{ display: "flex", alignItems: "center", gap: 11, padding: "10px 12px", borderRadius: 14, background: "var(--color-neutral-100)", border: "none", cursor: "pointer", textAlign: "left", width: "100%" }}
+              >
+                <div style={{ position: "relative", flex: "none" }}>
+                  <Avatar user={u} size={36} />
+                  <span style={{ position: "absolute", bottom: -1, right: -1, width: 11, height: 11, borderRadius: "50%", background: "var(--color-accent-2-500)", border: "2px solid var(--color-surface)" }} />
+                </div>
+                <div style={{ minWidth: 0, flex: 1 }}>
+                  <div style={{ fontSize: 13.5, fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.name || u.email}</div>
+                  <div style={{ fontSize: 11.5, color: muted(55) }}>active {fmtRel(u.lastSeenAt)}</div>
+                </div>
+                {u.role === "ADMIN" && <RoleTag role={u.role} />}
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {/* Recently logged in */}
+      <div style={{ display: "flex", flexDirection: "column", gap: 14 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, flexWrap: "wrap" }}>
+          <div style={{ position: "relative", flex: 1, minWidth: 220, maxWidth: 340 }}>
+            <Search size={16} strokeWidth={2.5} style={{ position: "absolute", left: 14, top: "50%", transform: "translateY(-50%)", color: muted(50) }} />
+            <input className="input" placeholder="Search name, email or username…" value={q} onChange={(e) => setQ(e.target.value)} style={{ paddingLeft: 40, background: "var(--color-surface)" }} />
+          </div>
+          <span style={{ marginLeft: "auto", fontSize: 12, color: muted(55) }}>Ordered by most recent login</span>
+        </div>
+
+        {error && <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", padding: "10px 14px", borderRadius: 14 }}>{error}</div>}
+
+        <div style={{ background: "var(--color-surface)", borderRadius: 22, boxShadow: "var(--shadow-sm)", overflow: "hidden" }}>
+          {loading ? (
+            <div style={{ padding: 40 }}>
+              <Spinner label="Loading users…" />
+            </div>
+          ) : recent.length === 0 ? (
+            <div style={{ padding: 32, textAlign: "center", color: muted(55) }}>No users match your search.</div>
+          ) : (
+            <table className="table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>Email</th>
+                  <th>Role</th>
+                  <th style={{ textAlign: "right" }}>Points</th>
+                  <th style={{ textAlign: "right" }}>Last login</th>
+                  <th style={{ textAlign: "center" }}>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {recent.map((u) => (
+                  <tr key={u.id} style={{ cursor: "pointer" }} onClick={() => setDetailId(u.id)}>
+                    <td>
+                      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                        <LiveDot on={isLive(u)} />
+                        <Avatar user={u} size={30} />
+                        <div style={{ minWidth: 0 }}>
+                          <div style={{ fontWeight: 600, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{u.name || "—"}</div>
+                          {u.username && <div style={{ fontSize: 11.5, color: muted(50) }}>@{u.username}</div>}
+                        </div>
+                      </div>
+                    </td>
+                    <td style={{ color: muted(62) }}>{u.email}</td>
+                    <td><RoleTag role={u.role} /></td>
+                    <td style={{ textAlign: "right", fontVariantNumeric: "tabular-nums", color: muted(62) }}>{(u.points ?? 0).toLocaleString("en-IN")}</td>
+                    <td style={{ textAlign: "right", color: muted(55), fontSize: 13 }}>{fmtRel(u.lastLoginAt)}</td>
+                    <td style={{ textAlign: "center" }}>
+                      {u.isActive ? (
+                        <span className="tag tag-accent-2">Active</span>
+                      ) : (
+                        <span className="tag tag-neutral">Banned</span>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      </div>
+
+      {detailId && (
+        <UserDrawer
+          userId={detailId}
+          onClose={() => setDetailId(null)}
+          onChanged={refresh}
+          onDeleted={() => {
+            setDetailId(null);
+            refresh();
+          }}
+        />
+      )}
+    </div>
+  );
+}
+
+function StatCell({ label, value }) {
+  return (
+    <div style={{ background: "var(--color-neutral-100)", borderRadius: 12, padding: "10px 12px" }}>
+      <div style={{ fontFamily: "var(--font-heading)", fontSize: 18, lineHeight: 1 }}>{(value ?? 0).toLocaleString("en-IN")}</div>
+      <div style={{ fontSize: 11, color: muted(55), marginTop: 4 }}>{label}</div>
+    </div>
+  );
+}
+
+function Field({ label, children }) {
+  return (
+    <div style={{ display: "flex", gap: 12, padding: "8px 0", borderBottom: "1px solid var(--color-divider)", fontSize: 13 }}>
+      <span style={{ width: 120, flex: "none", color: muted(55) }}>{label}</span>
+      <span style={{ flex: 1, minWidth: 0, wordBreak: "break-word" }}>{children}</span>
+    </div>
+  );
+}
+
+// Full-detail slide-over. Every non-secret field the API returns is shown here.
+function UserDrawer({ userId, onClose, onChanged, onDeleted }) {
+  const [u, setU] = useState(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let active = true;
+    setLoading(true);
+    api
+      .get(`/admin/users/${userId}`)
+      .then(({ data }) => active && (setU(data.user), setError("")))
+      .catch((e) => active && setError(e.response?.data?.message || "Failed to load user"))
+      .finally(() => active && setLoading(false));
+    return () => {
+      active = false;
+    };
+  }, [userId]);
+
+  const toggleStatus = async () => {
+    setBusy(true);
+    setError("");
+    try {
+      const { data } = await api.patch(`/admin/users/${userId}/status`);
+      setU((prev) => ({ ...prev, isActive: data.user.isActive }));
+      onChanged?.();
+    } catch (e) {
+      setError(e.response?.data?.message || "Failed to update status");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const remove = async () => {
+    if (!window.confirm(`Delete ${u?.name || u?.email}? This permanently removes the user and all their data. This cannot be undone.`)) return;
+    setBusy(true);
+    setError("");
+    try {
+      await api.delete(`/admin/users/${userId}`);
+      onDeleted?.();
+    } catch (e) {
+      setError(e.response?.data?.message || "Failed to delete user");
+      setBusy(false);
+    }
+  };
+
+  const c = u?._count || {};
+
+  return (
+    <div
+      onClick={onClose}
+      style={{ position: "fixed", inset: 0, background: "color-mix(in srgb, #000 42%, transparent)", zIndex: 60, display: "flex", justifyContent: "flex-end" }}
+    >
+      <div
+        onClick={(e) => e.stopPropagation()}
+        style={{ width: "min(480px, 100%)", height: "100%", background: "var(--color-bg)", boxShadow: "var(--shadow-lg, -8px 0 30px rgba(0,0,0,.2))", overflowY: "auto", padding: "22px 24px 40px" }}
+      >
+        <div style={{ display: "flex", alignItems: "center", justifyContent: "space-between", marginBottom: 18 }}>
+          <h2 style={{ fontFamily: "var(--font-heading)", fontSize: 22, margin: 0 }}>User details</h2>
+          <button className="btn btn-ghost btn-icon" style={{ width: 32, height: 32 }} onClick={onClose} aria-label="Close">
+            <X size={17} strokeWidth={2.5} />
+          </button>
+        </div>
+
+        {loading ? (
+          <Spinner label="Loading…" />
+        ) : error && !u ? (
+          <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", padding: "12px 16px", borderRadius: 14 }}>{error}</div>
+        ) : u ? (
+          <div style={{ display: "flex", flexDirection: "column", gap: 18 }}>
+            {/* Identity header */}
+            <div style={{ display: "flex", alignItems: "center", gap: 14 }}>
+              <div style={{ position: "relative", flex: "none" }}>
+                <Avatar user={u} size={56} />
+                {u.online && <span style={{ position: "absolute", bottom: 1, right: 1, width: 14, height: 14, borderRadius: "50%", background: "var(--color-accent-2-500)", border: "2.5px solid var(--color-bg)" }} />}
+              </div>
+              <div style={{ minWidth: 0, flex: 1 }}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8, flexWrap: "wrap" }}>
+                  <span style={{ fontFamily: "var(--font-heading)", fontSize: 19 }}>{u.name}</span>
+                  <RoleTag role={u.role} />
+                </div>
+                <div style={{ fontSize: 13, color: muted(58) }}>
+                  {u.username ? `@${u.username} · ` : ""}
+                  {u.online ? "Live now" : `seen ${fmtRel(u.lastSeenAt)}`}
+                </div>
+              </div>
+            </div>
+
+            {error && <div style={{ background: "var(--color-accent-100)", color: "var(--color-accent-800)", padding: "10px 14px", borderRadius: 12, fontSize: 13 }}>{error}</div>}
+
+            {/* Actions */}
+            <div style={{ display: "flex", gap: 10 }}>
+              <button className="btn btn-secondary" style={{ gap: 7 }} disabled={busy} onClick={toggleStatus}>
+                {u.isActive ? <><Ban size={15} strokeWidth={2.5} /> Ban user</> : <><CheckCircle2 size={15} strokeWidth={2.5} /> Reactivate</>}
+              </button>
+              <button className="btn btn-ghost" style={{ gap: 7, color: "var(--color-accent-800)", marginLeft: "auto" }} disabled={busy} onClick={remove}>
+                <Trash2 size={15} strokeWidth={2.5} /> Delete
+              </button>
+            </div>
+
+            {/* Activity stats */}
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: muted(58), textTransform: "uppercase", letterSpacing: ".06em", margin: "2px 0 10px" }}>Activity</div>
+              <div style={{ display: "grid", gridTemplateColumns: "repeat(3, 1fr)", gap: 8 }}>
+                <StatCell label="Points" value={u.points} />
+                <StatCell label="Submissions" value={c.submissions} />
+                <StatCell label="Solved" value={c.problemSolved} />
+                <StatCell label="Solutions" value={c.solutions} />
+                <StatCell label="Discussions" value={c.discussions} />
+                <StatCell label="Comments" value={c.comments} />
+                <StatCell label="Contests" value={c.contestParticipants} />
+                <StatCell label="Followers" value={c.followers} />
+                <StatCell label="Following" value={c.following} />
+              </div>
+            </div>
+
+            {/* Account fields */}
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: muted(58), textTransform: "uppercase", letterSpacing: ".06em", margin: "2px 0 4px" }}>Account</div>
+              <Field label="User ID"><code style={{ fontSize: 12 }}>{u.id}</code></Field>
+              <Field label="Email">
+                <span style={{ display: "inline-flex", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
+                  <Mail size={13} style={{ color: muted(50) }} /> {u.email}
+                  {u.emailVerified ? (
+                    <span className="tag tag-accent-2" style={{ fontSize: 10 }}>Verified</span>
+                  ) : (
+                    <span className="tag tag-neutral" style={{ fontSize: 10 }}>Unverified</span>
+                  )}
+                </span>
+              </Field>
+              <Field label="Status">{u.isActive ? <span className="tag tag-accent-2">Active</span> : <span className="tag tag-neutral">Banned</span>}</Field>
+              {u.bio && <Field label="Bio">{u.bio}</Field>}
+              {u.githubUrl && (
+                <Field label="GitHub">
+                  <a href={u.githubUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--color-accent-800)" }}>
+                    <Github size={13} /> {u.githubUrl}
+                  </a>
+                </Field>
+              )}
+              {u.websiteUrl && (
+                <Field label="Website">
+                  <a href={u.websiteUrl} target="_blank" rel="noreferrer" style={{ display: "inline-flex", alignItems: "center", gap: 6, color: "var(--color-accent-800)" }}>
+                    <Globe size={13} /> {u.websiteUrl}
+                  </a>
+                </Field>
+              )}
+              <Field label="OAuth">
+                {u.oauthAccounts?.length ? u.oauthAccounts.map((o) => <span key={o.provider} className="tag tag-neutral" style={{ marginRight: 6 }}>{o.provider}</span>) : <span style={{ color: muted(50) }}>Password login</span>}
+              </Field>
+              {(u.donationCount > 0 || u.totalDonated > 0) && (
+                <Field label="Donated">₹{Math.round(u.totalDonated).toLocaleString("en-IN")} · {u.donationCount} payment{u.donationCount === 1 ? "" : "s"}</Field>
+              )}
+            </div>
+
+            {/* Timeline */}
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: muted(58), textTransform: "uppercase", letterSpacing: ".06em", margin: "2px 0 4px" }}>Timeline</div>
+              <Field label="Joined">{fmtDateTime(u.createdAt)}</Field>
+              <Field label="Last login">{fmtDateTime(u.lastLoginAt)}</Field>
+              <Field label="Last seen">{fmtDateTime(u.lastSeenAt)}</Field>
+              <Field label="Updated">{fmtDateTime(u.updatedAt)}</Field>
+            </div>
+
+            {/* Recent submissions */}
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 700, color: muted(58), textTransform: "uppercase", letterSpacing: ".06em", margin: "2px 0 10px" }}>Recent submissions</div>
+              {u.recentSubmissions?.length ? (
+                <div style={{ border: "1px solid var(--color-divider)", borderRadius: 12, overflow: "hidden" }}>
+                  {u.recentSubmissions.map((s, i) => (
+                    <div key={s.id} style={{ display: "flex", alignItems: "center", gap: 10, padding: "9px 12px", borderBottom: i === u.recentSubmissions.length - 1 ? "none" : "1px solid var(--color-divider)" }}>
+                      <span style={{ flex: 1, minWidth: 0, fontSize: 13, fontWeight: 500, whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>{s.problem?.title || "—"}</span>
+                      <span style={{ fontSize: 11, fontWeight: 700, color: s.status === "Accepted" ? "var(--color-accent-2-700)" : muted(55) }}>{s.status}</span>
+                      <span style={{ fontSize: 11, color: muted(45), display: "inline-flex", alignItems: "center", gap: 4 }}><Clock size={11} /> {fmtRel(s.createdAt)}</span>
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <div style={{ padding: "12px 0", textAlign: "center", color: muted(50), fontSize: 13 }}>No submissions yet.</div>
+              )}
+            </div>
+          </div>
+        ) : null}
+      </div>
     </div>
   );
 }

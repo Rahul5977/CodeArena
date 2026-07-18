@@ -1,9 +1,11 @@
+import { useEffect } from "react";
 import { NavLink, Link, useLocation, useNavigate, Outlet } from "react-router-dom";
 import {
   Code2, LayoutDashboard, Library, ListChecks, Trophy, BarChart3,
   FileCheck2, MessagesSquare, User, Settings, ShieldCheck, Heart, Flame, Bell, Search, LogOut, Info,
 } from "lucide-react";
 import { useAuth } from "../store/auth.js";
+import { api } from "../lib/api.js";
 import VerifyBanner from "./VerifyBanner.jsx";
 
 // Sidebar model — mirrors AppShell.dc.html. `title` drives the top-bar heading;
@@ -56,6 +58,23 @@ export default function AppShell() {
     await logout();
     navigate("/login", { replace: true });
   };
+
+  // Liveness heartbeat — ping while the app is open so the admin "live now" list
+  // stays current. Only when a tab is visible, so backgrounded tabs don't count.
+  useEffect(() => {
+    if (!user?.id) return;
+    const ping = () => {
+      if (document.visibilityState === "visible") api.post("/auth/heartbeat").catch(() => {});
+    };
+    ping();
+    const id = setInterval(ping, 45000);
+    const onVisible = () => document.visibilityState === "visible" && ping();
+    document.addEventListener("visibilitychange", onVisible);
+    return () => {
+      clearInterval(id);
+      document.removeEventListener("visibilitychange", onVisible);
+    };
+  }, [user?.id]);
 
   return (
     <div style={{ display: "flex", width: "100%", height: "100%", background: "var(--color-bg)", color: "var(--color-text)", fontFamily: "var(--font-body)", overflow: "hidden" }}>

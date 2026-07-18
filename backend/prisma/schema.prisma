@@ -54,6 +54,7 @@ model User {
   emailVerified          Boolean   @default(false)
   emailVerificationToken String?
   lastLoginAt            DateTime?
+  lastSeenAt             DateTime? // heartbeat: last time the app was open — drives "live now"
   isActive               Boolean   @default(true)
   createdAt              DateTime  @default(now())
   updatedAt              DateTime  @updatedAt
@@ -89,6 +90,8 @@ model User {
 
   @@index([email])
   @@index([username])
+  @@index([lastSeenAt])
+  @@index([lastLoginAt])
 }
 
 model OAuthAccount {
