@@ -46,8 +46,14 @@ export const submitBatch = async (submissions) => {
 
 // Poll until every submission leaves the queued/processing states (status.id 1/2),
 // then return the full result objects in order.
+//
+// Budget: compiled languages (C++/Java) compile ONCE PER TESTCASE and Codebox
+// runs them serially, so a MEDIUM/HARD problem with 40–75 testcases can take
+// well over a minute end-to-end. We poll for up to ~3 min at a 2s cadence — the
+// slower cadence also keeps us under Codebox's request-rate limiter. A transient
+// 429 (rate-limit) during a poll is retried, not treated as a hard failure.
 export const pollBatchResults = async (tokens) => {
-  const maxAttempts = 40;
+  const maxAttempts = 90; // 90 × 2s ≈ 180s ceiling
   for (let attempt = 0; attempt < maxAttempts; attempt++) {
     const merged = [];
     try {
@@ -59,13 +65,18 @@ export const pollBatchResults = async (tokens) => {
         merged.push(...data.submissions);
       }
     } catch (error) {
+      // Rate-limited by Codebox — back off and re-poll rather than failing the run.
+      if (error.response?.status === 429) {
+        await sleep(2000);
+        continue;
+      }
       console.error("Executor poll error:", error.response?.data || error.message);
       throw new Error(`Failed to get results: ${error.response?.data?.message || error.message}`);
     }
 
     const done = merged.every((r) => r.status && r.status.id !== 1 && r.status.id !== 2);
     if (done) return merged;
-    await sleep(1000);
+    await sleep(2000);
   }
   throw new Error("Execution timeout - results not available");
 };
