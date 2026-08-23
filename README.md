@@ -1,4 +1,4 @@
-# CodeArena — Project README & Interview Prep
+# CodeArena — Project README
 
 > An online coding-judge platform (LeetCode-style) — problems, contests with live leaderboards, DSA sheets, community solutions/discussions — with **server-side verdicting** and an **isolated code-execution pipeline**.
 > Live: https://codearena.kodexa.in
