@@ -162,6 +162,38 @@ export const PROBLEMS = [
         "const n = Number(require('fs').readFileSync(0, 'utf8').replace(/\\r?\\n$/, ''));\nlet a = 0, b = 1;\nfor (let i = 0; i < n; i++) { [a, b] = [b, a + b]; }\nconsole.log(a);\n",
     },
   },
+  {
+    slug: "next-greater-element",
+    title: "Next Greater Element",
+    difficulty: "MEDIUM",
+    tags: ["Array", "Stack", "Monotonic Stack"],
+    description:
+      "Given an array of integers **nums**, for each element find the *next greater element* to its right — the first element that is strictly greater than it. If no such element exists, use **-1**. Print the results for all elements, space-separated, in the original order.",
+    constraints: "1 <= n <= 100000; -1000000000 <= nums[i] <= 1000000000",
+    examples: [
+      { input: "4\n4 5 2 25", output: "5 25 25 -1", explanation: "For 4 -> 5, for 5 -> 25, for 2 -> 25, for 25 -> none so -1." },
+    ],
+    testcases: [
+      { input: "4\n4 5 2 25", output: "5 25 25 -1" },
+      { input: "4\n13 7 6 12", output: "-1 12 12 -1" },
+      { input: "1\n5", output: "-1" },
+      { input: "5\n1 2 3 4 5", output: "2 3 4 5 -1" },
+      { input: "5\n5 4 3 2 1", output: "-1 -1 -1 -1 -1" },
+      { input: "6\n2 7 3 5 4 6", output: "7 -1 5 6 6 -1" },
+    ],
+    codeSnippets: {
+      PYTHON:
+        "import sys\ndata = sys.stdin.read().split('\\n')\nn = int(data[0])\nnums = list(map(int, data[1].split()))\n# print(...)\n",
+      JAVASCRIPT:
+        "const lines = require('fs').readFileSync(0, 'utf8').split('\\n');\nconst n = Number(lines[0]);\nconst nums = lines[1].trim().split(/\\s+/).map(Number);\n// console.log(...);\n",
+    },
+    referenceSolutions: {
+      PYTHON:
+        "import sys\ndata = sys.stdin.read().split('\\n')\nn = int(data[0])\nnums = list(map(int, data[1].split()))\nres = [-1] * n\nstack = []\nfor i in range(n):\n    while stack and nums[stack[-1]] < nums[i]:\n        res[stack.pop()] = nums[i]\n    stack.append(i)\nprint(' '.join(map(str, res)))\n",
+      JAVASCRIPT:
+        "const lines = require('fs').readFileSync(0, 'utf8').split('\\n');\nconst n = Number(lines[0]);\nconst nums = lines[1].trim().split(/\\s+/).map(Number);\nconst res = new Array(n).fill(-1);\nconst stack = [];\nfor (let i = 0; i < n; i++) {\n  while (stack.length && nums[stack[stack.length - 1]] < nums[i]) {\n    res[stack.pop()] = nums[i];\n  }\n  stack.push(i);\n}\nconsole.log(res.join(' '));\n",
+    },
+  },
 ];
 
 async function main() {
