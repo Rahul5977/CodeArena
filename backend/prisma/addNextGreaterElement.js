@@ -6,6 +6,7 @@
 // Run: `node prisma/addNextGreaterElement.js`.
 import "dotenv/config";
 import { PrismaClient } from "../src/generated/prisma/index.js";
+import { withIoFormat } from "./problemIoFormats.js";
 import { getJudge0LanguageId, submitBatch, pollBatchResults } from "../src/libs/executor.lib.js";
 
 const db = new PrismaClient();
@@ -82,10 +83,11 @@ async function main() {
   const admin = await db.user.findUnique({ where: { email: adminEmail } });
   if (!admin) throw new Error(`Admin user ${adminEmail} not found — run prisma/seed.js or resetProblems.js first`);
 
+  const data = { ...PROBLEM, description: withIoFormat(PROBLEM.slug, PROBLEM.description), published: true, authorId: admin.id };
   const problem = await db.problem.upsert({
     where: { slug: PROBLEM.slug },
-    update: { ...PROBLEM, published: true, authorId: admin.id },
-    create: { ...PROBLEM, published: true, authorId: admin.id },
+    update: data,
+    create: data,
   });
 
   const count = await db.problem.count();

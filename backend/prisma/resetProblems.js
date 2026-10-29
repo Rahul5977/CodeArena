@@ -7,6 +7,7 @@
 import "dotenv/config";
 import bcrypt from "bcryptjs";
 import { PrismaClient } from "../src/generated/prisma/index.js";
+import { withIoFormat } from "./problemIoFormats.js";
 
 const db = new PrismaClient();
 const adminEmail = (process.env.ADMIN_EMAIL || "admin@codearena.local").toLowerCase();
@@ -207,7 +208,7 @@ async function main() {
   const deleted = await db.problem.deleteMany({});
 
   for (const p of PROBLEMS) {
-    await db.problem.create({ data: { ...p, published: true, authorId: admin.id } });
+    await db.problem.create({ data: { ...p, description: withIoFormat(p.slug, p.description), published: true, authorId: admin.id } });
   }
 
   const count = await db.problem.count();
