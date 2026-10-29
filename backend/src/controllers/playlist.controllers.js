@@ -43,7 +43,7 @@ export const getAllListDetails = async (req, res) => {
       include: {
         problems: {
           include: {
-            problem: true,
+            problem: { select: { id: true, slug: true, title: true, difficulty: true, tags: true } },
           },
         },
       },
@@ -72,7 +72,7 @@ export const getPlaylistDetail = async (req, res) => {
       include: {
         problems: {
           include: {
-            problem: true,
+            problem: { select: { id: true, slug: true, title: true, difficulty: true, tags: true } },
           },
         },
       },

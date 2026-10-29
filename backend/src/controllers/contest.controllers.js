@@ -244,7 +244,7 @@ export const submitContestProblem = asyncHandler(async (req, res) => {
     throw new ApiError(429, "Too many submissions in a short period. Please wait before submitting again.");
   }
 
-  const problem = await db.problem.findUnique({ where: { id: problemId } });
+  const problem = await db.problem.findUnique({ where: { id: problemId }, select: { id: true, testcases: true } });
   if (!problem) throw new ApiError(404, "Problem not found");
 
   const testcases = problem.testcases || [];

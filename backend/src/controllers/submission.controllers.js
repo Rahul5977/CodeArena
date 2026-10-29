@@ -56,7 +56,11 @@ export const getSubmissionById = async (req, res) => {
     const submission = await db.submission.findFirst({
       where: { id: req.params.id, userId: req.user.id },
       include: {
-        testCases: { orderBy: { testCase: "asc" } },
+        // Verdict-only per testcase: expected/stdout/stderr would reveal hidden I/O.
+        testCases: {
+          orderBy: { testCase: "asc" },
+          select: { id: true, testCase: true, passed: true, status: true, time: true, memory: true, compileOutput: true },
+        },
         problem: { select: { title: true, slug: true, difficulty: true } },
       },
     });

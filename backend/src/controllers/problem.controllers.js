@@ -201,7 +201,8 @@ export const getAllProblemById = async (req, res) => {
     const where = id.includes("-") && id.length === 36 ? { id } : { slug: id };
     const problem = await db.problem.findUnique({
       where,
-      ...(isAdmin(req) ? {} : { select: PUBLIC_DETAIL_SELECT }),
+      // Admins (problem editor) opt back in to the globally-omitted answer fields.
+      ...(isAdmin(req) ? { omit: { testcases: false, referenceSolutions: false } } : { select: PUBLIC_DETAIL_SELECT }),
     });
 
     if (!problem) return res.status(404).json({ success: false, error: "No problem found" });
