@@ -3,6 +3,8 @@ import { useParams, Link } from "react-router-dom";
 import { Trophy, Clock, Users, ListChecks, CheckCircle2 } from "lucide-react";
 import BackLink from "../components/BackLink.jsx";
 import { api } from "../lib/api.js";
+import { useContestBoard, useOwnContestRank } from "../lib/useContestBoard.js";
+import { useAuth } from "../store/auth.js";
 import Spinner from "../components/Spinner.jsx";
 
 const muted = (p = 60) => `color-mix(in srgb, var(--color-text) ${p}%, transparent)`;
@@ -233,37 +235,29 @@ function ProblemsTab({ contest, problems }) {
 }
 
 function ContestLeaderboard({ id, live }) {
-  const [rows, setRows] = useState(null);
+  const { rows, truncated, loadFailed } = useContestBoard(id, live);
+  const userId = useAuth((s) => s.user?.id);
+  const needsOwnRank = truncated && !!userId && !rows.some((r) => r.userId === userId);
+  const ownEntry = useOwnContestRank(id, live, needsOwnRank);
 
-  useEffect(() => {
-    let active = true;
-    const fetchBoard = () =>
-      api
-        .get(`/contests/${id}/leaderboard`)
-        .then(({ data }) => active && setRows(data.leaderboard || []))
-        .catch(() => active && setRows([]));
-    fetchBoard();
-    // While the contest is live, keep the board fresh.
-    const timer = live ? setInterval(fetchBoard, 10000) : null;
-    return () => {
-      active = false;
-      if (timer) clearInterval(timer);
-    };
-  }, [id, live]);
-
-  if (rows === null) return <Spinner label="Loading leaderboard…" />;
+  if (rows === null) {
+    if (loadFailed) {
+      return <div style={{ ...surface, padding: "36px 40px", textAlign: "center", color: muted(60) }}>Couldn't load the leaderboard. Please try again.</div>;
+    }
+    return <Spinner label="Loading leaderboard…" />;
+  }
   if (rows.length === 0) {
     return <div style={{ ...surface, padding: "36px 40px", textAlign: "center", color: muted(60) }}>No submissions yet.</div>;
   }
 
   const top3 = rows.slice(0, 3);
-  const rest = rows.slice(3);
+  const rest = ownEntry ? [...rows.slice(3), ownEntry] : rows.slice(3);
 
   return (
     <div>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 18 }}>
         {top3.map((u, i) => (
-          <div key={u.userId} style={{ ...surface, padding: "22px 18px", textAlign: "center", order: i === 0 ? 2 : i === 1 ? 1 : 3, transform: i === 0 ? "scale(1.04)" : "none" }}>
+          <div key={u.userId}style={{ ...surface, padding: "22px 18px", textAlign: "center", order: i === 0 ? 2 : i === 1 ? 1 : 3, transform: i === 0 ? "scale(1.04)" : "none" }}>
             <div style={{ width: 52, height: 52, borderRadius: "50%", margin: "0 auto 10px", background: PODIUM[i], color: "var(--color-bg)", display: "flex", alignItems: "center", justifyContent: "center", fontFamily: "var(--font-heading)", fontSize: 18 }}>{initials(u.user?.name)}</div>
             <div style={{ fontSize: 12, fontWeight: 700, color: PODIUM[i] }}>#{u.rank}</div>
             <div style={{ fontFamily: "var(--font-heading)", fontSize: 16, margin: "3px 0" }}>{u.user?.name}</div>
@@ -286,7 +280,7 @@ function ContestLeaderboard({ id, live }) {
             </thead>
             <tbody>
               {rest.map((u) => (
-                <tr key={u.userId}>
+                <tr key={u.userId} style={u === ownEntry ? { background: "var(--color-accent-100)" } : undefined}>
                   <td style={{ fontVariantNumeric: "tabular-nums", color: muted(60) }}>#{u.rank}</td>
                   <td>
                     <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
@@ -304,6 +298,7 @@ function ContestLeaderboard({ id, live }) {
           </table>
         </div>
       )}
+      {truncated && <div style={{ marginTop: 12, fontSize: 12, textAlign: "center", color: muted(55) }}>Showing the top {rows.length}</div>}
     </div>
   );
 }

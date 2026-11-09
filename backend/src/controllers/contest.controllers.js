@@ -3,6 +3,12 @@ import { db } from "../libs/db.js";
 import { ApiError } from "../utils/api-error.js";
 import { submitBatch, pollBatchResults, getLanguageName } from "../libs/executor.lib.js";
 import { getIO } from "../libs/socket.js";
+import { createCache } from "../libs/cache.js";
+
+const LEADERBOARD_LIMIT = 100;
+const LEADERBOARD_CACHE_MS = 5000;
+const LEADERBOARD_BROADCAST_MS = 3000;
+const LEADERBOARD_USER = { select: { id: true, name: true, username: true, image: true } };
 
 // Answer-free projection used everywhere a registered participant reads a
 // contest problem. Excludes testcases/referenceSolutions (the answers).
@@ -289,7 +295,7 @@ export const submitContestProblem = asyncHandler(async (req, res) => {
 
   if (firstAC) {
     await updateLeaderboard(contestId, userId, 100, penaltyMinutes);
-    getIO()?.to(`contest_${contestId}`).emit("leaderboardUpdate", await getContestLeaderboardData(contestId));
+    scheduleLeaderboardBroadcast(contestId);
   }
 
   return res.status(200).json({
@@ -323,30 +329,83 @@ export const updateLeaderboard = async (contestId, userId, scoreToAdd, penaltyTo
   });
 };
 
-// Plain helper — the ranked leaderboard array for a contest.
+const toLeaderboardEntry = (entry, rank) => ({
+  rank,
+  userId: entry.userId,
+  user: entry.user,
+  totalScore: entry.totalScore,
+  penalty: entry.penalty,
+  problemsSolved: entry.problemsSolved,
+  lastSubmission: entry.lastSubmission,
+});
+
+// Plain helper — the top of the ranked board. generatedAt lets clients discard
+// a REST response that arrives after a newer socket push.
 export const getContestLeaderboardData = async (contestId) => {
-  const leaderboard = await db.contestLeaderboard.findMany({
+  const generatedAt = Date.now();
+  const rows = await db.contestLeaderboard.findMany({
     where: { contestId },
-    include: {
-      user: { select: { id: true, name: true, username: true, image: true } },
-    },
+    include: { user: LEADERBOARD_USER },
     orderBy: [{ totalScore: "desc" }, { penalty: "asc" }, { lastSubmission: "asc" }],
+    take: LEADERBOARD_LIMIT + 1,
   });
 
-  return leaderboard.map((entry, i) => ({
-    rank: i + 1,
-    userId: entry.userId,
-    user: entry.user,
-    totalScore: entry.totalScore,
-    penalty: entry.penalty,
-    problemsSolved: entry.problemsSolved,
-    lastSubmission: entry.lastSubmission,
-  }));
+  return {
+    leaderboard: rows.slice(0, LEADERBOARD_LIMIT).map((entry, i) => toLeaderboardEntry(entry, i + 1)),
+    truncated: rows.length > LEADERBOARD_LIMIT,
+    generatedAt,
+  };
+};
+
+const contestBoardCache = createCache({ ttlMs: LEADERBOARD_CACHE_MS, load: getContestLeaderboardData });
+
+// Coalesces a burst of accepted submissions into one query and one emit per
+// window. The flush also refreshes the cache, so a client that joins the room
+// and then reads the board can't miss an update between the two.
+const pendingBroadcasts = new Set();
+const scheduleLeaderboardBroadcast = (contestId) => {
+  if (pendingBroadcasts.has(contestId)) return;
+  pendingBroadcasts.add(contestId);
+  setTimeout(async () => {
+    pendingBroadcasts.delete(contestId);
+    try {
+      const board = await contestBoardCache.refresh(contestId);
+      getIO()?.to(`contest_${contestId}`).emit("leaderboardUpdate", board);
+    } catch (error) {
+      console.error("Leaderboard broadcast error:", error);
+      scheduleLeaderboardBroadcast(contestId); // no later AC may come to deliver this one
+    }
+  }, LEADERBOARD_BROADCAST_MS);
 };
 
 export const getLeaderboard = asyncHandler(async (req, res) => {
-  const leaderboard = await getContestLeaderboardData(req.params.contestId);
-  return res.status(200).json({ success: true, leaderboard });
+  const board = await contestBoardCache.get(req.params.contestId);
+  return res.status(200).json({ success: true, ...board });
+});
+
+// The viewer's own row, for when they fall outside the capped board. Mirrors
+// the board's ORDER BY (a NULL lastSubmission sorts last in Postgres ASC).
+export const getMyLeaderboardEntry = asyncHandler(async (req, res) => {
+  const { contestId } = req.params;
+  const entry = await db.contestLeaderboard.findUnique({
+    where: { userId_contestId: { userId: req.user.id, contestId } },
+    include: { user: LEADERBOARD_USER },
+  });
+  if (!entry) return res.status(200).json({ success: true, entry: null });
+
+  const { totalScore, penalty, lastSubmission } = entry;
+  const ahead = await db.contestLeaderboard.count({
+    where: {
+      contestId,
+      OR: [
+        { totalScore: { gt: totalScore } },
+        { totalScore, penalty: { lt: penalty } },
+        { totalScore, penalty, lastSubmission: lastSubmission ? { lt: lastSubmission } : { not: null } },
+      ],
+    },
+  });
+
+  return res.status(200).json({ success: true, entry: toLeaderboardEntry(entry, ahead + 1) });
 });
 
 export const getMyContestSubmissions = asyncHandler(async (req, res) => {

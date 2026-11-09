@@ -1,5 +1,6 @@
 import { Server } from "socket.io";
 import jwt from "jsonwebtoken";
+import cookieParser from "cookie-parser";
 import { db } from "./db.js";
 
 let io;
@@ -14,9 +15,12 @@ export const initializeSocket = (server) => {
       credentials: true,
     },
   });
-  // Middleware to authenticate socket connections
+  io.engine.use(cookieParser());
+  // Middleware to authenticate socket connections. Browsers authenticate with
+  // the httpOnly cookie; handshake.auth.token is for non-browser clients.
   io.use(async (socket, next) => {
-    const token = socket.handshake.auth.token;
+    const { accessToken, jwt: legacyToken } = socket.request.cookies || {};
+    const token = accessToken || legacyToken || socket.handshake.auth.token;
     if (!token) {
       return next(new Error("Authentication error"));
     }
@@ -24,9 +28,9 @@ export const initializeSocket = (server) => {
       const decoded = jwt.verify(token, process.env.SECRET);
       const user = await db.user.findUnique({
         where: { id: decoded.id },
-        select: { id: true, name: true, email: true, role: true },
+        select: { id: true, name: true, email: true, role: true, isActive: true },
       });
-      if (!user) {
+      if (!user?.isActive) {
         return next(new Error("Authentication error"));
       }
       socket.userId = user.id;
@@ -39,9 +43,11 @@ export const initializeSocket = (server) => {
   io.on("connection", (socket) => {
     console.log(`User ${socket.user.name} connected: ${socket.id}`);
     //join contest room
-    socket.on("joinContest", (contestId) => {
+    socket.on("joinContest", (contestId, ack) => {
+      if (typeof contestId !== "string") return;
       socket.join(`contest_${contestId}`);
       console.log(`User ${socket.user.name} joined contest room: contest_${contestId}`);
+      if (typeof ack === "function") ack();
     });
     //leave contest room
     socket.on("leaveContest", (contestId) => {

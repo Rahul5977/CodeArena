@@ -290,10 +290,11 @@ Prisma schema highlights (`backend/prisma/schema.prisma`, 4 migrations):
 ## 9. Contests & real-time leaderboard
 
 - Scoring in `contest.controllers.js`: first AC on a problem = 100 points + penalty = minutes since contest start; subsequent ACs don't re-score. Leaderboard `ORDER BY totalScore DESC, penalty ASC, lastSubmission ASC`.
-- After every accepted contest submission: `updateLeaderboard` (Prisma upsert with `increment`) then `io.to("contest_<id>").emit("leaderboardUpdate", fullBoard)`.
-- Clients `joinContest` on mount, `leaveContest` on unmount; Socket.IO handshake is JWT-authenticated.
+- After every accepted contest submission: `updateLeaderboard` (Prisma upsert with `increment`), then a per-contest broadcast is scheduled. Accepted submissions within a 3s window share one query and one `io.to("contest_<id>").emit("leaderboardUpdate", board)`.
+- The board is capped at the top 100; viewers outside it get their own row from `GET /contests/:id/leaderboard/me`. REST reads go through a 5s in-process cache (60s for the global board).
+- While a contest is live, clients `joinContest` on every connect, then read the board once. If the socket is down they poll every 30s. The Socket.IO handshake authenticates with the httpOnly access-token cookie.
 
-**🎤 Why push the whole leaderboard rather than a delta?** Boards are ≤ a few hundred rows; simplicity wins, and it's self-healing (a missed event doesn't leave a client stale). **Scaling:** the Socket.IO Redis adapter so multiple API processes share rooms; throttle emits to at most once per second per contest.
+**🎤 Why push the board rather than a delta?** It's capped at 100 rows, so simplicity wins, and it's self-healing (a missed event doesn't leave a client stale). **Scaling:** the Socket.IO Redis adapter so multiple API processes share rooms, and move the in-process cache to Redis at the same time.
 
 ---
 

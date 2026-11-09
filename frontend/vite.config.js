@@ -15,6 +15,11 @@ export default defineConfig({
         target: process.env.VITE_PROXY_TARGET || "http://localhost:8080",
         changeOrigin: true,
       },
+      "/socket.io": {
+        target: process.env.VITE_PROXY_TARGET || "http://localhost:8080",
+        changeOrigin: true,
+        ws: true,
+      },
     },
   },
   define: {

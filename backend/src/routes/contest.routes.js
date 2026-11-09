@@ -8,6 +8,7 @@ import {
   getContestProblem,
   submitContestProblem,
   getLeaderboard,
+  getMyLeaderboardEntry,
   getMyContestSubmissions,
   updateContest,
   updateContestStatus,
@@ -20,6 +21,7 @@ const contestRoutes = express.Router();
 contestRoutes.get("/", authMiddleware, getAllContests);
 contestRoutes.get("/:contestId", authMiddleware, getContestById);
 contestRoutes.get("/:contestId/leaderboard", authMiddleware, getLeaderboard);
+contestRoutes.get("/:contestId/leaderboard/me", authMiddleware, getMyLeaderboardEntry);
 
 // Participant routes
 contestRoutes.post("/:contestId/register", authMiddleware, registerForContest);
