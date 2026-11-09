@@ -72,6 +72,21 @@ export const getSubmissionById = async (req, res) => {
   }
 };
 
+// Status of a submission being judged, for clients that missed the socket event.
+export const getSubmissionJob = async (req, res) => {
+  try {
+    const job = await db.submissionJob.findFirst({
+      where: { id: req.params.id, userId: req.user.id },
+      select: { id: true, status: true, result: true },
+    });
+    if (!job) return res.status(404).json({ success: false, message: "Submission not found" });
+    res.status(200).json({ success: true, job });
+  } catch (error) {
+    console.error("Fetch Submission Job Error:", error);
+    res.status(500).json({ success: false, message: "Failed to fetch submission" });
+  }
+};
+
 export const getAllTheSubmissionsForProblem = async (req, res) => {
   try {
     const count = await db.submission.count({ where: { problemId: req.params.problemId } });

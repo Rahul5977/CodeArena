@@ -1,14 +1,8 @@
 import { asyncHandler } from "../utils/asyncHandler.js";
 import { db } from "../libs/db.js";
 import { ApiError } from "../utils/api-error.js";
-import { submitBatch, pollBatchResults, getLanguageName } from "../libs/executor.lib.js";
-import { getIO } from "../libs/socket.js";
-import { createCache } from "../libs/cache.js";
-
-const LEADERBOARD_LIMIT = 100;
-const LEADERBOARD_CACHE_MS = 5000;
-const LEADERBOARD_BROADCAST_MS = 3000;
-const LEADERBOARD_USER = { select: { id: true, name: true, username: true, image: true } };
+import { enqueueSubmission } from "../libs/submissionJobs.lib.js";
+import { LEADERBOARD_USER, contestBoardCache, toLeaderboardEntry } from "../libs/contestLeaderboard.lib.js";
 
 // Answer-free projection used everywhere a registered participant reads a
 // contest problem. Excludes testcases/referenceSolutions (the answers).
@@ -243,8 +237,8 @@ export const submitContestProblem = asyncHandler(async (req, res) => {
 
   // Anti-flood: cap submissions per (user, contest, problem) in the last minute.
   const oneMinuteAgo = new Date(now.getTime() - 60 * 1000);
-  const recentSubmissions = await db.contestSubmission.count({
-    where: { userId, contestId, problemId, submittedAt: { gte: oneMinuteAgo } },
+  const recentSubmissions = await db.submissionJob.count({
+    where: { userId, contestId, problemId, createdAt: { gte: oneMinuteAgo }, status: { not: "FAILED" } },
   });
   if (recentSubmissions >= 5) {
     throw new ApiError(429, "Too many submissions in a short period. Please wait before submitting again.");
@@ -257,126 +251,9 @@ export const submitContestProblem = asyncHandler(async (req, res) => {
   if (!Array.isArray(testcases) || testcases.length === 0) {
     throw new ApiError(400, "This problem has no testcases yet");
   }
-  const submissions = testcases.map((tc) => ({ source_code, language_id, stdin: tc.input }));
-
-  const submitResponse = await submitBatch(submissions);
-  const tokens = submitResponse.map((sub) => sub.token);
-  const results = await pollBatchResults(tokens);
-
-  let allPassed = true;
-  const detailedResults = results.map((result, index) => {
-    const stdout = (result.stdout || "").trim();
-    const expected = (testcases[index].output || "").trim();
-    const passed = stdout === expected;
-    if (!passed) allPassed = false;
-    return { testCase: index + 1, passed, status: result.status?.description || "Unknown" };
-  });
-
-  const penaltyMinutes = Math.floor((now - contest.startTime) / 60000);
-
-  const existingAC = await db.contestSubmission.findFirst({
-    where: { userId, contestId, problemId, status: "Accepted" },
-  });
-  const firstAC = allPassed && !existingAC;
-  const score = firstAC ? 100 : 0;
-
-  await db.contestSubmission.create({
-    data: {
-      userId,
-      contestId,
-      problemId,
-      sourceCode: { code: source_code, language_id },
-      language: getLanguageName(language_id),
-      status: allPassed ? "Accepted" : "Wrong Answer",
-      score,
-      penalty: firstAC ? penaltyMinutes : 0,
-    },
-  });
-
-  if (firstAC) {
-    await updateLeaderboard(contestId, userId, 100, penaltyMinutes);
-    scheduleLeaderboardBroadcast(contestId);
-  }
-
-  return res.status(200).json({
-    success: true,
-    status: allPassed ? "Accepted" : "Wrong Answer",
-    passed: detailedResults.filter((r) => r.passed).length,
-    total: detailedResults.length,
-    results: detailedResults,
-    score,
-  });
+  const submissionId = await enqueueSubmission({ userId, problemId, contestId, sourceCode: source_code, languageId: language_id });
+  return res.status(202).json({ success: true, submissionId, status: "QUEUED" });
 });
-
-// Plain helper — upsert the leaderboard row for (user, contest).
-export const updateLeaderboard = async (contestId, userId, scoreToAdd, penaltyToAdd = 0) => {
-  await db.contestLeaderboard.upsert({
-    where: { userId_contestId: { userId, contestId } },
-    update: {
-      totalScore: { increment: scoreToAdd },
-      penalty: { increment: penaltyToAdd },
-      problemsSolved: { increment: 1 },
-      lastSubmission: new Date(),
-    },
-    create: {
-      userId,
-      contestId,
-      totalScore: scoreToAdd,
-      penalty: penaltyToAdd,
-      problemsSolved: 1,
-      lastSubmission: new Date(),
-    },
-  });
-};
-
-const toLeaderboardEntry = (entry, rank) => ({
-  rank,
-  userId: entry.userId,
-  user: entry.user,
-  totalScore: entry.totalScore,
-  penalty: entry.penalty,
-  problemsSolved: entry.problemsSolved,
-  lastSubmission: entry.lastSubmission,
-});
-
-// Plain helper — the top of the ranked board. generatedAt lets clients discard
-// a REST response that arrives after a newer socket push.
-export const getContestLeaderboardData = async (contestId) => {
-  const generatedAt = Date.now();
-  const rows = await db.contestLeaderboard.findMany({
-    where: { contestId },
-    include: { user: LEADERBOARD_USER },
-    orderBy: [{ totalScore: "desc" }, { penalty: "asc" }, { lastSubmission: "asc" }],
-    take: LEADERBOARD_LIMIT + 1,
-  });
-
-  return {
-    leaderboard: rows.slice(0, LEADERBOARD_LIMIT).map((entry, i) => toLeaderboardEntry(entry, i + 1)),
-    truncated: rows.length > LEADERBOARD_LIMIT,
-    generatedAt,
-  };
-};
-
-const contestBoardCache = createCache({ ttlMs: LEADERBOARD_CACHE_MS, load: getContestLeaderboardData });
-
-// Coalesces a burst of accepted submissions into one query and one emit per
-// window. The flush also refreshes the cache, so a client that joins the room
-// and then reads the board can't miss an update between the two.
-const pendingBroadcasts = new Set();
-const scheduleLeaderboardBroadcast = (contestId) => {
-  if (pendingBroadcasts.has(contestId)) return;
-  pendingBroadcasts.add(contestId);
-  setTimeout(async () => {
-    pendingBroadcasts.delete(contestId);
-    try {
-      const board = await contestBoardCache.refresh(contestId);
-      getIO()?.to(`contest_${contestId}`).emit("leaderboardUpdate", board);
-    } catch (error) {
-      console.error("Leaderboard broadcast error:", error);
-      scheduleLeaderboardBroadcast(contestId); // no later AC may come to deliver this one
-    }
-  }, LEADERBOARD_BROADCAST_MS);
-};
 
 export const getLeaderboard = asyncHandler(async (req, res) => {
   const board = await contestBoardCache.get(req.params.contestId);

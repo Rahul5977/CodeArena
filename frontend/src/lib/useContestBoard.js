@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
-import { io } from "socket.io-client";
 import { api } from "./api.js";
+import { createSocket } from "./socket.js";
 
 const DISCONNECTED_POLL_MS = 30000;
 const OWN_RANK_POLL_MS = 30000;
@@ -37,7 +37,7 @@ export function useContestBoard(id, live) {
       };
     }
 
-    const socket = io(import.meta.env.VITE_WS_URL || undefined, { withCredentials: true, autoConnect: false });
+    const socket = createSocket();
     // Rooms don't survive a reconnect, so re-join every time. Read the board only
     // after the join is acknowledged, so no update can fall between the two.
     socket.on("connect", () => socket.emit("joinContest", id, () => fetchBoard()));

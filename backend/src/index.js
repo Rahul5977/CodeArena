@@ -26,6 +26,7 @@ import { donationWebhook } from "./controllers/donationWebhook.controllers.js";
 import { heartbeat } from "./controllers/auth.controllers.js";
 import { authMiddleware } from "./middleware/auth.middleware.js";
 import { startReconciler } from "./libs/reconcile.js";
+import { startSubmissionJobSweeper } from "./libs/submissionJobs.lib.js";
 
 import { httpLogger } from "./libs/logger.js";
 import { initializeSocket } from "./libs/socket.js";
@@ -125,6 +126,7 @@ server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
   console.log(`Environment: ${process.env.NODE_ENV || "development"}`);
   startReconciler(); // periodic payment reconciliation (no-op if Razorpay isn't configured)
+  startSubmissionJobSweeper(); // resume submissions interrupted by a restart
 });
 
 export default app;

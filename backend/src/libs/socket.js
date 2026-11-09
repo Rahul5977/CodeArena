@@ -42,6 +42,7 @@ export const initializeSocket = (server) => {
   });
   io.on("connection", (socket) => {
     console.log(`User ${socket.user.name} connected: ${socket.id}`);
+    socket.join(`user_${socket.userId}`); // verdicts for this user's submissions
     //join contest room
     socket.on("joinContest", (contestId, ack) => {
       if (typeof contestId !== "string") return;

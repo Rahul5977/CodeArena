@@ -82,11 +82,11 @@ This document does two jobs: it is the project README, **and** it is a line-by-l
 
 1. SPA `POST /api/v1/execute-code` `{ source_code, language_id, problemId }` (httpOnly JWT cookie rides along).
 2. Caddy routes `/api/*` → backend. `executeLimiter` (30/min/IP) + `authMiddleware` + `requireVerified`.
-3. Backend loads the problem's **full hidden testcases from Postgres** (`executeCode.controllers.js`).
-4. Builds N executor submissions (one per testcase), `submitBatch` → Codebox (chunked ≤20), gets tokens.
+3. Backend saves a `SubmissionJob` and immediately returns `202 { submissionId }`. The rest runs in the background (`submissionJobs.lib.js`); the job row is what lets it resume after a restart.
+4. Loads the problem's **full hidden testcases from Postgres**, builds N executor submissions (one per testcase), `submitBatch` → Codebox (chunked ≤20), and saves the tokens on the job.
 5. `pollBatchResults` polls `GET /submissions/batch?tokens=…` every 2 s until no result is in `queued/processing` (status id 1/2), ≤180 s.
-6. Compares `stdout.trim() === expected.trim()` per testcase; writes `Submission` + `TestCaseResult[]`; awards points on first AC.
-7. Returns **only** `{ status, passed, total, results:[{testCase, passed, status, time, memory}] }` — no stdin, no expected output, no stdout.
+6. Compares `stdout.trim() === expected.trim()` per testcase. In one transaction: marks the job done, writes `Submission` + `TestCaseResult[]`, awards points on first AC.
+7. Pushes **only** `{ status, passed, total, results:[{testCase, passed, status, time, memory}] }` to the user's Socket.IO room (`submissionResult`) — no stdin, no expected output, no stdout. `GET /submission/jobs/:id` returns the same for a client that missed the event.
 
 ---
 
@@ -102,7 +102,7 @@ The client never computes or sees a verdict input. The **only** thing the browse
 | Layer | File | Mechanism |
 |---|---|---|
 | **Read API** | `problem.controllers.js` → `PUBLIC_DETAIL_SELECT` / `PUBLIC_LIST_SELECT` | Prisma `select` whitelists that *omit* `testcases` and `referenceSolutions`. Non-admins can never fetch them — even `GET /problems/:id` uses the whitelist unless `req.user.role === "ADMIN"`. An allow-list (select) is safer than a deny-list (omit) because a new sensitive column is hidden by default. |
-| **Submit response** | `executeCode.controllers.js` final `res.json` | `results.map(r => ({ testCase, passed, status, time, memory }))` — strips `stdout`, `expected`, `stdin`, `stderr`. You learn *that* test 7 failed, not *what* test 7 was. |
+| **Submit result** | `toResult` in `submissionJobs.lib.js` | `results.map(r => ({ testCase, passed, status, time, memory }))` — strips `stdout`, `expected`, `stdin`, `stderr`. You learn *that* test 7 failed, not *what* test 7 was. |
 | **Run endpoint** | `runCode` | Executes only the user-supplied stdin, no DB read of testcases, no DB write. So "Run" can't be used as an oracle on hidden cases. |
 
 ### 🎤 Likely questions
@@ -170,13 +170,13 @@ Untrusted code is treated as a black box: stdin in → stdout out. No function-s
 **Q: Walk me through what happens when I click Submit, end to end.** → §3 request flow. Know the 7 steps cold.
 
 **Q: Why polling instead of webhooks/callbacks from the executor?**
-Judge0 supports `callback_url`, but polling keeps the executor unable to initiate connections into the app (simpler trust model, no public callback endpoint to secure), and for a same-host call the poll cost is trivial. Next step would be a job queue (BullMQ in the app) with the HTTP request returning a `submissionId` immediately and the client subscribing via Socket.IO — this also fixes the "request held open for 3 minutes" problem.
+Judge0 supports `callback_url`, but polling means no inbound endpoint to secure and no network route from the executor into the app, and for a same-host call the poll cost is trivial. Polling happens in a background job, not inside the HTTP request: submit returns a `submissionId` immediately and the verdict is pushed over Socket.IO. Next step would be one shared poller across all in-flight jobs.
 
 **Q: What stops a user from fork-bombing, reading `/etc/passwd`, or making network calls?**
 isolate: pid limits (`--processes`), memory/cpu/wall limits, own mount namespace with a minimal rootfs, no network namespace. Their code can't see the host, other submissions, or the Codebox Redis.
 
 **Q: What if Codebox is down?**
-`submitBatch` throws → controller returns 500 "Error running your code"; nothing is written to DB. The `/api/v1/health` endpoint checks DB only; adding a Codebox `/health` check is an obvious TODO.
+`submitBatch` throws → the job is marked `FAILED` and the client is told to retry; no `Submission` is written and no points move. The `/api/v1/health` endpoint checks DB only; adding a Codebox `/health` check is an obvious TODO.
 
 **Q: How would you scale execution?**
 Executor is the real bottleneck, not web traffic. Options in order: raise `WORKER_CONCURRENCY` with more cores → run Codebox workers on separate boxes pointed at one Redis queue → per-user submit quotas & a bounded queue so a "Run" stampede degrades gracefully instead of OOMing the host. Also compile once per submission and run N times (Judge0 can't; a custom worker could) — this alone would make C++/Java ~N× cheaper.
@@ -328,7 +328,6 @@ Interviewers respect candour. Lead with these before they find them.
 | Gap | Status | Fix |
 |---|---|---|
 | Redis unused by app code | Provisioned, idle | Rate-limit store (`rate-limit-redis`), refresh-token store, problem-list/leaderboard cache, Socket.IO adapter |
-| Submit holds the HTTP request open for up to 3 min | Works, but ties a Node event-loop slot & risks proxy timeouts | Enqueue → return `submissionId` → push verdict over Socket.IO |
 | Compile once per testcase (C++/Java) | Slow on 40–75-case problems | Custom worker step: compile once, run N times |
 | No tests | `backend/test.js` is a scratch file | Supertest integration tests for auth + execute + problem select-whitelist (a regression test that `testcases` never appears in a non-admin response is the single most valuable one) |
 | No CI/CD | Manual `git pull` | GitHub Actions → build images → SSH deploy; or Watchtower |

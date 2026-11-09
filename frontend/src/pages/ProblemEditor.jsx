@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import Editor from "@monaco-editor/react";
 import Split from "react-split";
 import { Play, Send, CheckCircle2, XCircle, FileText, History, ChevronDown, CornerUpLeft } from "lucide-react";
 import { api } from "../lib/api.js";
+import { waitForSubmission } from "../lib/waitForSubmission.js";
 import Spinner from "../components/Spinner.jsx";
 import Markdown from "../components/Markdown.jsx";
 import BackLink from "../components/BackLink.jsx";
@@ -72,6 +73,7 @@ export default function ProblemEditor() {
   const [subs, setSubs] = useState(null);
   const [subsLoading, setSubsLoading] = useState(false);
   const [openSub, setOpenSub] = useState(null);
+  const verdictWait = useRef(null);
 
   useEffect(() => {
     let active = true;
@@ -94,6 +96,7 @@ export default function ProblemEditor() {
       .finally(() => active && setLoading(false));
     return () => {
       active = false;
+      verdictWait.current?.abort(); // a verdict for the previous problem isn't wanted here
     };
   }, [problemKey, contestId, problemId]);
 
@@ -147,25 +150,29 @@ export default function ProblemEditor() {
     setSubmitting(true);
     setVerdict(null);
     setOutput(null);
+    const wait = new AbortController();
+    verdictWait.current = wait;
     try {
       // Contest mode: submit against the contest-scoped route (no sheet progress,
       // no inline submissions history) — just show the returned verdict.
       if (contestId) {
         const { data } = await api.post(`/contests/${contestId}/problems/${problemId}/submit`, { source_code: code, language_id: LANG_ID[lang] });
-        setVerdict(data);
+        setVerdict(await waitForSubmission(data.submissionId, wait.signal));
         return;
       }
       const { data } = await api.post("/execute-code", { source_code: code, language_id: LANG_ID[lang], problemId: problem.id });
-      setVerdict(data);
+      const result = await waitForSubmission(data.submissionId, wait.signal);
+      setVerdict(result);
       // When solved inside a sheet, record sheet progress (best-effort).
-      if (data.status === "Accepted" && sheetId) {
+      if (result.status === "Accepted" && sheetId) {
         api.post(`/sheets/${sheetId}/problems/${problem.id}/complete`).catch(() => {});
       }
       // Show THIS user's submissions for THIS problem (newest — the one just made — on top).
       await loadSubs();
       setLeftTab("submissions");
     } catch (e) {
-      setVerdict({ error: e.response?.data?.message || "Submit failed — the executor may not be running yet." });
+      if (e.name === "AbortError") return;
+      setVerdict({ error: e.response?.data?.message || e.message || "Submit failed — the executor may not be running yet." });
     } finally {
       setSubmitting(false);
     }
